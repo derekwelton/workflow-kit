@@ -1,0 +1,12 @@
+# workflow-kit: ephemera under work/ stays out of history
+work/**/*.png
+work/**/*.jpg
+work/**/*.jpeg
+work/**/*.webp
+work/**/*.gif
+work/**/*.mp4
+work/**/*.pdf
+work/**/*.zip
+work/**/*.log
+work/**/node_modules/
+work/features/*/review/

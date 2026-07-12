@@ -36,7 +36,10 @@ confirm it in your reply.
    - `notes.md` — issue link + dated "Started" entry. This is the running
      decision log; every meaningful decision gets a dated line here.
 
-3. **Report**: issue URL, folder path, and the immediate next step.
+3. **Report**: issue URL, folder path, and the immediate next step — for
+   anything non-trivial that's a `grilling` round (then `to-spec`); for work
+   bigger than one session, `to-tickets` after the spec; for a foggy epic,
+   suggest `wayfinder` instead of a single feature.
 
 ## Conventions downstream of this skill
 
@@ -44,4 +47,5 @@ confirm it in your reply.
 - PRs use `Refs #<n>` while work continues, `Closes #<n>` only when the merge
   should close the issue.
 - Screenshots/evidence go in the folder's `qa/`, scratch scripts in `scratch/`,
-  documents for the user in `review/` (via `/workflow-kit:present`).
+  research findings in `research/`, session handoffs as `handoff-<date>.md`,
+  documents for the user in `review/` (via `present`).

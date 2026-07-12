@@ -21,7 +21,8 @@ confirm which one in your reply before acting).
    merged --search <issue#>` or check the issue timeline) — or the work was
    committed directly, in which case confirm the commits exist on the default
    branch.
-2. **Verify the checklist**: every task in the issue body is checked, or
+2. **Verify the checklist**: every task in the issue body is checked (or, for
+   features broken down via `to-tickets`, every sub-issue is closed), or
    explicitly acknowledged as dropped.
 3. **Write the record** (this is what survives):
    - `notes.md`: dated "Wrapped" entry — outcome, key decisions, gotchas
@@ -32,8 +33,8 @@ confirm which one in your reply before acting).
 4. **Close the issue**: `gh issue close <n> --comment` with a short summary of
    what shipped and a pointer to the archived folder.
 5. **Delete ephemera**: remove the folder's `scratch/`, `qa/`, and `review/`
-   directories entirely.
-6. **Archive**: move the folder (now spec/plan/notes only) to
+   directories and any `handoff-*.md` files entirely.
+6. **Archive**: move the folder (now spec/plan/notes + `research/`) to
    `<workDir>/features/_archive/<issue#>-<slug>/` (use `git mv` for tracked
    files).
 7. **Prune git**: delete the merged local branch; if a worktree exists for it

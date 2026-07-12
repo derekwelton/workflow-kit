@@ -1,0 +1,27 @@
+# Upstream provenance
+
+Skills vendored from [mattpocock/skills](https://github.com/mattpocock/skills)
+(MIT License, © 2026 Matt Pocock) at commit `391a2701dd948f94f56a39f7533f8eea9a859c87`
+(2026-07-12). To pull upstream improvements: diff the paths below against a
+fresh clone at that SHA, then review what changed upstream since.
+
+| workflow-kit skill | upstream path | adaptation |
+|---|---|---|
+| grilling | skills/productivity/grilling | REWRITTEN — Derek's bulk-question-rounds variant |
+| research | skills/engineering/research | findings → feature folder `research/` (committed) |
+| to-spec | skills/engineering/to-spec | writes folder `spec.md` instead of publishing to tracker; no triage labels |
+| to-tickets | skills/engineering/to-tickets | publishes GitHub sub-issues of the feature issue; escalation not default; no local-files mode; no triage labels |
+| implement | skills/engineering/implement | + branch/checklist/notes.md conventions; model routing deferred to repo policy |
+| code-review | skills/engineering/code-review | spec source = feature folder spec.md via issue link; standards sources include agent-docs + glossary/ADRs |
+| codebase-design | skills/engineering/codebase-design | verbatim (+ DEEPENING.md, DESIGN-IT-TWICE.md) |
+| improve-codebase-architecture | skills/engineering/improve-codebase-architecture | report via our review-doc template (no CDNs, no temp dir); issue-first; HTML-REPORT.md not vendored |
+| prototype | skills/engineering/prototype | verbatim (+ LOGIC.md, UI.md) |
+| handoff | skills/productivity/handoff | saves to feature folder, committed (two-machine sync) instead of OS temp |
+| wayfinder | skills/engineering/wayfinder | tracker = GitHub issue + sub-issues; Blocked-by body lists; lazy `wayfinder:*` labels; assets in feature folder |
+| domain-modeling | skills/engineering/domain-modeling | verbatim (+ CONTEXT-FORMAT.md, ADR-FORMAT.md); per-repo paths via lifecycle-doc `glossary`/`adrDir` config |
+| tdd | skills/engineering/tdd | verbatim (+ tests.md, mocking.md) |
+
+Not vendored (add later if wanted): triage, diagnosing-bugs,
+resolving-merge-conflicts, grill-with-docs (ours: run grilling +
+domain-modeling together), setup-matt-pocock-skills (merged into
+workflow-init), qa (deprecated upstream).

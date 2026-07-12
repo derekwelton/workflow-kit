@@ -25,20 +25,42 @@ claude plugin install workflow-kit@derekwelton
 
 ## Commands
 
+Lifecycle (the container of work):
+
 | Command | Purpose |
 |---|---|
-| `/workflow-kit:workflow-init` | One-time repo bootstrap (scaffold, gitignore, labels, lifecycle doc) |
+| `/workflow-kit:workflow-init` | One-time repo bootstrap (scaffold, gitignore, labels, lifecycle doc, AGENTS.md pointer) |
 | `/workflow-kit:new-feature <slug>` | File issue + create feature folder with stub spec/notes |
 | `/workflow-kit:present [topic]` | Generate a self-contained HTML review doc from feature state |
 | `/workflow-kit:wrap-feature <issue#>` | Verify shipped → close issue → delete ephemera → archive folder → prune git |
 | `/workflow-kit:work-audit` | Propose cleanup of stale work (never deletes without approval) |
 
+Craft (inside the build; adapted from [mattpocock/skills](https://github.com/mattpocock/skills), MIT — see `UPSTREAM.md`):
+
+| Command | Purpose |
+|---|---|
+| `/workflow-kit:grilling` | Relentless interview in bulk-question rounds, recommended answers, until shared understanding |
+| `/workflow-kit:research` | Background agent → primary-source findings in the folder's `research/` |
+| `/workflow-kit:prototype` | Throwaway code that answers a design question (logic or UI branch) |
+| `/workflow-kit:to-spec` | Crystallize the conversation into the folder's `spec.md` (no interview) |
+| `/workflow-kit:to-tickets` | Escalate a big feature into tracer-bullet vertical-slice sub-issues with blocking edges |
+| `/workflow-kit:implement` | Build one ticket/spec per fresh session — TDD at pre-agreed seams, review, commit |
+| `/workflow-kit:tdd` | Test-first reference: seams, red–green tracer bullets, anti-patterns |
+| `/workflow-kit:code-review` | Two-axis review (Standards + smell baseline / Spec fidelity) in parallel subagents |
+| `/workflow-kit:codebase-design` | Deep-module vocabulary: module, interface, seam, depth, leverage, locality |
+| `/workflow-kit:domain-modeling` | Maintain the domain glossary + sparing ADRs as decisions crystallize |
+| `/workflow-kit:improve-codebase-architecture` | Scan for deepening opportunities → visual HTML report → grill through one |
+| `/workflow-kit:handoff` | Committed session-handoff doc the next session (or other machine) resumes from |
+| `/workflow-kit:wayfinder` | Chart a foggy epic as a map issue + decision-ticket sub-issues; resolve one per session |
+
 ## Layout
 
-- `skills/` — the five skills above
+- `skills/` — the eighteen skills above
 - `templates/feature-lifecycle.md` — per-repo convention doc stamped by `workflow-init`
-  (config frontmatter: `workDir`, `docsHome`, `labels`)
+  (config frontmatter: `workDir`, `docsHome`, `labels`, `glossary`, `adrDir`; body carries
+  the skills catalog so non-Claude agents learn the system from the repo itself)
 - `templates/review-doc.html` — visual shell for review documents
+- `UPSTREAM.md` — provenance of vendored skills
 
 Designed 2026-07-12 in the Ironwood-Website repo; canonical design spec lives
 there at `work/features/6-feature-workflow/spec.md`.
