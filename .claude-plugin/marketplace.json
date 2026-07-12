@@ -1,0 +1,11 @@
+{
+  "name": "derekwelton",
+  "owner": { "name": "Derek Welton" },
+  "plugins": [
+    {
+      "name": "workflow-kit",
+      "source": "./",
+      "description": "Issue-driven feature workflow: one issue, one folder, one lifecycle."
+    }
+  ]
+}
