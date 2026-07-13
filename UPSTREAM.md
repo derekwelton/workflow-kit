@@ -1,9 +1,13 @@
 # Upstream provenance
 
-Skills vendored from [mattpocock/skills](https://github.com/mattpocock/skills)
+To pull upstream improvements: diff the paths below against a fresh clone at
+the recorded SHA, then review what changed upstream since.
+
+## mattpocock/skills
+
+Vendored from [mattpocock/skills](https://github.com/mattpocock/skills)
 (MIT License, © 2026 Matt Pocock) at commit `391a2701dd948f94f56a39f7533f8eea9a859c87`
-(2026-07-12). To pull upstream improvements: diff the paths below against a
-fresh clone at that SHA, then review what changed upstream since.
+(2026-07-12).
 
 | workflow-kit skill | upstream path | adaptation |
 |---|---|---|
@@ -25,3 +29,18 @@ Not vendored (add later if wanted): triage, diagnosing-bugs,
 resolving-merge-conflicts, grill-with-docs (ours: run grilling +
 domain-modeling together), setup-matt-pocock-skills (merged into
 workflow-init), qa (deprecated upstream).
+
+## DietrichGebert/ponytail
+
+Vendored from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail)
+(MIT License, © 2026 DietrichGebert) at commit `14a0d79548d4de8fc2de95c1b94bb0de63a739d3`
+(2026-07-12).
+
+| workflow-kit skill | upstream path | adaptation |
+|---|---|---|
+| ponytail | skills/ponytail | body verbatim; Boundaries section extended: implement runs it by default, tdd outranks the one-check rule at agreed seams, never simplify away spec.md requirements, Caveman pairing dropped |
+| ponytail-audit | skills/ponytail-audit | tags inlined (self-contained without ponytail-review); long reports via `present`; findings acted on = issue-first chore; ordered before improve-codebase-architecture; ADRs override findings |
+
+Not vendored (add later if wanted): ponytail-review (diff-scoped — our
+code-review's Standards axis + ponytail-at-write-time cover most of it),
+ponytail-debt, ponytail-gain, ponytail-help.

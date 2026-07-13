@@ -84,11 +84,13 @@ Craft (inside the build):
 | `prototype` | "Does this logic feel right?" / "What should this look like?" → throwaway code that answers the question |
 | `to-spec` | Conversation is ready to crystallize → writes the folder's `spec.md` (no interview) |
 | `to-tickets` | Feature exceeds one context window → tracer-bullet vertical-slice sub-issues with blocking edges |
-| `implement` | A spec/ticket is ready to build — one ticket per fresh session, TDD at pre-agreed seams, then code-review, commit |
-| `tdd` | Building test-first: seams confirmed up front, red–green tracer bullets, no implementation-coupled or tautological tests |
+| `implement` | A spec/ticket is ready to build — one ticket per fresh session, ponytail governs the code, TDD at pre-agreed seams, then code-review, commit |
+| `ponytail` | ALL code writing (auto-active): laziest solution that works — reuse > stdlib > native > installed dep > one line > minimum code; never simplifies away spec requirements |
+| `tdd` | Building test-first: seams confirmed up front, red–green tracer bullets, no implementation-coupled or tautological tests (outranks ponytail's one-check minimum at agreed seams) |
 | `code-review` | Before wrap / on any branch: two-axis review — Standards (+ smell baseline) and Spec fidelity — in parallel subagents |
 | `codebase-design` | Designing or restructuring modules — the deep-module vocabulary (module/interface/seam/depth/leverage/locality) |
 | `domain-modeling` | Terms are being sharpened or hard-to-reverse decisions made → glossary updates + sparing ADRs |
+| `ponytail-audit` | Repo-wide bloat scan → ranked delete/stdlib/native/yagni/shrink list; run BEFORE improve-codebase-architecture (subtract, then deepen) |
 | `improve-codebase-architecture` | Periodic architecture health check → visual HTML report of deepening opportunities, then grill through one |
 | `handoff` | Ending a session mid-work → committed handoff doc the next session (or other machine) resumes from |
 | `wayfinder` | An epic too big/foggy for one session → map issue + decision-ticket sub-issues, worked one per session |

@@ -59,7 +59,8 @@ Craft (inside the build; adapted from [mattpocock/skills](https://github.com/mat
 | `/workflow-kit:prototype` | Throwaway code that answers a design question (logic or UI branch) |
 | `/workflow-kit:to-spec` | Crystallize the conversation into the folder's `spec.md` (no interview) |
 | `/workflow-kit:to-tickets` | Escalate a big feature into tracer-bullet vertical-slice sub-issues with blocking edges |
-| `/workflow-kit:implement` | Build one ticket/spec per fresh session — TDD at pre-agreed seams, review, commit |
+| `/workflow-kit:implement` | Build one ticket/spec per fresh session — ponytail + TDD at pre-agreed seams, review, commit |
+| `/workflow-kit:ponytail [lite\|full\|ultra]` | Persistent lazy-senior-dev mode: the laziest solution that works (auto-active on coding) |
 | `/workflow-kit:tdd` | Test-first reference: seams, red–green tracer bullets, anti-patterns |
 | `/workflow-kit:code-review` | Two-axis review (Standards + smell baseline / Spec fidelity) in parallel subagents |
 | `/workflow-kit:codebase-design` | Deep-module vocabulary: module, interface, seam, depth, leverage, locality |
@@ -67,6 +68,13 @@ Craft (inside the build; adapted from [mattpocock/skills](https://github.com/mat
 | `/workflow-kit:improve-codebase-architecture` | Scan for deepening opportunities → visual HTML report → grill through one |
 | `/workflow-kit:handoff` | Committed session-handoff doc the next session (or other machine) resumes from |
 | `/workflow-kit:wayfinder` | Chart a foggy epic as a map issue + decision-ticket sub-issues; resolve one per session |
+| `/workflow-kit:ponytail-audit` | Repo-wide over-engineering scan: ranked delete/stdlib/native/yagni/shrink list |
+
+Anti-over-engineering skills adapted from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) (MIT — see `UPSTREAM.md`).
+
+**See [`CHEATSHEET.md`](CHEATSHEET.md)** for the full map: every skill, how they
+interact, when they auto-load vs. need a slash command, and ordered
+walkthroughs from tiny bug to foggy epic.
 
 ## Layout
 

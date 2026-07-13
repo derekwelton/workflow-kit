@@ -10,9 +10,14 @@ don't chain tickets in one context; hand off between them.
 
 - Work on a branch referencing the issue (`feat/<issue#>-<slug>`) unless the
   repo's conventions say otherwise.
+- **Apply the `ponytail` skill (full) to all code you write** — the ladder
+  governs the implementation: reuse > stdlib > native > installed dep > one
+  line > minimum code. Never simplify away what the spec explicitly requires;
+  challenge it in a note instead.
 - Use the `tdd` skill where possible, **at the seams pre-agreed in the spec**
   (its Testing Decisions section). If the spec never agreed seams, confirm
-  them with the user before writing tests.
+  them with the user before writing tests. Test depth is tdd's call, not
+  ponytail's — its one-check minimum applies only where tdd isn't in play.
 - Run typechecking regularly, single test files regularly, and the full test
   suite once at the end.
 - Once done, run the `code-review` skill on the work and address what it
