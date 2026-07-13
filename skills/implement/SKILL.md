@@ -8,6 +8,8 @@ Implement the work described in the feature folder's `spec.md`, or in the
 specific sub-issue ticket the user names. **One ticket per fresh session** —
 don't chain tickets in one context; hand off between them.
 
+- Apply `update-issue` when implementation starts. Name the branch, the ticket
+  or checklist slice in progress, and the next verification checkpoint.
 - Work on a branch referencing the issue (`feat/<issue#>-<slug>`) unless the
   repo's conventions say otherwise.
 - **Apply the `ponytail` skill (full) to all code you write** — the ladder
@@ -22,9 +24,14 @@ don't chain tickets in one context; hand off between them.
   suite once at the end.
 - Once done, run the `code-review` skill on the work and address what it
   surfaces.
-- Commit to the current branch. Update the tracker: tick the checklist item,
-  or close the sub-issue (`Closes #n` in the PR/commit, or `gh issue close`)
-  — never the parent feature issue.
+- Commit to the current branch. Apply `update-issue`: summarize what changed,
+  verification and review results, link only pushed/reachable artifacts, and
+  tick the completed checklist item. Close the sub-issue (`Closes #n` in the
+  PR/commit, or `gh issue close`) when its acceptance criteria are satisfied —
+  never close the parent feature issue.
+- If implementation pauses, blocks, or needs the user's verification or a
+  decision, apply `update-issue` before ending the session. Put the exact ask,
+  recommendation, current state, and resumption step in the issue comment.
 - Log a dated line in the feature's `notes.md` (what shipped, gotchas hit).
 
 Model/agent routing (e.g. delegating bulk implementation to another model) is

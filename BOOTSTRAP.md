@@ -16,7 +16,8 @@
    (`gh repo create --private --source .`). The workflow is issue-first — it
    needs GitHub Issues. If `gh` isn't authenticated, stop and tell the user.
 2. **Already adopted?** If a `feature-lifecycle.md` stamped by workflow-kit
-   already exists in this repo, skip to Step 3 (verify + refresh).
+   already exists, record its path and continue. Step 1 refreshes the machine
+   plugin; Step 2 refreshes the repo's stamped integration.
 
 ## Step 1 — Validate the plugin is installed on this machine
 
@@ -45,25 +46,32 @@ Tell the user if an install/update happened: skills load at session start, so
 `/workflow-kit:*` commands appear next session. **Do not stop** — Step 2 works
 without the loaded skills.
 
-## Step 2 — Initialize this repo
+## Step 2 — Initialize or refresh this repo
 
-If the `workflow-kit:workflow-init` skill is available in this session, invoke
-it. If it is NOT available (plugin just installed, or you're not Claude),
-fetch the skill's instructions and follow them directly:
+Choose by repo state:
+
+- Existing workflow-kit-stamped `feature-lifecycle.md` → invoke
+  `/workflow-kit:workflow-update`.
+- No stamped lifecycle document → invoke `/workflow-kit:workflow-init`.
+
+If the needed skill is NOT available (plugin just installed/updated, or you're
+not Claude), fetch its instructions and follow them directly. Use
+`skills/workflow-update/SKILL.md` for an adopted repo or
+`skills/workflow-init/SKILL.md` for a new one:
 
 ```
-gh api repos/derekwelton/workflow-kit/contents/skills/workflow-init/SKILL.md \
+gh api repos/derekwelton/workflow-kit/contents/skills/<skill>/SKILL.md \
   --jq .content | base64 -d
 ```
 
-Fetch the two templates it references the same way
-(`templates/feature-lifecycle.md`, `templates/review-doc.html` — the latter
-only needs to exist in the plugin, not in the repo).
+Fetch `templates/feature-lifecycle.md` the same way. `workflow-init` also
+references `templates/review-doc.html`, which only needs to exist in the
+plugin, not in the project.
 
-That skill does the full setup: `work/features/` scaffold, gitignore block,
-`feature/bug/chore/idea` labels, the stamped `feature-lifecycle.md` (with this
-repo's config frontmatter), and the pointer section in the repo's agent-docs
-entrypoint.
+`workflow-init` does the full first-time setup. `workflow-update` replaces only
+the lifecycle document's versioned managed block, preserves repo frontmatter
+and additions, then reconciles the scaffold, gitignore block, labels, and
+agent-entrypoint pointer. In either case, show and validate the resulting diff.
 
 ## Step 3 — Verify the agent entrypoints
 
@@ -109,8 +117,9 @@ If `codex` isn't installed, skip this step and say so.
 - If this file was **copied into the repo**, delete the copy — the stamped
   `feature-lifecycle.md` supersedes it; this file lives only in
   `derekwelton/workflow-kit` (one source, no drift).
-- Report: plugin status (installed/updated/current), what workflow-init
-  created vs. skipped, which entrypoint got the pointer, any legacy mess
-  found. Remind the user: new work starts with `/workflow-kit:new-feature
-  <slug>`, non-trivial plans with `/workflow-kit:grilling`, and if the plugin
-  was just installed, the commands appear after a session restart.
+- Report: plugin status (installed/updated/current), whether the repo was
+  initialized or refreshed, files changed vs. preserved, which entrypoint has
+  the pointer, and any legacy mess found. Remind the user: new work starts
+  with `/workflow-kit:new-feature <slug>`, future repo refreshes use
+  `/workflow-kit:workflow-update`, and newly installed skills appear after a
+  session restart.

@@ -13,6 +13,10 @@ license: MIT
 
 Repo-wide over-engineering scan. Rank findings biggest cut first.
 
+Resolve a `chore` issue and feature folder first (`new-feature` if needed),
+then apply `update-issue` with a Started comment. The audit issue remains the
+control point for the report and the user's decisions.
+
 ## Tags
 
 - `delete:` dead code, unused flexibility, speculative feature. Replacement: nothing.
@@ -35,6 +39,9 @@ End with `net: -<N> lines, -<M> deps possible.` Nothing to cut:
 
 For a long report the user will review, render it via `present` (review-doc
 HTML, findings as a ranked table) — the chat gets the top cuts + the net line.
+In all cases, apply `update-issue` with a **Ready for review** comment that
+includes the top cuts, net estimate, recommended approvals, evidence, and any
+GitHub-reachable artifact links. Local-only HTML must not be required to act.
 
 ## Boundaries
 
@@ -45,10 +52,10 @@ Lists findings, applies nothing. One-shot.
 
 In this workflow specifically:
 
-- **Acting on findings is issue-first**: cuts the user approves become a
-  `chore` issue (`new-feature`; `to-tickets` if the cutting exceeds one
-  session — expand–contract applies to wide deletions too). The audit itself
-  needs no issue.
+- **Acting on findings remains issue-first**: the audit has its own `chore`
+  issue; approved cuts either become checklist items there or separate chore
+  issues when they need independent branches/folders (`to-tickets` if the
+  cutting exceeds one session — expand–contract applies to wide deletions).
 - **Division of labor with `improve-codebase-architecture`**: ponytail-audit
   finds what to *subtract* (delete/shrink/replace); improve-codebase-
   architecture finds what to *restructure* (deepen shallow modules). Run the

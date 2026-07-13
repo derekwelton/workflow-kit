@@ -16,6 +16,11 @@ approved list.
 
 ## Phase 1 — Propose
 
+Resolve the audit's `chore` issue and feature folder first (`new-feature` if
+this audit does not have one), then apply `update-issue` with a Started comment.
+The audit issue is the single review/control point; do not scatter proposal
+comments across every issue being audited.
+
 Scan (thresholds: feature folders stale after ~3 weeks of no file mtime/commit
 activity; dated QA-sweep folders stale after ~2 weeks; adjust if the repo's
 lifecycle doc overrides):
@@ -37,10 +42,16 @@ lifecycle doc overrides):
 Present the findings as a table — item, category, proposed action (delete /
 archive / wrap / close / keep), and a one-line reason. If the list is long or
 includes visual evidence, use `/workflow-kit:present` to render it as a review
-HTML. End by asking for one-shot approval ("approve all", or list exceptions).
+HTML. Apply `update-issue` with a **Needs decision** comment containing the
+proposal summary, exact approval request, recommendations, and any
+GitHub-reachable artifact links. The comment must remain actionable when the
+HTML is local-only. End by asking for one-shot approval ("approve all", or
+list exceptions).
 
 ## Phase 2 — Execute (only after approval)
 
 Apply exactly the approved actions. Use `git mv`/`git rm` for tracked files so
 history stays clean. Close issues with a one-line comment. Report a summary of
-what changed, and commit if the user's conventions call for it.
+what changed, and commit if the user's conventions call for it. Apply
+`update-issue` to the audit issue with the executed/skipped actions and
+verification, then wrap the audit issue when complete.

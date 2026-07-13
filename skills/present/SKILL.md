@@ -19,6 +19,9 @@ otherwise infer from what the current session produced.
 - **Self-contained**: inline all CSS, no external requests, opens via `file://`.
   Reference screenshots relatively from the sibling `qa/` folder (they're
   local-only, same as the review doc).
+- **The issue comment is the remote review surface.** Apply `update-issue` for
+  every presentation. A local review doc may add polish and depth, but the
+  user must be able to understand and answer the request from GitHub alone.
 
 ## Steps
 
@@ -37,6 +40,12 @@ otherwise infer from what the current session produced.
    - sections of findings/comparisons/screenshots as appropriate.
 4. If a browser tool is available (Playwright), screenshot the rendered doc
    once to verify nothing is broken; delete the check screenshot after.
-5. Log a dated line in `notes.md` (`presented: <file> — <topic>`), then give
-   the user the absolute path to open, plus a 2–3 sentence summary of what it
-   asks of them.
+5. Log a dated line in `notes.md` (`presented: <file> — <topic>`).
+6. Apply `update-issue` and post a **Ready for review** or **Needs decision**
+   comment. Include the executive summary, every concrete question with its
+   recommendation, the material evidence, and the next action. Link canonical
+   Markdown, a deployed preview, PR, commit, or screenshots only when they are
+   actually reachable from GitHub. If the HTML is local-only, label its path
+   as such and do not make opening it necessary to respond.
+7. Give the user the issue URL, the absolute local HTML path when useful, and
+   a 2–3 sentence summary of what it asks of them.

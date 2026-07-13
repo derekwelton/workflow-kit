@@ -30,8 +30,10 @@ confirm which one in your reply before acting).
    - Ensure `spec.md` status line says shipped/done.
    - If the agent has a persistent memory system and a gotcha is durable
      (not derivable from the repo), record it there too.
-4. **Close the issue**: `gh issue close <n> --comment` with a short summary of
-   what shipped and a pointer to the archived folder.
+4. **Close the issue**: apply `update-issue` and close with a standalone
+   **Complete** comment: what shipped, checklist disposition, verification,
+   PR/commit links, and a GitHub-reachable pointer to the archived folder.
+   Do not link a local-only path as though GitHub can open it.
 5. **Delete ephemera**: remove the folder's `scratch/`, `qa/`, and `review/`
    directories and any `handoff-*.md` files entirely.
 6. **Archive**: move the folder (now spec/plan/notes + `research/`) to

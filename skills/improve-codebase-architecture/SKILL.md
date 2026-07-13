@@ -23,7 +23,8 @@ Built on the shared design vocabulary:
 
 **Issue-first applies to audits too**: file a `chore` issue for the
 architecture review (via `new-feature`) so the report and subsequent
-refactor work have a tracking handle and folder.
+refactor work have a tracking handle and folder. Apply `update-issue` with a
+Started comment before exploring.
 
 ## Process
 
@@ -69,7 +70,10 @@ clearly ("contradicts ADR-0007 — but worth reopening because…"). Don't list
 every theoretical refactor an ADR forbids.
 
 Do NOT propose interfaces yet. After the doc is written, ask the user:
-"Which of these would you like to explore?"
+"Which of these would you like to explore?" The `present` step must also apply
+`update-issue`: post the candidates, top recommendation, exact choice needed,
+and reachable evidence to the architecture-review issue. The request must be
+answerable there even when the HTML report is local-only.
 
 ### 3. Grilling loop
 

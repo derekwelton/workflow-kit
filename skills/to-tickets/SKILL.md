@@ -100,4 +100,6 @@ prototype snippets, trimmed, with a note of origin.
 
 Work the **frontier** — any ticket whose blockers are all closed — one ticket
 per fresh session with `implement`, clearing context between tickets. Do NOT
-close or modify the parent issue.
+close the parent issue. Apply `update-issue` to the parent with a checkpoint
+summary linking the created sub-issues, naming the current frontier, and
+stating the next action; ticket-specific progress stays on each sub-issue.

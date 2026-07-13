@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Compact the current conversation into a handoff document in the feature folder so a fresh agent — on this machine or the other one — can pick up the work. Argument: what the next session will be used for.
+description: "Compact the current conversation into a handoff document in the feature folder so a fresh agent — on this machine or the other one — can pick up the work. Argument: what the next session will be used for."
 disable-model-invocation: true
 ---
 
@@ -27,3 +27,9 @@ Rules:
   session will focus on and tailor the doc accordingly.
 - Delete superseded handoff files when writing a new one — one live handoff
   per feature. (All of them die at wrap anyway.)
+
+After committing the handoff, apply `update-issue` with a **Paused** or
+**Blocked** comment: current state, completed checkpoint, blocker/unfinished
+work, and exact resumption step. Link the handoff only if it has been pushed
+and is reachable on GitHub; otherwise label its path local-only and keep the
+comment sufficient for the next human to understand the pause.

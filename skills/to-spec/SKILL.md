@@ -24,7 +24,9 @@ folder exists yet, run `new-feature` first (issue-first rule).
    seams to new ones; use the highest seam possible; if new seams are needed,
    propose them at the highest point you can. The fewer seams across the
    codebase, the better — the ideal number is one. **Check with the user that
-   these seams match their expectations** before writing.
+   these seams match their expectations** before writing. Apply `update-issue`
+   with the proposed seams, recommendation, and exact decision needed so the
+   request is durable outside the current chat.
 
 3. Write `spec.md` using the template below (keep the standard header: title,
    issue link, status line). Update the issue's checklist if the breakdown
@@ -77,4 +79,6 @@ Anything else future sessions need.
 </spec-template>
 
 If the spec is big enough that implementation won't fit one session, follow up
-with `to-tickets`.
+with `to-tickets`. Apply `update-issue` after writing the spec: summarize the
+locked scope and testing decisions, sync the issue checklist, and link the
+spec only when its branch/commit is reachable from GitHub.

@@ -21,3 +21,9 @@ Its job:
 
 When the findings resolve a decision, record the decision in `spec.md` /
 `notes.md` and let the research file carry the evidence.
+
+When research finishes, apply `update-issue` to the originating issue with a
+checkpoint summary, the answer, confidence/limitations, and a permalink to
+the findings only when the file is committed and pushed. If the findings need
+a user decision, make it a **Needs decision** comment with the recommendation
+and exact next action; never leave the ask only in the research file or chat.

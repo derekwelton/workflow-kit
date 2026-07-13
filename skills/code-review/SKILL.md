@@ -109,6 +109,13 @@ End with a one-line summary: total findings per axis, and the worst issue
 *within each axis*. Don't pick a single winner across axes — that's the
 reranking the separation exists to prevent.
 
+When the review resolves to a feature/ticket issue, apply `update-issue` with
+a checkpoint or **Needs decision** comment. Preserve the two axes, include the
+finding counts and worst finding in each, state what was fixed versus still
+open, and give the exact next action. Do not make a local report the only
+record. For a standalone review with no originating issue, report in chat
+without inventing a tracker item.
+
 ## Why two axes
 
 A change can pass one axis and fail the other:

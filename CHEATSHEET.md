@@ -17,6 +17,8 @@ is the full reference.)
   │
   ▼
  new-feature ──────── files the ISSUE first, creates work/features/<n>-<slug>/
+  │                    update-issue mirrors every meaningful lifecycle change
+  │                    back to the issue (start/checkpoint/input/pause/done)
   │
   ▼
  grilling ─────────── bulk-question rounds until shared understanding
@@ -66,7 +68,9 @@ is the full reference.)
 | Skill | Auto-loads? | Use when |
 |---|---|---|
 | `workflow-init` | ✔ auto (adopting the workflow) | Once per repo. `BOOTSTRAP.md` is the machine-level wrapper around it. |
+| `workflow-update` | ✔ auto (refreshing an adopted repo) | Replaces the versioned managed lifecycle block; preserves repo config/additions. `--check` is read-only. |
 | `new-feature` | ✔ auto (starting any unit of work) | ALWAYS the first step. Issue → folder. |
+| `update-issue` | ✔ auto (issue-backed work changes state) | Durable progress, decisions, evidence, artifact links, and next action on the issue. |
 | `present` | ✔ auto (something needs the user's review) | Renders decisions/evidence as review-doc HTML. |
 | `wrap-feature` | ✔ auto (user declares work done) | The only way work ends. Verifies before deleting. |
 | `work-audit` | ✔ auto (clutter, migration) | Proposes cleanup; never deletes without approval. |
@@ -89,9 +93,10 @@ is the full reference.)
 
 ## Ceremony is opt-in
 
-The one picture is the **escalation path, not a mandatory march**. Only two
-steps are universal: the issue at the start, the wrap at the end. Everything
-between scales with the work — and the heavy steps (`grilling`, `to-spec`,
+The one picture is the **escalation path, not a mandatory march**. Three
+requirements are universal: the issue at the start, durable issue updates at
+meaningful transitions, and the wrap at the end. Everything between scales
+with the work — and the heavy steps (`grilling`, `to-spec`,
 `to-tickets`, `wayfinder`, `implement` as a formal step) run only when the
 user asks or accepts a one-line offer. "Fix this typo" must never spawn a
 brainstorming session, a spec, or a subagent fleet. When in doubt: do the
@@ -111,11 +116,15 @@ smaller thing, offer the next step in one line.
 - **A repo that hasn't adopted yet**: give the agent
   `BOOTSTRAP.md` (fetch from this repo via `gh`) — it validates/installs the
   plugin, runs `workflow-init`, and wires the entrypoints.
+- **A repo that already adopted**: update the plugin once per machine, start a
+  new session, then run `/workflow-kit:workflow-update` in each project. The
+  command refreshes only managed content and preserves repo additions.
 
 ## Who calls whom
 
 ```
 new-feature ──suggests──► grilling ──uses──► domain-modeling
+issue-backed lifecycle transitions ──invoke──► update-issue
                               │ ──may spawn──► research · prototype
 to-spec ──feeds──► to-tickets ──feeds──► implement
 implement ──runs──► ponytail + tdd ──then──► code-review
@@ -123,6 +132,7 @@ wayfinder ──tickets invoke──► grilling · research · prototype · dom
 improve-codebase-architecture ──uses──► codebase-design · present · grilling · domain-modeling
 ponytail-audit / work-audit / improve-arch ──approved findings──► new-feature (chore) → the normal loop
 everything with evidence or decisions ──presents via──► present
+present ──always mirrors actionable summary to──► update-issue
 every finished thing ──ends in──► wrap-feature
 ```
 
@@ -147,7 +157,8 @@ Key boundaries (the ones that prevent fights between skills):
 
 **Tiny bug** (one-file fix):
 `new-feature` (issue only, no folder) → fix on a branch (ponytail auto-applies)
-→ PR `Closes #n`. Done — no spec, no folder, no wrap ceremony.
+→ `update-issue` with verification → PR `Closes #n`. Done — no spec, no
+folder, no wrap ceremony.
 
 **Small feature** (fits one session):
 `new-feature` → quick `grilling` round if anything's unclear → build (ponytail;
@@ -175,3 +186,6 @@ chore issue) → each chore runs the normal loop.
 
 **Session ending mid-anything**: `handoff` — the next session (either machine)
 picks up from the committed doc.
+
+**Existing repo upgrade**: machine marketplace/plugin update → new session →
+`workflow-update` in the repo → review/commit the project integration diff.

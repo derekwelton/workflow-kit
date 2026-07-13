@@ -45,6 +45,8 @@ confirm it in your reply.
 
 ## Conventions downstream of this skill
 
+- Once substantive work begins, apply `update-issue` at every meaningful
+  lifecycle transition; issue creation itself is the initial tracker record.
 - Branch names should reference the issue (e.g. `feat/<issue#>-<slug>`).
 - PRs use `Refs #<n>` while work continues, `Closes #<n>` only when the merge
   should close the issue.

@@ -51,11 +51,13 @@ skip any step whose result already exists, and say so.
 5. **Lifecycle doc**: copy `${CLAUDE_PLUGIN_ROOT}/templates/feature-lifecycle.md`
    to the docs home chosen in step 1, filling in the config frontmatter
    (`workDir`, `docsHome`, `labels`, `glossary`, `adrDir`) for this repo —
-   keep the template's full body including the skills-catalog tables. It
-   exists so that agents that cannot see this plugin (Codex, Gemini, Cursor)
-   still follow the convention. Do NOT create the glossary or ADR dir now —
-   they're created lazily by `domain-modeling` when the first term/decision
-   lands.
+   keep the template's full versioned managed block, including the
+   skills-catalog tables and managed markers. Repo-specific additions belong
+   below the managed-end marker so `workflow-update` can preserve them. The
+   document exists so agents that cannot see this plugin (Codex, Gemini,
+   Cursor) still follow the convention. Do NOT create the glossary or ADR dir
+   now — they're created lazily by `domain-modeling` when the first
+   term/decision lands.
 
 6. **Agent-entrypoint pointer**: add a short section to the repo's
    agent-instruction entrypoint (`.ai/AGENTS.md` → `AGENTS.md` → `CLAUDE.md`,
@@ -80,4 +82,5 @@ skip any step whose result already exists, and say so.
 
 8. **Report**: list what was created vs. skipped, and remind the user that new
    work starts with `/workflow-kit:new-feature <slug>` and non-trivial plans
-   with `/workflow-kit:grilling`.
+   with `/workflow-kit:grilling`. Future template refreshes use
+   `/workflow-kit:workflow-update` after the machine plugin is updated.

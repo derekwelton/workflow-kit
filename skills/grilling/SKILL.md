@@ -37,4 +37,8 @@ invoked, be relentless; until invoked, don't be here.
   one compact list.
 
 Decisions produced by a grilling session are written into the feature's
-`spec.md` / `notes.md` — the interview transcript is not the record.
+`spec.md` / `notes.md` — the interview transcript is not the record. At the
+end of each issue-backed session, apply `update-issue` with the locked
+decisions, unresolved questions, recommendations, and next action. If the
+session pauses awaiting answers, the issue gets the same question round as a
+**Needs decision** comment; do not rely on chat history as the only queue.
