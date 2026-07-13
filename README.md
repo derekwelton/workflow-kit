@@ -23,6 +23,21 @@ claude plugin marketplace add derekwelton/workflow-kit
 claude plugin install workflow-kit@derekwelton
 ```
 
+Update: `claude plugin marketplace update derekwelton && claude plugin update workflow-kit@derekwelton`
+
+## Adopt in a repo (existing or brand-new)
+
+Tell the agent in that repo:
+
+```
+Fetch BOOTSTRAP.md from derekwelton/workflow-kit with gh and follow it.
+```
+
+`BOOTSTRAP.md` validates/install-or-updates the plugin on the machine, runs
+the repo initialization (even in a session where the skills aren't loaded
+yet), verifies the CLAUDE.md/AGENTS.md entrypoints, and cleans up after
+itself. It lives only in this repo — don't keep copies in projects.
+
 ## Commands
 
 Lifecycle (the container of work):

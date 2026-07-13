@@ -7,3 +7,4 @@ Issue: #1
   pointer block, skills-catalog stamping), lifecycle template rewritten with full
   when-to-use catalog, UPSTREAM.md provenance, README. Folder layout gains
   research/ (committed, archived at wrap) + handoff-<date>.md (committed, deleted at wrap).
+2026-07-12 — 0.2.1: BOOTSTRAP.md added (self-contained repo-adoption instructions: validates/installs plugin, runs init even without loaded skills via gh api fetch, verifies entrypoints, self-deletes if copied).
