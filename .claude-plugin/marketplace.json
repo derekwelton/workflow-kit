@@ -12,8 +12,8 @@
     {
       "name": "codex",
       "source": {
-        "source": "github",
-        "repo": "derekwelton/codex-kit"
+        "source": "git",
+        "url": "https://github.com/derekwelton/codex-kit.git"
       },
       "description": "Codex delegation for Claude Code, modernized for GPT-5.6 Sol/Terra/Luna with canonical model-routing (fork of openai/codex-plugin-cc)."
     }
