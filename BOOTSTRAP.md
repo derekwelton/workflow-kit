@@ -88,10 +88,12 @@ Every agent must be able to *discover* the lifecycle from the repo itself:
 If the `codex` CLI is installed on this machine (`codex --version` succeeds):
 
 1. Ensure the modernized plugin is installed: `claude plugin list` should show
-   `codex@derekwelton`. If it shows the stale `codex@openai-codex`, replace it:
+   `codex@derekwelton-codex`. If it shows the stale `codex@openai-codex`,
+   replace it:
    ```
    claude plugin uninstall codex@openai-codex
-   claude plugin install codex@derekwelton
+   claude plugin marketplace add derekwelton/codex-kit
+   claude plugin install codex@derekwelton-codex
    ```
 2. Ensure the repo's `CLAUDE.md` carries the model-routing pointer block —
    fetch `templates/claude-md-block.md` from `derekwelton/codex-kit` via
