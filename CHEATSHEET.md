@@ -87,6 +87,16 @@ is the full reference.)
 | `ponytail-audit` | ✔ auto ("find bloat", "what can I delete") | Repo-wide subtraction report. One-shot, applies nothing. |
 | `improve-codebase-architecture` | ✋ manual `/workflow-kit:improve-codebase-architecture` | Repo-wide deepening report → grill through one candidate. |
 
+## Ceremony is opt-in
+
+The one picture is the **escalation path, not a mandatory march**. Only two
+steps are universal: the issue at the start, the wrap at the end. Everything
+between scales with the work — and the heavy steps (`grilling`, `to-spec`,
+`to-tickets`, `wayfinder`, `implement` as a formal step) run only when the
+user asks or accepts a one-line offer. "Fix this typo" must never spawn a
+brainstorming session, a spec, or a subagent fleet. When in doubt: do the
+smaller thing, offer the next step in one line.
+
 ## How loading works
 
 - **Claude Code**: the plugin (user scope) makes every skill available in every

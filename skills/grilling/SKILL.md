@@ -1,11 +1,15 @@
 ---
 name: grilling
-description: Grill the user relentlessly about a plan or design in rounds of bulk questions until shared understanding is reached. Use when the user wants to stress-test a plan before building, at the start of any non-trivial feature, or on any 'grill' trigger phrase.
+description: Grill the user relentlessly about a plan or design in rounds of bulk questions until shared understanding is reached. Use ONLY when the user explicitly asks for it — "grill me", "interview me", "stress-test this plan", "let's plan/brainstorm/design this" — or accepts an offered grilling. NEVER self-initiate a grilling session because a task merely looks non-trivial; if a request seems underspecified, offer a grilling in one line and let the user decide.
 ---
 
 Interview the user relentlessly about every aspect of this plan until you reach
 a shared understanding. Walk down each branch of the design tree, resolving
 dependencies between decisions one-by-one.
+
+**This session is opt-in.** It runs because the user asked for it (or said yes
+to a one-line offer) — never because the task "seemed big enough". Once
+invoked, be relentless; until invoked, don't be here.
 
 ## Rules
 

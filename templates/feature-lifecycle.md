@@ -23,6 +23,15 @@ idea → issue → folder → grill → research/prototype → to-spec → to-ti
 
 ## Rules
 
+0. **Ceremony is opt-in — match process to size.** The pipeline above is the
+   *escalation path*, not a mandatory march. The only universal steps are:
+   issue first, and wrap when done. Everything between is proportional:
+   a small fix is issue → branch → code → PR, nothing else. `grilling`,
+   `to-spec`, `to-tickets`, and `wayfinder` run only when the user explicitly
+   asks for a planning/brainstorm/spec session or says yes to a one-line
+   offer. Never launch an interview, spec document, ticket breakdown, or
+   subagent fleet because a task "seems non-trivial" — when in doubt, do the
+   smaller thing and offer the next step in one line.
 1. **Issue first, always.** Every unit of work — feature, bug, chore, even
    exploration — gets a GitHub issue before anything else (labels: `feature` /
    `bug` / `chore` / `idea`). Tasks live as a markdown checklist in the issue

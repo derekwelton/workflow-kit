@@ -36,10 +36,12 @@ confirm it in your reply.
    - `notes.md` — issue link + dated "Started" entry. This is the running
      decision log; every meaningful decision gets a dated line here.
 
-3. **Report**: issue URL, folder path, and the immediate next step — for
-   anything non-trivial that's a `grilling` round (then `to-spec`); for work
-   bigger than one session, `to-tickets` after the spec; for a foggy epic,
-   suggest `wayfinder` instead of a single feature.
+3. **Report**: issue URL, folder path, and the immediate next step —
+   **suggested in one line, never started unprompted**. Match the suggestion
+   to the size: small/clear work → "ready to build"; genuinely decision-heavy
+   work → offer a `grilling` round (then `to-spec`); bigger than one session →
+   `to-tickets` after the spec; foggy epic → `wayfinder`. The user picks;
+   proportionality is theirs to decide, not yours.
 
 ## Conventions downstream of this skill
 

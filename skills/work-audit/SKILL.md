@@ -1,6 +1,6 @@
 ---
 name: work-audit
-description: Sweep the repo for stale work — inactive feature folders, open issues with merged PRs, stale branches/worktrees, old QA sweeps, stray scratch files — and present a proposed cleanup list for one-shot approval. Never deletes anything without approval. Use periodically or when clutter builds; also the migration pass for repos with pre-existing scattered work artifacts.
+description: Sweep the repo for stale work — inactive feature folders, open issues with merged PRs, stale branches/worktrees, old QA sweeps, stray scratch files — and present a proposed cleanup list for one-shot approval. Never deletes anything without approval. Use ONLY when the user asks for an audit/cleanup/migration sweep — never spontaneously mid-task (at most, mention clutter in one line and let the user decide).
 ---
 
 # work-audit
