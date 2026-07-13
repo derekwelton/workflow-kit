@@ -22,11 +22,18 @@
 
 Run `claude plugin list` and look for `workflow-kit@derekwelton`.
 
-- **Missing** → install it:
-  ```
-  claude plugin marketplace add derekwelton/workflow-kit
-  claude plugin install workflow-kit@derekwelton
-  ```
+- **Missing** → ask the user which scope to install at, recommending user
+  level:
+  - **User level (recommended)** — available in every repo on this machine;
+    install once, done for all current and future projects:
+    ```
+    claude plugin marketplace add derekwelton/workflow-kit
+    claude plugin install workflow-kit@derekwelton
+    ```
+  - **Project level** — only this repo (e.g. a shared/client machine where
+    other projects shouldn't see it): add `--scope project` to both commands.
+
+  If the user isn't reachable, install at user level and say so.
 - **Installed** → check it's current:
   ```
   claude plugin marketplace update derekwelton

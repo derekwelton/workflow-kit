@@ -1,6 +1,6 @@
 {
   "name": "workflow-kit",
   "description": "Issue-driven feature workflow: one issue, one folder, one lifecycle — plus the craft inside the build phase (grilling, research, spec, tickets, TDD implementation, two-axis review, prototyping, architecture, handoffs, wayfinding), adapted from mattpocock/skills.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": { "name": "Derek Welton" }
 }
