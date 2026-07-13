@@ -83,7 +83,24 @@ Every agent must be able to *discover* the lifecycle from the repo itself:
    `plans/`, `scratch/` piles, TODO trackers), do NOT migrate them now —
    report them and recommend `/workflow-kit:work-audit` as the migration pass.
 
-## Step 4 — Clean up and report
+## Step 4 — Codex delegation layer (if the machine uses Codex)
+
+If the `codex` CLI is installed on this machine (`codex --version` succeeds):
+
+1. Ensure the modernized plugin is installed: `claude plugin list` should show
+   `codex@derekwelton`. If it shows the stale `codex@openai-codex`, replace it:
+   ```
+   claude plugin uninstall codex@openai-codex
+   claude plugin install codex@derekwelton
+   ```
+2. Ensure the repo's `CLAUDE.md` carries the model-routing pointer block —
+   fetch `templates/claude-md-block.md` from `derekwelton/codex-kit` via
+   `gh api` and stamp it (replacing any older full model-selection section;
+   keep repo-specific exceptions below the marker comment).
+
+If `codex` isn't installed, skip this step and say so.
+
+## Step 5 — Clean up and report
 
 - If this file was **copied into the repo**, delete the copy — the stamped
   `feature-lifecycle.md` supersedes it; this file lives only in

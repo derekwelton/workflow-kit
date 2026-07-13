@@ -1,11 +1,21 @@
 {
   "name": "derekwelton",
-  "owner": { "name": "Derek Welton" },
+  "owner": {
+    "name": "Derek Welton"
+  },
   "plugins": [
     {
       "name": "workflow-kit",
       "source": "./",
       "description": "Issue-driven feature workflow: one issue, one folder, one lifecycle."
+    },
+    {
+      "name": "codex",
+      "source": {
+        "source": "github",
+        "repo": "derekwelton/codex-kit"
+      },
+      "description": "Codex delegation for Claude Code, modernized for GPT-5.6 Sol/Terra/Luna with canonical model-routing (fork of openai/codex-plugin-cc)."
     }
   ]
 }
