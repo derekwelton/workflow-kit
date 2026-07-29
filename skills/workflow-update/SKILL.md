@@ -32,8 +32,12 @@ argument: `--check` reports drift without editing.
    the source template to contain matching `workflow-kit:managed-start` and
    `workflow-kit:managed-end` comments.
 3. Preserve the project's YAML frontmatter exactly. It owns `workDir`,
-   `docsHome`, labels, glossary paths, ADR paths, and any future repo-specific
-   configuration.
+   `docsHome`, labels, glossary paths, ADR paths, `linearTeam`, and any future
+   repo-specific configuration. **Never add, remove, or change `linearTeam`
+   here** — it gates Linear mode, so touching it silently changes how every
+   skill behaves. If the repo has it, keep it verbatim; if it doesn't, leave
+   it absent and mention in the report that Linear mode is available and
+   opt-in.
 4. If the project document already has managed markers, replace only the
    marked block with the source template's marked block. Preserve everything
    below `workflow-kit:managed-end`; that is the repo-specific additions area.

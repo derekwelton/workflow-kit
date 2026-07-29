@@ -112,6 +112,35 @@ If the `codex` CLI is installed on this machine (`codex --version` succeeds):
 
 If `codex` isn't installed, skip this step and say so.
 
+## Step 4a — Linear mode (only if the repo binds a Linear team)
+
+Skip this step entirely unless the stamped `feature-lifecycle.md` frontmatter
+carries a `linearTeam` key. Linear mode is opt-in; an unbound repo must keep
+behaving exactly as it always has.
+
+If it is bound:
+
+1. **Sync integration.** The whole contract depends on Linear's GitHub sync
+   being enabled for this repo — that's what creates the twin issue and the
+   synced comment thread. Verify with the user; nothing else in Linear mode
+   works without it.
+2. **Claude** reaches Linear through its Linear MCP connector. If it isn't
+   authorized, say so — the capability is unavailable until the user connects
+   it in their claude.ai connector settings or via `/mcp`.
+3. **Codex has no Linear MCP by default.** Adding this to `~/.codex/config.toml`
+   plus a one-time OAuth login gives Codex the same tool surface, so a single
+   set of instructions serves both agents:
+
+   ```toml
+   [mcp_servers.linear]
+   url = "https://mcp.linear.app/mcp"
+   ```
+
+4. The stamped lifecycle doc's "Linear mode" section is the contract every
+   agent follows. It names Linear tools **logically** (`save_comment`, not a
+   harness-prefixed name) precisely so Codex and Claude can follow the same
+   doc — keep it that way.
+
 ## Step 5 — Clean up and report
 
 - If this file was **copied into the repo**, delete the copy — the stamped

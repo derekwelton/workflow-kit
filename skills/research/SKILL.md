@@ -17,10 +17,16 @@ Its job:
    `research/` directory on first use — it's committed text, so findings
    travel between machines and sessions). If no feature folder exists yet for
    this work, that's the signal to file the issue first (`new-feature`), not
-   to save the file somewhere loose.
+   to save the file somewhere loose. Research is the main reason a feature
+   folder gets created — create the folder here if the issue exists but the
+   folder doesn't.
 
 When the findings resolve a decision, record the decision in `spec.md` /
-`notes.md` and let the research file carry the evidence.
+`notes.md` and let the research file carry the evidence. Under Linear mode
+(`../linear-mode/SKILL.md`) those files don't exist: the decision goes
+into the issue — the body if it changes scope or acceptance criteria, a sync-
+thread comment if it's reasoning — while `research/` stays on disk exactly as
+described above. Do not paste research dumps into the issue.
 
 When research finishes, apply `update-issue` to the originating issue with a
 checkpoint summary, the answer, confidence/limitations, and a permalink to

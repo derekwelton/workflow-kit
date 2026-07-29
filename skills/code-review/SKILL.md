@@ -28,7 +28,12 @@ parallel sub-agents.
 
 ### 2. Identify the spec source
 
-In this order:
+**Check the lifecycle doc's frontmatter for `linearTeam` first.** If the key is
+**absent**, use the default below and do not touch Linear. If it is **present**,
+skip the default and use the Linear-mode block instead
+(`../linear-mode/SKILL.md`).
+
+**Default — the spec is on disk.** In this order:
 
 1. The **feature folder's `spec.md`** — resolve via issue references in the
    branch name or commit messages (`#123`, `Closes #45`) to
@@ -38,6 +43,25 @@ In this order:
    against the ticket's acceptance criteria plus the parent spec.
 4. If nothing is found, ask the user. If they say there isn't one, the Spec
    sub-agent skips and reports "no spec available".
+
+**Only when `linearTeam` is set — the spec is the issue.** There is no
+`spec.md` under Linear mode, so looking only on disk would silently degrade
+this axis to nothing. Resolve the issue from the branch name (it's the Linear
+`gitBranchName`, e.g. `derekswelton/irp-13-…` → `IRP-13`), a `Refs #<n>` in
+the commits, or the user's argument. Then fetch **both**:
+
+1. the **issue body** via `get_issue` — goal, scope, acceptance criteria, and
+   the `## Tasks` checklist; this is the current truth, and
+2. the **spec comment** via `list_comments` — implementation and testing
+   decisions, alternatives rejected, open questions; this is the reasoning the
+   body doesn't carry.
+
+Reviewing against the body alone misses the decisions, which is where most spec
+infidelity actually shows up. For a sub-issue ticket, use the ticket's own body
+plus the parent's.
+
+In either mode, `research/` stays on disk and remains available to both
+sub-agents as cited evidence.
 
 ### 3. Identify the standards sources
 
@@ -92,6 +116,8 @@ Send a single message with two Agent tool calls (general-purpose subagents).
 
 - The diff command and commit list.
 - The path or fetched contents of the spec (and ticket, if reviewing one).
+  Under Linear mode, **paste the issue body and spec comment in full** — the
+  sub-agent may have no Linear tool surface, so a key alone gets it nothing.
 - The brief: "Report: (a) requirements the spec asked for that are missing or
   partial; (b) behaviour in the diff that wasn't asked for (scope creep);
   (c) requirements that look implemented but where the implementation looks

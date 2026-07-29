@@ -4,9 +4,10 @@ docsHome: .ai/workflows
 labels: [feature, bug, chore, idea]
 glossary: CONTEXT.md
 adrDir: docs/adr
+# linearTeam: ABC    # uncomment + set to bind this repo to a Linear team (see "Linear mode")
 ---
 
-<!-- workflow-kit:managed-start version=0.4.0 -->
+<!-- workflow-kit:managed-start version=0.5.0 -->
 
 # Feature Lifecycle
 
@@ -17,10 +18,12 @@ the skills as `/workflow-kit:<name>`; agents without plugin access follow the
 same steps by hand with `gh` + file operations.
 
 ```
-idea → issue → folder → grill → research/prototype → to-spec → to-tickets?
-                                                        │
-     wrap ← present ← code-review ← implement (tdd) ←───┘
-        (wayfinder wraps the whole loop for foggy multi-session epics)
+(plan: bulk dump → many issues)
+        ↓
+idea → issue → folder? → grill → research/prototype → to-spec → to-tickets?
+                                                         │
+      wrap ← present ← code-review ← implement (tdd) ←───┘
+         (wayfinder wraps the whole loop for foggy multi-session epics)
 ```
 
 ## Rules
@@ -84,6 +87,118 @@ idea → issue → folder → grill → research/prototype → to-spec → to-ti
    terms — use them exactly; ADRs record hard-to-reverse decisions — don't
    re-litigate them.
 
+## Linear mode — active only when `linearTeam` is set
+
+**If this doc's frontmatter has no `linearTeam` key, skip this entire section.**
+Everything above applies unchanged, GitHub is the only tracker, and no Linear
+tool should ever be called. Absence is the default and the safe state.
+
+When `linearTeam` **is** set, the repo is bound to that Linear team: **Linear
+becomes the control plane** (status, priority, triage, planning) and **GitHub
+stays the execution surface** (branches, PRs, diffs). Sync is bidirectional and
+automatic — create an issue on either side and the twin appears. The rules
+below override the corresponding rules above.
+
+Tool names differ per harness, so this doc names them **logically** — Linear
+`save_issue`, `get_issue`, `list_issues`, `list_comments`, `save_comment`,
+`list_issue_statuses`, `list_issue_labels`. Map them to whatever your harness
+exposes. Claude has these via the Linear MCP connector; Codex needs
+`[mcp_servers.linear]` in `~/.codex/config.toml` (see the plugin's
+`BOOTSTRAP.md`). Without a Linear tool surface, fall back to `gh` against the
+GitHub twin and tell the user the Linear side was not touched.
+
+### L1. The sync-thread rule — only replies to one thread reach GitHub
+
+Get this wrong and every agent comment is silently Linear-only.
+
+When Linear syncs an issue it plants a root comment with `parentId: null` and
+`author: null`:
+
+> This comment thread is synced to a corresponding [GitHub issue](…). All
+> replies are displayed in both locations.
+
+**Required procedure for every comment:**
+
+1. `list_comments({ issueId })`
+2. Find the comment with `parentId === null` whose body matches
+   `/synced to a corresponding/i` (author is `null`)
+3. `save_comment({ parentId: <that id>, body })`
+4. If no such root exists, the issue is not synced — post top-level and warn
+   the user
+
+**Never** post the same comment to GitHub with `gh` as well. Sync handles it;
+duplicating produces two copies on the GitHub side.
+
+### L2. Status contract — an agent's terminal state is `In Review`
+
+| Status | Meaning | Set by |
+|---|---|---|
+| `Triage` | raw idea, needs shaping before anyone can act | `plan`, when it can't infer enough |
+| `Backlog` | real work, not scheduled | `plan` |
+| `Todo` | specified enough for an agent to start cold | `plan`, `to-spec`, `to-tickets` |
+| `In Progress` | actively being worked | auto on branch push; skills also set it explicitly |
+| `In Review` | code complete, **awaiting human review** | auto on PR open; skills set it when there is no PR |
+| `Done` | merged, or human-verified | **never an agent** — merge or the user |
+| `Canceled` / `Duplicate` | triage outcomes | proposed by `board`, applied on approval |
+
+**An agent never marks its own work `Done`.** This is the point of Linear mode:
+GitHub's open/closed can't express "finished, awaiting your review", which is
+the most useful state in an agent-driven workflow.
+
+Status names vary by team. Resolve via `list_issue_statuses({ team })` and
+match on `type` (`triage` / `backlog` / `unstarted` / `started` / `completed` /
+`canceled` / `duplicate`), falling back to name. `In Progress` and `In Review`
+**both** have `type: "started"` — disambiguate by name. If a team has no
+`In Review` equivalent, say so rather than guessing.
+
+### L3. Branch naming — overrides Rule 5
+
+Branches come from the issue's **`gitBranchName`** field (e.g.
+`derekswelton/irp-13-rework-purchase-order-editing…`), **not**
+`feat/<issue#>-<slug>`. Linear then auto-links the PR and drives
+`In Progress` / `In Review` / `Done` on push, PR open, and merge — making
+explicit status flips a backup rather than the only mechanism.
+
+PR bodies use `Refs #<gh#>`. **Never `Closes`** — closing the GitHub twin drags
+the Linear issue to `Done`, which is the user's call.
+
+Work folders keep `<gh#>-<slug>` naming. Where a folder exists, its header
+carries both keys (`IRP-13` / `#40`).
+
+### L4. Artifacts live in the issue — overrides Rule 3
+
+| Artifact | Under Linear mode |
+|---|---|
+| `spec.md` | issue **body** (goal / scope / acceptance criteria) + a spec **comment** recording the reasoning |
+| `plan.md` | `## Tasks` checklist in the issue **body** — tickable, renders both sides |
+| `notes.md` | checkpoint **comments** on the sync thread |
+| `research/` | **unchanged, stays on disk** |
+| `scratch/`, `qa/`, `review/` | **unchanged, stays on disk** |
+| `handoff-<date>.md` | **comment**, unless it needs attached artifacts |
+
+Narrative and decisions → issue; bulk, binary, and evidence → disk. Never push
+research dumps, SQL output, or generated HTML into an issue body.
+
+**Body = current truth, edited in place. Comments = immutable timeline.**
+`save_issue({ id, description })` replaces the whole description, so always
+`get_issue` immediately before editing. Edit the body on the Linear side only,
+so the two sides can't race.
+
+**The feature folder is created only when real artifacts exist** — most units
+of work create none. Skills must tolerate a missing folder.
+
+### L5. Labels
+
+Linear labels are canonical under Linear mode; the `labels:` frontmatter above
+names GitHub labels and stops being the authority. Resolve the real set with
+`list_issue_labels({ team })`. Sync maps them onto the twin; that mapping is
+not yours to manage.
+
+### L6. Limits
+
+`linearTeam` is a scalar — one team per repo. Projects and cycles are
+deliberately unused.
+
 ## The skills — what to use when
 
 Lifecycle (container of work):
@@ -92,11 +207,13 @@ Lifecycle (container of work):
 |---|---|
 | `workflow-init` | Bootstrapping a repo into this system (once) |
 | `workflow-update` | Refreshing an adopted repo from the installed plugin while preserving repo-specific configuration |
-| `new-feature` | Starting ANY unit of work — files the issue, creates the folder |
-| `update-issue` | Any issue-backed work starts/checkpoints/needs input/pauses/finishes → durable GitHub comment + checklist sync |
+| `plan` | A bulk dump of things that need doing → deduped, classified, prioritized issues in one approval-gated pass |
+| `new-feature` | Starting ONE unit of work — files the issue, creates the folder if artifacts need one |
+| `update-issue` | Any issue-backed work starts/checkpoints/needs input/pauses/finishes → durable tracker comment + checklist sync |
 | `present` | Anything needs the user's review/decision → self-contained HTML in `review/` |
-| `wrap-feature` | Work shipped → close, clean, archive, prune |
-| `work-audit` | Clutter check / migration sweep — proposes, never auto-deletes |
+| `wrap-feature` | Work shipped → close (or hand off at `In Review`), clean, archive, prune |
+| `work-audit` | Repo clutter check / migration sweep — proposes, never auto-deletes |
+| `board` | "What's left / what fell through?" — tracker sweep for stale work, unanswered questions, unfiled follow-ups |
 
 Craft (inside the build):
 
@@ -105,7 +222,7 @@ Craft (inside the build):
 | `grilling` | Stress-testing a plan BEFORE building — bulk-question rounds, recommended answers, facts from the codebase, decisions from the user |
 | `research` | A question needs primary-source legwork → cited findings in `research/` |
 | `prototype` | "Does this logic feel right?" / "What should this look like?" → throwaway code that answers the question |
-| `to-spec` | Conversation is ready to crystallize → writes the folder's `spec.md` (no interview) |
+| `to-spec` | Conversation is ready to crystallize → writes the folder's `spec.md`, or the issue body + spec comment under Linear mode (no interview) |
 | `to-tickets` | Feature exceeds one context window → tracer-bullet vertical-slice sub-issues with blocking edges |
 | `implement` | A spec/ticket is ready to build — one ticket per fresh session, ponytail governs the code, TDD at pre-agreed seams, then code-review, commit |
 | `ponytail` | ALL code writing (auto-active): laziest solution that works — reuse > stdlib > native > installed dep > one line > minimum code; never simplifies away spec requirements |

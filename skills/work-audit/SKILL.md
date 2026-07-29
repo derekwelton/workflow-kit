@@ -39,6 +39,15 @@ lifecycle doc overrides):
 5. **Ephemera by extension** anywhere under `<workDir>`: logs, old screenshots,
    build outputs.
 
+**Linear mode** (`linearTeam` in the lifecycle doc's frontmatter — see
+`../linear-mode/SKILL.md`): audit the **board** as well as the repo.
+Item 2 above becomes richer than open-vs-closed — add stale `In Progress` (no
+activity in ~2 weeks), issues whose PR merged but whose status never moved, and
+`In Review` items sitting past ~1 week awaiting the user. Expect most units of
+work to have **no** feature folder; a missing folder is not a finding.
+`/workflow-kit:board` goes deeper on the tracker — unanswered questions and
+unfiled follow-ups buried in comments — and pairs with this sweep.
+
 Present the findings as a table — item, category, proposed action (delete /
 archive / wrap / close / keep), and a one-line reason. If the list is long or
 includes visual evidence, use `/workflow-kit:present` to render it as a review
@@ -55,3 +64,7 @@ history stays clean. Close issues with a one-line comment. Report a summary of
 what changed, and commit if the user's conventions call for it. Apply
 `update-issue` to the audit issue with the executed/skipped actions and
 verification, then wrap the audit issue when complete.
+
+In Linear mode, status changes are subject to the same approval as deletions,
+and an agent still never sets `Done` (linear-mode §4) — propose it and leave
+it to the user. Wrapping the audit issue means handing it off at `In Review`.

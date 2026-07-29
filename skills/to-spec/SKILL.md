@@ -1,6 +1,6 @@
 ---
 name: to-spec
-description: Turn the current conversation into the feature folder's spec.md — no interview, just synthesis of what was already discussed and decided. Use after a grilling session, or whenever accumulated context should crystallize into the canonical spec.
+description: Turn the current conversation into the canonical spec — the feature folder's spec.md, or the issue body plus a spec comment under Linear mode. No interview, just synthesis of what was already discussed and decided. Use after a grilling session, or whenever accumulated context should crystallize into the canonical spec.
 disable-model-invocation: true
 ---
 
@@ -8,10 +8,17 @@ Take the current conversation context and codebase understanding and produce
 the spec. Do NOT interview the user — just synthesize what you already know
 (run `grilling` first if the plan is still full of holes).
 
-The spec is written to the feature folder's **`spec.md`** — the canonical,
-committed artifact — not published to the tracker. The issue keeps only its
-task checklist; sync it if the spec changes the task breakdown. If no feature
-folder exists yet, run `new-feature` first (issue-first rule).
+Where the spec lands depends on the mode — check the lifecycle doc's
+frontmatter for `linearTeam` before writing anything.
+
+**Without `linearTeam` (default):** the spec is written to the feature folder's
+**`spec.md`** — the canonical, committed artifact — not published to the
+tracker. The issue keeps only its task checklist; sync it if the spec changes
+the task breakdown. If no feature folder exists yet, run `new-feature` first
+(issue-first rule).
+
+**With `linearTeam`:** the spec is published to the issue and **no `spec.md` is
+written**. See "Linear mode" at the bottom of this file.
 
 ## Process
 
@@ -82,3 +89,38 @@ If the spec is big enough that implementation won't fit one session, follow up
 with `to-tickets`. Apply `update-issue` after writing the spec: summarize the
 locked scope and testing decisions, sync the issue checklist, and link the
 spec only when its branch/commit is reachable from GitHub.
+
+## Linear mode
+
+When the lifecycle doc's frontmatter carries `linearTeam`, follow
+`../linear-mode/SKILL.md`. The process above is unchanged — explore,
+sketch the seams, check them with the user — but step 3 becomes:
+
+**Stop writing `spec.md`.** The spec is split between the issue body and one
+comment, by the rule in linear-mode §6: body = current truth, comments =
+immutable timeline.
+
+1. **Body** (`get_issue`, edit the fetched description, `save_issue`) carries
+   the durable shape of the work — what a reader needs to know *now*:
+   Goal / Why now / In scope / Out of scope / Acceptance criteria / Open
+   questions, plus the `## Tasks` checklist. Use the feature template in
+   linear-mode §8. This replaces both `spec.md` and `plan.md`. Re-fetch
+   immediately before writing; the call replaces the whole description.
+
+2. **A spec comment** on the sync thread (linear-mode §3) records the
+   *reasoning* — the part that would be misleading to edit later: the
+   Implementation Decisions and Testing Decisions from the template above,
+   the alternatives considered and why they were rejected, and the open
+   questions with your recommended answers. This is the durable record of why
+   the spec is what it is, and it is why a bare body is not enough.
+
+   The User Stories section is optional here — write it into the comment only
+   when the feature is big enough that the list earns its length. For most
+   work, acceptance criteria in the body cover it.
+
+3. **Status**: if the spec makes the issue startable cold, move it to `Todo`
+   (linear-mode §4). If the spec surfaced blocking open questions instead,
+   leave the status alone and make the comment a `Needs your decision`.
+
+Do not create a feature folder just to hold a spec — under Linear mode there is
+nothing to put in one. Folders appear only when research or evidence does.

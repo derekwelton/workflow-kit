@@ -10,6 +10,11 @@ just the intake form. A user returning to the issue must be able to tell what
 happened, inspect reachable evidence, answer any questions, and see what comes
 next without reconstructing the agent session.
 
+**First, check the mode.** Read the lifecycle doc's frontmatter. If it carries
+`linearTeam`, Linear is the control plane instead — see "Linear mode" at the
+bottom of this file before posting anything. If it does not, everything below
+applies as written and Linear is not involved at all.
+
 ## Required checkpoints
 
 Post an issue update at each of these transitions:
@@ -28,7 +33,8 @@ Post an issue update at each of these transitions:
    when it is reachable on GitHub.
 5. **Finished** — summarize the outcome and verification. Close the issue only
    when the lifecycle says it is done; a completed phase does not close a
-   parent feature issue.
+   parent feature issue. (In Linear mode an agent never closes: it sets
+   `In Review` and hands off.)
 
 Do not post minute-by-minute narration. One comment per meaningful phase or
 session is normally enough. Before writing, fetch the issue body and recent
@@ -97,3 +103,41 @@ milestone summary up to the parent.
 
 The final chat response may be shorter than the issue comment, but it must
 include the issue URL so the user knows the durable update exists.
+
+## Linear mode
+
+When the lifecycle doc's frontmatter carries `linearTeam`, follow
+`../linear-mode/SKILL.md`. The checkpoints, comment shape, artifact
+rules, and redaction rules above all still apply — what changes is *where* the
+update goes and that status now carries meaning.
+
+**Comments — the part that is easy to get wrong.** Every comment goes on the
+sync thread, per linear-mode §3: `list_comments({ issueId })`, find the root
+comment with `parentId === null` whose body matches
+`/synced to a corresponding/i`, then `save_comment({ parentId: <that id>, body })`.
+A top-level comment does **not** reach GitHub. If no such root exists, post
+top-level and warn the user the comment is Linear-only.
+
+**Never post the same comment to GitHub with `gh` as well** — sync crosses it
+over, and duplicating produces two copies on the GitHub side.
+
+**Checklists** live in the issue **body**, not a `plan.md`. To tick one:
+`get_issue` to fetch the current description, apply the edit to that fetched
+text, then `save_issue({ id, description })`. Always re-fetch immediately
+before writing — the call replaces the whole description, so a stale copy
+clobbers concurrent edits from the user or the GitHub side.
+
+**Status at the documented transitions** (linear-mode §4, which also covers
+resolving status names per team):
+
+| Checkpoint | Status |
+|---|---|
+| Started | `In Progress` |
+| Checkpoint | leave as-is |
+| Needs input | leave as-is — the comment is the signal |
+| Paused or blocked | leave as-is; say so in the comment |
+| Finished | `In Review` |
+
+**Never set `Done`.** `In Review` is where an agent stops; `Done` is the
+user's, or a merge's. A finished-work comment says what was verified and what
+still needs a human — it does not close anything.
