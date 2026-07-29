@@ -32,8 +32,8 @@ otherwise infer from what the current session produced.
    if genuinely ambiguous). Review docs need somewhere to live, so if the work
    has an issue but no folder yet — normal under Linear mode — create it now.
 2. **Pick the template that matches the report's shape**, from
-   `${CLAUDE_PLUGIN_ROOT}/templates/`. Each is self-contained, responsive, and
-   dark/print aware; they share one design system, so reports look like a
+   `${CLAUDE_PLUGIN_ROOT}/templates/`. Each is self-contained, responsive,
+   light-mode, and print-aware; they share one design system, so reports look like a
    family rather than five unrelated documents.
 
    | Template | Shape | Used by |

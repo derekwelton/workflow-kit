@@ -170,7 +170,7 @@ walkthroughs from tiny bug to foggy epic.
 - `templates/report-findings.html` — evidence-and-confidence findings, optional two axes (`code-review`, `research`, `plan`)
 - `templates/review-doc.html` — the general visual shell (screenshot grid, comparison columns)
 
-  All four share one design system and are responsive, dark-mode aware, and print-clean.
+  All four share one design system and are responsive, light-mode, and print-clean.
 - `UPSTREAM.md` — provenance of vendored skills
 
 Designed 2026-07-12 in the Ironwood-Website repo; canonical design spec lives

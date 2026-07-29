@@ -17,6 +17,8 @@
   merge or rerank across them — the separation is the point.
   Single-axis mode (research/plan): delete the second axis.
 
+  Self-contained: inline CSS/JS only. Light mode only.
+
   Severity → class:  .v-high  .v-med  .v-low  .v-info
   Confidence → class: .c-firm (verified) · .c-soft (inferred, say why)
 -->
@@ -30,17 +32,6 @@
     --blue:#2f5f8a; --blue-soft:#e6eef6;
     --mono:ui-monospace,'Cascadia Code',Consolas,monospace;
     --shadow:0 1px 2px rgba(16,20,28,.05),0 1px 8px rgba(16,20,28,.03);
-  }
-  @media (prefers-color-scheme:dark){
-    :root{
-      --ink:#e8eaee; --soft:#a4adba; --faint:#78818f;
-      --paper:#14171c; --card:#1c2027; --line:#2c323b;
-      --gold:#d3b981; --gold-soft:#2a2418;
-      --red:#e0937f; --red-soft:#2e1e1a;
-      --green:#8fc7a8; --green-soft:#18261f;
-      --blue:#93b8dc; --blue-soft:#1a222c;
-      --shadow:0 1px 2px rgba(0,0,0,.4);
-    }
   }
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}

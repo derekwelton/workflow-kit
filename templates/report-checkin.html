@@ -13,7 +13,7 @@
 
   Section order is deliberate and must not change: what needs the human comes
   first, history last. Self-contained: inline CSS/JS only, no external requests.
-  Mobile-first; the desk layout kicks in at 720px.
+  Light mode only. Mobile-first; the desk layout kicks in at 720px.
 
   Status vocabulary → class:
     In Review  → .s-review    In Progress → .s-active
@@ -30,19 +30,6 @@
     --blue:#2f5f8a; --blue-soft:#e6eef6;
     --mono:ui-monospace,'Cascadia Code',Consolas,monospace;
     --shadow:0 1px 2px rgba(16,20,28,.05),0 1px 8px rgba(16,20,28,.03);
-  }
-  @media (prefers-color-scheme:dark){
-    :root{
-      --ink:#e8eaee; --soft:#a4adba; --faint:#78818f;
-      --paper:#14171c; --card:#1c2027; --line:#2c323b; --line-soft:#242931;
-      --gold:#d3b981; --gold-soft:#2a2418;
-      --red:#e0937f; --red-soft:#2e1e1a;
-      --green:#8fc7a8; --green-soft:#18261f;
-      --blue:#93b8dc; --blue-soft:#1a222c;
-      --shadow:0 1px 2px rgba(0,0,0,.4);
-      --triage:#b3a3d6; --triage-soft:#221d2e;
-      --blocked:#c9b49a; --blocked-soft:#262019;
-    }
   }
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}
@@ -89,9 +76,9 @@
   .s-review{background:var(--red-soft);color:var(--red)}
   .s-active{background:var(--blue-soft);color:var(--blue)}
   .s-todo{background:var(--gold-soft);color:var(--gold)}
-  .s-triage{background:var(--triage-soft,#f0eef5);color:var(--triage,#5b4c7d)}
+  .s-triage{background:#f0eef5;color:#5b4c7d}
   .s-done{background:var(--green-soft);color:var(--green)}
-  .s-blocked{background:var(--blocked-soft,#efeae4);color:var(--blocked,#6d5b47)}
+  .s-blocked{background:#efeae4;color:#6d5b47}
   .note{margin:.45rem 0 0;font-size:.9rem;color:var(--soft)}
   .note b{color:var(--ink)}
   .quote{margin:.5rem 0 0;padding:.5rem .7rem;border-left:2px solid var(--gold);

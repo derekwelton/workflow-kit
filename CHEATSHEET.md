@@ -144,7 +144,7 @@ stamped into `feature-lifecycle.md` so Codex and Gemini follow the same rules.
 Skills that hand you a report render it from a shared template family in
 `templates/` — one design system, so reports look related rather than
 improvised. All are self-contained (no external requests), responsive,
-dark-mode aware, and print cleanly.
+light-mode, and print cleanly.
 
 | Template | Shape | Used by |
 |---|---|---|

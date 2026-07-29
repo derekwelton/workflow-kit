@@ -15,7 +15,7 @@
   Fill {{PLACEHOLDERS}}; repeat/delete <article class="find"> blocks; set
   {{SCOPE}} to what was swept ("the tracker", "the repo", "IRP-* comments").
   Order findings by value, not by category — the top item should be the one
-  worth acting on first. Self-contained: inline CSS/JS only.
+  worth acting on first. Self-contained: inline CSS/JS only. Light mode only.
 
   Action vocabulary → class:
     delete → .a-del     archive → .a-arc    file an issue → .a-new
@@ -33,18 +33,6 @@
     --violet:#5b4c7d; --violet-soft:#f0eef5;
     --mono:ui-monospace,'Cascadia Code',Consolas,monospace;
     --shadow:0 1px 2px rgba(16,20,28,.05),0 1px 8px rgba(16,20,28,.03);
-  }
-  @media (prefers-color-scheme:dark){
-    :root{
-      --ink:#e8eaee; --soft:#a4adba; --faint:#78818f;
-      --paper:#14171c; --card:#1c2027; --line:#2c323b;
-      --gold:#d3b981; --gold-soft:#2a2418;
-      --red:#e0937f; --red-soft:#2e1e1a;
-      --green:#8fc7a8; --green-soft:#18261f;
-      --blue:#93b8dc; --blue-soft:#1a222c;
-      --violet:#b3a3d6; --violet-soft:#221d2e;
-      --shadow:0 1px 2px rgba(0,0,0,.4);
-    }
   }
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}
