@@ -1,28 +1,88 @@
 ---
 name: board
-description: What's-left sweep over the tracker — surfaces stale In Progress work, work merged but never marked, unanswered questions buried in comments, and follow-up work mentioned in comments but never filed. Proposes actions; applies only on approval. Use when the user asks what's outstanding, what fell through, or wants a board review.
-disable-model-invocation: true
+description: Read the tracker for this repo and report what's available to pick up, what's in progress, what's awaiting review, and what recently shipped — including questions and follow-ups buried in issue comments. Use when the user asks what they should work on, what's pending, what's outstanding, what fell through, what's left, or what was recently finished. `board audit` runs the deeper stale-work sweep that proposes cleanup.
 ---
 
 # board
 
-A sweep over the tracker answering "what's actually left, and what fell through
-the cracks?"
+Answers "where does this project stand?" against the tracker, scoped to **this
+repository**.
+
+Two modes. **Status is the default** — a fast, read-only orientation report,
+which is what almost every question of this shape actually wants:
+
+| The user asks | Mode |
+|---|---|
+| "what should I work on?" · "what's pending?" · "what's in flight?" · "what did we just finish?" · "where are we?" | **status** (default) |
+| "what fell through?" · "what's stale?" · "audit the board" · `/workflow-kit:board audit` | **audit** |
+
+Status **never mutates anything and never asks for approval** — it's a read.
+Audit proposes and waits. When genuinely ambiguous, run status and offer audit
+in one line.
 
 Distinct from `work-audit`, which sweeps the **repo** for stale folders,
-branches, and files. This sweeps the **board**. They complement each other; run
-either alone.
+branches, and files. This sweeps the **tracker**.
 
-## Mode
+## Resolving the tracker
 
 Read the lifecycle doc's frontmatter for `linearTeam`
 (see `../linear-mode/SKILL.md` §1).
 
-- **Linear mode on** → sweep the Linear board (`list_issues` by status), and
-  read comments via `list_comments`.
-- **Linear mode off** → sweep GitHub issues with `gh`. The status-based checks
-  degrade to open/closed, and that's expected — say so once rather than
-  pretending the board has states it doesn't.
+- **Linear mode on** → the repo is bound to that Linear team. Query it with
+  `list_issues({ team })`, and read discussion with `list_comments({ issueId })`.
+  Statuses are real, so the report can be precise.
+- **Linear mode off** → use `gh issue list` against this repo. Everything below
+  still works, but status collapses to open/closed: "available" means open and
+  unassigned, "in progress" means an open issue with a linked branch or PR, and
+  there is no `In Review`. **Say that limitation once**, plainly, rather than
+  implying states the tracker doesn't have.
+
+One scoping caution: a Linear team can span more than one repository. When the
+team's issues clearly cover work outside this repo, say so and report the
+subset tied to this repo (via the GitHub twin's attachment, branch names, or
+project), rather than silently presenting the whole team's board as if it were
+this repo's.
+
+## Mode: status (default)
+
+Read-only. Report, in this order — lead with what's actionable, not with
+history:
+
+1. **Awaiting you** — `In Review`, plus any issue whose latest comment asks the
+   user a question that nothing after it answers. **This is the top of the
+   report**, because it's the only category the user alone can unblock. Include
+   the actual question, not just a count.
+2. **Available to pick up** — `Todo` (or open + unassigned), ordered by
+   priority. For each: key, title, one-line summary of what it involves, and
+   whether it's specified enough to start cold. Flag anything whose blockers
+   are still unresolved as not actually available.
+3. **In progress** — `In Progress`, with the branch/PR if one exists and the
+   last checkpoint comment's date. Note anything with no activity in ~2 weeks;
+   that's a candidate for audit mode rather than a real in-flight item.
+4. **Recently completed** — `Done` (or closed) within the last ~2 weeks, one
+   line each. Keep this section short; it's context, not the point.
+5. **Needs shaping** — anything in `Triage`, with what's unclear about it.
+
+Read the comments, not just the issue list. **Pending work hides in comment
+threads**: an unanswered question, a decision the user was asked for, or
+follow-up work someone mentioned and never filed. Where a thread reveals
+something material that the status field doesn't, say so inline on that issue.
+Also check `list_documents` when a team uses Linear documents, and cite any
+that bear on an issue in the report.
+
+Reading every comment on every issue is too expensive for a routine orientation
+query. Read comments on everything in `In Review` and `In Progress`, plus
+anything in `Todo` that looks blocked or ambiguous; skip the rest. **If you
+sampled rather than read exhaustively, say so** — a report that looks complete
+but isn't is worse than one that states its own limits.
+
+End with a single recommended next action — the one thing worth picking up now,
+and why. If the answer is "nothing is ready, three things need your input,"
+say that instead of manufacturing a task.
+
+## Mode: audit
+
+Everything below runs only in audit mode.
 
 ## Phase 1 — Sweep (read-only)
 

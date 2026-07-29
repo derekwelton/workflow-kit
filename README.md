@@ -103,7 +103,7 @@ Lifecycle (the container of work):
 | `/workflow-kit:present [topic]` | Generate a self-contained HTML review doc from feature state |
 | `/workflow-kit:wrap-feature <issue#>` | Verify shipped → close issue (or hand off at `In Review`) → delete ephemera → archive folder → prune git |
 | `/workflow-kit:work-audit` | Propose cleanup of stale work in the repo (never deletes without approval) |
-| `/workflow-kit:board` | Tracker sweep: stale work, unanswered questions, follow-ups mentioned but never filed |
+| `/workflow-kit:board [audit]` | "What should I work on?" — awaiting-you, available, in-flight, recently shipped. `audit` adds the stale-work sweep |
 
 Craft (inside the build; adapted from [mattpocock/skills](https://github.com/mattpocock/skills), MIT — see `UPSTREAM.md`):
 

@@ -49,7 +49,7 @@ is the full reference.)
                       (Linear mode: stops at In Review and hands off — never Done)
 
  MAINTENANCE (own loop, issue-first when acted on):
-   board ── what's left on the TRACKER (unfiled follow-ups, stale, unanswered)
+   board audit ── what fell through on the TRACKER (stale, unanswered, unfiled)
    work-audit ── stale folders/issues/branches      ┐ run in
    ponytail-audit ── what to DELETE (subtraction)   ├ this
    improve-codebase-architecture ── what to DEEPEN  ┘ order
@@ -78,7 +78,7 @@ is the full reference.)
 | `present` | ✔ auto (something needs the user's review) | Renders decisions/evidence as review-doc HTML. |
 | `wrap-feature` | ✔ auto (user declares work done) | The only way work ends. Verifies before deleting. Under Linear mode, hands off at `In Review`. |
 | `work-audit` | ✔ auto (clutter, migration) | Proposes cleanup of the REPO; never deletes without approval. |
-| `board` | ✋ manual `/workflow-kit:board` | "What's left / what fell through?" Sweeps the TRACKER — the complement to work-audit. |
+| `board` | ✔ auto ("what should I work on?", "what's pending?", "where are we?") | Reads the TRACKER: awaiting-you, available, in-flight, recently shipped. `board audit` = the stale-work sweep. |
 
 **Build steps** — the craft inside:
 

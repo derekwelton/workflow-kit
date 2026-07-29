@@ -213,7 +213,7 @@ Lifecycle (container of work):
 | `present` | Anything needs the user's review/decision → self-contained HTML in `review/` |
 | `wrap-feature` | Work shipped → close (or hand off at `In Review`), clean, archive, prune |
 | `work-audit` | Repo clutter check / migration sweep — proposes, never auto-deletes |
-| `board` | "What's left / what fell through?" — tracker sweep for stale work, unanswered questions, unfiled follow-ups |
+| `board` | "What should I work on / what's pending?" — tracker read: awaiting-you, available, in-flight, recently shipped. `board audit` sweeps for stale work and unfiled follow-ups |
 
 Craft (inside the build):
 
