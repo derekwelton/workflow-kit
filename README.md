@@ -20,6 +20,32 @@ idea → issue ⇄ updates → folder → build → present → wrap
 - **Ephemera dies at wrap-up**; spec/plan/notes archive; git history + the
   closed issue are the permanent record.
 
+### Optional: Linear mode
+
+Set `linearTeam: <KEY>` in a repo's `feature-lifecycle.md` frontmatter and
+**Linear becomes the control plane** — status, priority, triage, planning —
+while GitHub stays the execution surface (branches, PRs, diffs). Two things
+change that GitHub alone can't do:
+
+- **`In Review` exists.** Open/closed can't express "finished, awaiting your
+  review", which is the most useful state in an agent-driven workflow. Under
+  Linear mode an agent's terminal state is `In Review` — it never marks its
+  own work `Done`.
+- **Specs and plans live in the issue**, not the repo: the body carries goal,
+  scope, acceptance criteria, and a tickable `## Tasks` checklist; comments
+  carry the reasoning and the running timeline. No `spec.md`/`plan.md`/
+  `notes.md`, and usually no feature folder at all. `research/`, `scratch/`,
+  `qa/`, and `review/` stay on disk where they belong.
+
+**Without the key, nothing changes** — every skill behaves exactly as it does
+today. Linear mode is opt-in per repo, `workflow-init` asks once, and
+`workflow-update` never touches the setting.
+
+The contract (including the sync-thread rule that decides whether a comment
+reaches GitHub at all) is stamped into the repo's lifecycle doc in logical tool
+names, so Codex and Claude follow the same instructions. Full version:
+[`skills/linear-mode/SKILL.md`](skills/linear-mode/SKILL.md).
+
 ## Install (per machine)
 
 ```
@@ -44,10 +70,35 @@ already-adopted project, run:
 ```
 
 Use `/workflow-kit:workflow-update --check` to report drift without editing.
-The machine update refreshes the executable skills for every project on that
-computer; the per-project command refreshes the committed
-`feature-lifecycle.md` used by Codex, Gemini, Cursor, and other agents. It
-preserves repo-specific frontmatter and additions below the managed marker.
+
+### Why it's two steps — and what reaches Codex
+
+Claude and every other agent learn this workflow through **different
+mechanisms**, and updating one does nothing for the other:
+
+| | Claude Code | Codex / Gemini / Cursor |
+|---|---|---|
+| Reads | `SKILL.md` files in the installed plugin | `AGENTS.md` → the repo's `feature-lifecycle.md` |
+| Lives | `~/.claude/plugins/` — per machine | committed in the repo — travels via git |
+| Refreshed by | `claude plugin update` + a new session | `/workflow-kit:workflow-update`, **then commit** |
+
+So there is **no command you give Codex to update itself.** It has no plugin
+and no cache; it reads whatever markdown is in the repo at that moment. The way
+Codex learns a new version is that a Claude session runs `workflow-update` in
+that repo and someone commits the result — after which every agent, on every
+machine, picks it up on the next `git pull`.
+
+Full sequence after a new release:
+
+1. **Per machine, once** — `marketplace update` + `plugin update`, then start a
+   new session. Claude now has the new skills.
+2. **Per repo, once** — run `/workflow-kit:workflow-update`, review the diff,
+   **commit it**. Codex now has the new contract.
+
+Step 2 is the one that's easy to skip, and it's the only one that helps
+non-Claude agents. An uncommitted refresh has updated nothing for them.
+`new-feature` flags the mismatch in one line when it notices a repo running an
+older managed block than the installed plugin.
 
 ## Adopt in a repo (existing or brand-new)
 
@@ -71,11 +122,13 @@ Lifecycle (the container of work):
 |---|---|
 | `/workflow-kit:workflow-init` | One-time repo bootstrap (scaffold, gitignore, labels, lifecycle doc, AGENTS.md pointer) |
 | `/workflow-kit:workflow-update [--check]` | Refresh an adopted repo from the installed plugin without overwriting repo-specific configuration |
+| `/workflow-kit:plan` | Bulk dump of work → deduped, classified, prioritized issues in one approval-gated pass |
 | `/workflow-kit:new-feature <slug>` | File issue + create feature folder with stub spec/notes |
 | `/workflow-kit:update-issue` | Keep the issue current at starts, checkpoints, decisions, pauses, and completion |
 | `/workflow-kit:present [topic]` | Generate a self-contained HTML review doc from feature state |
-| `/workflow-kit:wrap-feature <issue#>` | Verify shipped → close issue → delete ephemera → archive folder → prune git |
-| `/workflow-kit:work-audit` | Propose cleanup of stale work (never deletes without approval) |
+| `/workflow-kit:wrap-feature <issue#>` | Verify shipped → close issue (or hand off at `In Review`) → delete ephemera → archive folder → prune git |
+| `/workflow-kit:work-audit` | Propose cleanup of stale work in the repo (never deletes without approval) |
+| `/workflow-kit:board [audit]` | "What should I work on?" — awaiting-you, available, in-flight, recently shipped. `audit` adds the stale-work sweep |
 
 Craft (inside the build; adapted from [mattpocock/skills](https://github.com/mattpocock/skills), MIT — see `UPSTREAM.md`):
 
@@ -84,7 +137,7 @@ Craft (inside the build; adapted from [mattpocock/skills](https://github.com/mat
 | `/workflow-kit:grilling` | Relentless interview in bulk-question rounds, recommended answers, until shared understanding |
 | `/workflow-kit:research` | Background agent → primary-source findings in the folder's `research/` |
 | `/workflow-kit:prototype` | Throwaway code that answers a design question (logic or UI branch) |
-| `/workflow-kit:to-spec` | Crystallize the conversation into the folder's `spec.md` (no interview) |
+| `/workflow-kit:to-spec` | Crystallize the conversation into the folder's `spec.md`, or the issue body + spec comment under Linear mode (no interview) |
 | `/workflow-kit:to-tickets` | Escalate a big feature into tracer-bullet vertical-slice sub-issues with blocking edges |
 | `/workflow-kit:implement` | Build one ticket/spec per fresh session — ponytail + TDD at pre-agreed seams, review, commit |
 | `/workflow-kit:ponytail [lite\|full\|ultra]` | Persistent lazy-senior-dev mode: the laziest solution that works (auto-active on coding) |
@@ -105,10 +158,13 @@ walkthroughs from tiny bug to foggy epic.
 
 ## Layout
 
-- `skills/` — the twenty-two skills above
+- `skills/` — the twenty-four skills above
+- `skills/linear-mode/SKILL.md` — the Linear-mode contract every skill defers to
+  (gating, sync-thread rule, status contract, templates). Not a skill; a shared reference.
 - `templates/feature-lifecycle.md` — per-repo convention doc stamped by `workflow-init`
-  (config frontmatter: `workDir`, `docsHome`, `labels`, `glossary`, `adrDir`; body carries
-  the skills catalog so non-Claude agents learn the system from the repo itself)
+  (config frontmatter: `workDir`, `docsHome`, `labels`, `glossary`, `adrDir`, optional
+  `linearTeam`; body carries the skills catalog so non-Claude agents learn the system
+  from the repo itself)
 - `templates/review-doc.html` — visual shell for review documents
 - `UPSTREAM.md` — provenance of vendored skills
 

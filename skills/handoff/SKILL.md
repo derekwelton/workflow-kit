@@ -33,3 +33,26 @@ After committing the handoff, apply `update-issue` with a **Paused** or
 work, and exact resumption step. Link the handoff only if it has been pushed
 and is reachable on GitHub; otherwise label its path local-only and keep the
 comment sufficient for the next human to understand the pause.
+
+## Linear mode
+
+When the lifecycle doc's frontmatter carries `linearTeam`
+(`../linear-mode/SKILL.md`), **the handoff is a comment, not a file.**
+
+Write the same document — same rules on suggested skills, no duplication, and
+redaction — as a comment on the sync thread (linear-mode §3), headed
+`## Handoff — <YYYY-MM-DD>`. That way the next session reads it from either
+side, on any machine, without a pull, and it can't go stale in a folder nobody
+opens.
+
+Keep a committed `handoff-<date>.md` **only** when the handoff needs attached
+artifacts that don't belong in an issue body — a large dump, a log, evidence
+files. Then the comment carries the narrative and points at the folder path,
+labelled local-only unless it's pushed.
+
+Leave the status where it is: a pause isn't a transition. Say in the comment
+that work is paused and what unblocks it.
+
+The one-live-handoff rule still holds — but comments are an immutable timeline,
+so don't try to delete superseded ones. The newest comment wins; say so
+explicitly if an earlier handoff comment is now stale.

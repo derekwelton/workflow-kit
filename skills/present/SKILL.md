@@ -13,7 +13,10 @@ otherwise infer from what the current session produced.
 
 - **HTML is presentation, markdown is canonical.** Never put information ONLY
   in the HTML — decisions and facts it presents must exist in (or be written
-  back to) `spec.md` / `notes.md`.
+  back to) `spec.md` / `notes.md`. Under Linear mode
+  (`../linear-mode/SKILL.md`) those files don't exist; the issue is the
+  canonical surface, so decisions are written back to the issue body and a
+  sync-thread comment instead.
 - Output path: `<feature-folder>/review/<YYYY-MM-DD>-<topic>.html`. Review docs
   are ephemeral and gitignored; they die at wrap-up.
 - **Self-contained**: inline all CSS, no external requests, opens via `file://`.
@@ -26,7 +29,8 @@ otherwise infer from what the current session produced.
 ## Steps
 
 1. Identify the feature folder (the one being worked on this session; ask only
-   if genuinely ambiguous).
+   if genuinely ambiguous). Review docs need somewhere to live, so if the work
+   has an issue but no folder yet — normal under Linear mode — create it now.
 2. Start from `${CLAUDE_PLUGIN_ROOT}/templates/review-doc.html` — it provides
    the visual shell (masthead with issue link, section grammar, decision panel,
    screenshot grid with lightbox, comparison columns). Keep its look; replace
@@ -40,7 +44,8 @@ otherwise infer from what the current session produced.
    - sections of findings/comparisons/screenshots as appropriate.
 4. If a browser tool is available (Playwright), screenshot the rendered doc
    once to verify nothing is broken; delete the check screenshot after.
-5. Log a dated line in `notes.md` (`presented: <file> — <topic>`).
+5. Log a dated line in `notes.md` (`presented: <file> — <topic>`) — under
+   Linear mode, that line is part of the issue comment in step 6 instead.
 6. Apply `update-issue` and post a **Ready for review** or **Needs decision**
    comment. Include the executive summary, every concrete question with its
    recommendation, the material evidence, and the next action. Link canonical

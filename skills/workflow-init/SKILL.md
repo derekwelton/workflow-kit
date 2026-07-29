@@ -50,7 +50,8 @@ skip any step whose result already exists, and say so.
 
 5. **Lifecycle doc**: copy `${CLAUDE_PLUGIN_ROOT}/templates/feature-lifecycle.md`
    to the docs home chosen in step 1, filling in the config frontmatter
-   (`workDir`, `docsHome`, `labels`, `glossary`, `adrDir`) for this repo —
+   (`workDir`, `docsHome`, `labels`, `glossary`, `adrDir`, and optionally
+   `linearTeam` — see step 5a) for this repo —
    keep the template's full versioned managed block, including the
    skills-catalog tables and managed markers. Repo-specific additions belong
    below the managed-end marker so `workflow-update` can preserve them. The
@@ -58,6 +59,19 @@ skip any step whose result already exists, and say so.
    Cursor) still follow the convention. Do NOT create the glossary or ADR dir
    now — they're created lazily by `domain-modeling` when the first
    term/decision lands.
+
+5a. **Linear mode (optional)**: ask the user, in one line, whether this repo is
+   backed by a Linear team — offering the default of no. If they name one, set
+   `linearTeam: <key>` in the frontmatter; otherwise leave the commented-out
+   line as the template ships it. Do not probe Linear or infer a team from a
+   connected MCP server: absence is the default, and it means the repo behaves
+   exactly as an unbound repo always has.
+
+   If they do bind a team, tell them the GitHub↔Linear sync integration must be
+   enabled for this repo on the Linear side — the whole contract (the sync
+   comment thread, the twin issues) depends on it. See the plugin's
+   `skills/linear-mode/SKILL.md` for the full contract; the managed block
+   you just stamped carries the repo-facing version.
 
 6. **Agent-entrypoint pointer**: add a short section to the repo's
    agent-instruction entrypoint (`.ai/AGENTS.md` → `AGENTS.md` → `CLAUDE.md`,

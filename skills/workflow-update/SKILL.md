@@ -32,8 +32,12 @@ argument: `--check` reports drift without editing.
    the source template to contain matching `workflow-kit:managed-start` and
    `workflow-kit:managed-end` comments.
 3. Preserve the project's YAML frontmatter exactly. It owns `workDir`,
-   `docsHome`, labels, glossary paths, ADR paths, and any future repo-specific
-   configuration.
+   `docsHome`, labels, glossary paths, ADR paths, `linearTeam`, and any future
+   repo-specific configuration. **Never add, remove, or change `linearTeam`
+   here** — it gates Linear mode, so touching it silently changes how every
+   skill behaves. If the repo has it, keep it verbatim; if it doesn't, leave
+   it absent and mention in the report that Linear mode is available and
+   opt-in.
 4. If the project document already has managed markers, replace only the
    marked block with the source template's marked block. Preserve everything
    below `workflow-kit:managed-end`; that is the repo-specific additions area.
@@ -66,6 +70,13 @@ After the lifecycle document is current, idempotently verify the same seams as
 Show the resulting diff. Run the plugin/repo documentation checks available in
 the project, plus `git diff --check`. Do not commit or push unless the user or
 repo workflow requests it.
+
+**Say plainly that the refresh only reaches other agents once it is committed.**
+Claude reads the installed plugin, but Codex, Gemini, Cursor, and every other
+machine read *only* the committed lifecycle document. Until this diff is
+committed and pushed, they keep following the old contract — so an uncommitted
+`workflow-update` has updated nothing for them. Recommend committing it, and
+say so even when the user hasn't asked about other agents.
 
 In apply mode, use `update-issue` with the old/new workflow-kit versions, files
 changed, preserved local additions, validation results, and any remaining
