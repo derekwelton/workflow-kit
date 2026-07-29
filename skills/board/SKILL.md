@@ -80,6 +80,14 @@ End with a single recommended next action — the one thing worth picking up now
 and why. If the answer is "nothing is ready, three things need your input,"
 say that instead of manufacturing a task.
 
+**Render it.** Chat gets the headline plus the awaiting-you items; the full
+report goes to HTML via `/workflow-kit:present` using
+`templates/report-checkin.html`, which already encodes this section order.
+Skip the HTML for a quick one-or-two-item answer — a full document for "one
+thing is waiting on you" is ceremony. When the check-in resolves to a specific
+issue, `update-issue` carries the actionable summary so it survives outside
+chat.
+
 ## Mode: audit
 
 Everything below runs only in audit mode.
@@ -122,8 +130,9 @@ answer or re-ask a stale question; move a merged item to `Done` (**the user
 does this — see below**); ping on a long-sitting `In Review`; move an abandoned
 `In Progress` back to `Backlog`; `Cancel` or mark `Duplicate` after triage.
 
-If the list is long, `/workflow-kit:present` renders it as a review HTML — but
-the chat/issue summary must stand alone, since the HTML is local-only.
+If the list is long, render it with `/workflow-kit:present` using
+`templates/report-audit.html` — but the chat/issue summary must stand alone,
+since the HTML is local-only.
 
 End by asking for one-shot approval: "approve all", or list exceptions.
 

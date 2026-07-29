@@ -46,7 +46,8 @@ it concentrate complexity, or just move it? "Yes, concentrates" is the signal.
 
 ### 2. Present candidates as an HTML review doc
 
-Generate the report via the `present` skill — the standard review-doc template
+Generate the report via the `present` skill — use `templates/report-audit.html`
+(each deepening candidate is a proposed change awaiting your pick); the general review-doc template
 in the feature folder's `review/`, self-contained, no CDNs. Hand-build the
 visuals with inline CSS/SVG (mass diagrams, before/after cross-sections);
 be visual.

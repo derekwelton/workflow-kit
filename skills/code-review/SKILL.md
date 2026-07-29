@@ -129,7 +129,9 @@ If the spec is missing, skip the Spec sub-agent and note this in the report.
 
 Present the two reports under `## Standards` and `## Spec` headings, verbatim
 or lightly cleaned. Do **not** merge or rerank findings — the two axes are
-deliberately separate.
+deliberately separate. For a long review, render it with `present` using
+`templates/report-findings.html`, which has a two-axis layout that keeps the
+separation visible.
 
 End with a one-line summary: total findings per axis, and the worst issue
 *within each axis*. Don't pick a single winner across axes — that's the

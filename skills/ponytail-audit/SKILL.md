@@ -37,8 +37,8 @@ One line per finding, ranked: `<tag> <what to cut>. <replacement>. [path]`.
 End with `net: -<N> lines, -<M> deps possible.` Nothing to cut:
 `Lean already. Ship.`
 
-For a long report the user will review, render it via `present` (review-doc
-HTML, findings as a ranked table) — the chat gets the top cuts + the net line.
+For a long report the user will review, render it via `present` using
+`templates/report-audit.html` (findings ranked, each with its proposed cut) — the chat gets the top cuts + the net line.
 In all cases, apply `update-issue` with a **Ready for review** comment that
 includes the top cuts, net estimate, recommended approvals, evidence, and any
 GitHub-reachable artifact links. Local-only HTML must not be required to act.

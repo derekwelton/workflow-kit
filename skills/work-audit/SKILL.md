@@ -50,8 +50,8 @@ unfiled follow-ups buried in comments — and pairs with this sweep.
 
 Present the findings as a table — item, category, proposed action (delete /
 archive / wrap / close / keep), and a one-line reason. If the list is long or
-includes visual evidence, use `/workflow-kit:present` to render it as a review
-HTML. Apply `update-issue` with a **Needs decision** comment containing the
+includes visual evidence, use `/workflow-kit:present` with
+`templates/report-audit.html` to render it. Apply `update-issue` with a **Needs decision** comment containing the
 proposal summary, exact approval request, recommendations, and any
 GitHub-reachable artifact links. The comment must remain actionable when the
 HTML is local-only. End by asking for one-shot approval ("approve all", or

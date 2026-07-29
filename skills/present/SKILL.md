@@ -31,11 +31,23 @@ otherwise infer from what the current session produced.
 1. Identify the feature folder (the one being worked on this session; ask only
    if genuinely ambiguous). Review docs need somewhere to live, so if the work
    has an issue but no folder yet — normal under Linear mode — create it now.
-2. Start from `${CLAUDE_PLUGIN_ROOT}/templates/review-doc.html` — it provides
-   the visual shell (masthead with issue link, section grammar, decision panel,
-   screenshot grid with lightbox, comparison columns). Keep its look; replace
-   its placeholder content. Freeform layout is allowed only for design-variant
-   explorations where the content IS the design.
+2. **Pick the template that matches the report's shape**, from
+   `${CLAUDE_PLUGIN_ROOT}/templates/`. Each is self-contained, responsive, and
+   dark/print aware; they share one design system, so reports look like a
+   family rather than five unrelated documents.
+
+   | Template | Shape | Used by |
+   |---|---|---|
+   | `report-checkin.html` | Where things stand — awaiting-you first, history last | `board` |
+   | `report-audit.html` | Ranked findings, each a *proposed* action, one approval gate | `board audit`, `work-audit`, `ponytail-audit`, `improve-codebase-architecture` |
+   | `report-findings.html` | Conclusions with evidence and confidence; optional two axes | `code-review`, `research`, `plan` |
+   | `review-doc.html` | Anything else — the general shell (screenshot grid + lightbox, comparison columns, decision panel) | `prototype`, spec reviews, QA galleries |
+
+   Fill the placeholders, repeat or delete the example blocks, and **delete any
+   section with nothing in it** — an empty section is not proof you looked, and
+   the coverage note is where you say what was skipped. Keep the template's
+   look; freeform layout is allowed only for design-variant explorations where
+   the content IS the design.
 3. Structure the content for a reviewer, not a log: lead with what's being
    asked of them, then the evidence. Always include:
    - masthead: title, date, feature name + issue link,

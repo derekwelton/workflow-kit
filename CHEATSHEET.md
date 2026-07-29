@@ -78,7 +78,7 @@ is the full reference.)
 | `present` | ✔ auto (something needs the user's review) | Renders decisions/evidence as review-doc HTML. |
 | `wrap-feature` | ✔ auto (user declares work done) | The only way work ends. Verifies before deleting. Under Linear mode, hands off at `In Review`. |
 | `work-audit` | ✔ auto (clutter, migration) | Proposes cleanup of the REPO; never deletes without approval. |
-| `board` | ✔ auto ("what should I work on?", "what's pending?", "where are we?") | Reads the TRACKER: awaiting-you, available, in-flight, recently shipped. `board audit` = the stale-work sweep. |
+| `board` | ✔ auto ("what should I work on?", "what's pending?", "where are we?") | The daily check-in — reads the TRACKER: awaiting-you, available, in-flight, recently shipped. `board audit` = the stale-work sweep. |
 
 **Build steps** — the craft inside:
 
@@ -138,6 +138,25 @@ Two rules do the heavy lifting:
 
 Full contract: `skills/linear-mode/SKILL.md`; the repo-facing version is
 stamped into `feature-lifecycle.md` so Codex and Gemini follow the same rules.
+
+## Report templates
+
+Skills that hand you a report render it from a shared template family in
+`templates/` — one design system, so reports look related rather than
+improvised. All are self-contained (no external requests), responsive,
+dark-mode aware, and print cleanly.
+
+| Template | Shape | Used by |
+|---|---|---|
+| `report-checkin.html` | Where things stand — awaiting-you first, history last | `board` |
+| `report-audit.html` | Ranked findings, each a *proposed* action, one approval gate | `board audit`, `work-audit`, `ponytail-audit`, `improve-codebase-architecture` |
+| `report-findings.html` | Conclusions with evidence + confidence; optional two axes | `code-review`, `research`, `plan` |
+| `review-doc.html` | The general shell — screenshot grid w/ lightbox, comparison columns, decision panel | `prototype`, spec reviews, QA galleries |
+
+`present` picks the template; it never invents a layout. Two rules the
+templates enforce: **delete any section with nothing in it** (an empty section
+is not proof you looked), and every report ends with a **coverage note** saying
+what was actually read versus sampled.
 
 ## How loading works
 

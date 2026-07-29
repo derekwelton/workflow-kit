@@ -28,6 +28,11 @@ into the issue — the body if it changes scope or acceptance criteria, a sync-
 thread comment if it's reasoning — while `research/` stays on disk exactly as
 described above. Do not paste research dumps into the issue.
 
+When the findings are long or the user will read them directly, render them
+with `present` using `templates/report-findings.html` — it carries the
+per-claim evidence and confidence markers this skill's output depends on. The
+committed Markdown in `research/` stays canonical either way.
+
 When research finishes, apply `update-issue` to the originating issue with a
 checkpoint summary, the answer, confidence/limitations, and a permalink to
 the findings only when the file is committed and pushed. If the findings need

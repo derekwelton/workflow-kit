@@ -79,8 +79,9 @@ hard to undo.
 Present a table: proposed title, type/label, priority, starting status, and
 either "new" or the existing issue it duplicates. Below the table, show the
 drafted bodies — or, if the set is large, the bodies for anything non-obvious
-plus a note that the rest follow the template. If the list is long or visual,
-`/workflow-kit:present` renders it as a review HTML.
+plus a note that the rest follow the template. For a big batch, render it with
+`/workflow-kit:present` using `templates/report-findings.html` (its summary
+table plus per-item detail fits the proposed-issue set).
 
 Ask for one-shot approval: "approve all", or list changes/exceptions. Iterate
 until approved, then create.

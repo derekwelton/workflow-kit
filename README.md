@@ -165,7 +165,12 @@ walkthroughs from tiny bug to foggy epic.
   (config frontmatter: `workDir`, `docsHome`, `labels`, `glossary`, `adrDir`, optional
   `linearTeam`; body carries the skills catalog so non-Claude agents learn the system
   from the repo itself)
-- `templates/review-doc.html` — visual shell for review documents
+- `templates/report-checkin.html` — `board`'s check-in (awaiting-you first, history last)
+- `templates/report-audit.html` — ranked proposals awaiting one approval (`board audit`, `work-audit`, `ponytail-audit`)
+- `templates/report-findings.html` — evidence-and-confidence findings, optional two axes (`code-review`, `research`, `plan`)
+- `templates/review-doc.html` — the general visual shell (screenshot grid, comparison columns)
+
+  All four share one design system and are responsive, dark-mode aware, and print-clean.
 - `UPSTREAM.md` — provenance of vendored skills
 
 Designed 2026-07-12 in the Ironwood-Website repo; canonical design spec lives
