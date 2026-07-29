@@ -70,10 +70,35 @@ already-adopted project, run:
 ```
 
 Use `/workflow-kit:workflow-update --check` to report drift without editing.
-The machine update refreshes the executable skills for every project on that
-computer; the per-project command refreshes the committed
-`feature-lifecycle.md` used by Codex, Gemini, Cursor, and other agents. It
-preserves repo-specific frontmatter and additions below the managed marker.
+
+### Why it's two steps — and what reaches Codex
+
+Claude and every other agent learn this workflow through **different
+mechanisms**, and updating one does nothing for the other:
+
+| | Claude Code | Codex / Gemini / Cursor |
+|---|---|---|
+| Reads | `SKILL.md` files in the installed plugin | `AGENTS.md` → the repo's `feature-lifecycle.md` |
+| Lives | `~/.claude/plugins/` — per machine | committed in the repo — travels via git |
+| Refreshed by | `claude plugin update` + a new session | `/workflow-kit:workflow-update`, **then commit** |
+
+So there is **no command you give Codex to update itself.** It has no plugin
+and no cache; it reads whatever markdown is in the repo at that moment. The way
+Codex learns a new version is that a Claude session runs `workflow-update` in
+that repo and someone commits the result — after which every agent, on every
+machine, picks it up on the next `git pull`.
+
+Full sequence after a new release:
+
+1. **Per machine, once** — `marketplace update` + `plugin update`, then start a
+   new session. Claude now has the new skills.
+2. **Per repo, once** — run `/workflow-kit:workflow-update`, review the diff,
+   **commit it**. Codex now has the new contract.
+
+Step 2 is the one that's easy to skip, and it's the only one that helps
+non-Claude agents. An uncommitted refresh has updated nothing for them.
+`new-feature` flags the mismatch in one line when it notices a repo running an
+older managed block than the installed plugin.
 
 ## Adopt in a repo (existing or brand-new)
 

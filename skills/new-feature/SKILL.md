@@ -17,6 +17,15 @@ confirm it in your reply.
   and why.
 - Read the repo's lifecycle doc (see its config frontmatter for `workDir`;
   default `work`) to respect per-repo paths and labels.
+- **Notice a stale repo, in one line.** While reading that doc, compare its
+  `workflow-kit:managed-start version=` stamp to the installed plugin's
+  version. If the repo's is older, or the markers are missing entirely
+  (a pre-0.4.0 stamp), add one line to your report: the repo is on version X,
+  the plugin is on Y, `/workflow-kit:workflow-update` refreshes it. This
+  matters beyond Claude — Codex and other agents read *only* that committed
+  doc, so a stale one means they are following outdated instructions with no
+  way to know. Do **not** run the update, and do not derail the task the user
+  actually asked for.
 - **Check the same frontmatter for `linearTeam`.** If present, follow
   "Linear mode" below instead of steps 1–2. If absent, this skill behaves
   exactly as written — do not touch Linear.

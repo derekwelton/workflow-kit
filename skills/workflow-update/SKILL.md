@@ -71,6 +71,13 @@ Show the resulting diff. Run the plugin/repo documentation checks available in
 the project, plus `git diff --check`. Do not commit or push unless the user or
 repo workflow requests it.
 
+**Say plainly that the refresh only reaches other agents once it is committed.**
+Claude reads the installed plugin, but Codex, Gemini, Cursor, and every other
+machine read *only* the committed lifecycle document. Until this diff is
+committed and pushed, they keep following the old contract — so an uncommitted
+`workflow-update` has updated nothing for them. Recommend committing it, and
+say so even when the user hasn't asked about other agents.
+
 In apply mode, use `update-issue` with the old/new workflow-kit versions, files
 changed, preserved local additions, validation results, and any remaining
 manual action. Report the issue URL and remind the user that other machines
