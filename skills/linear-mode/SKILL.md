@@ -1,6 +1,6 @@
 ---
 name: linear-mode
-description: The Linear-mode contract every lifecycle skill defers to — gating on linearTeam, the sync-thread comment rule, the Code Review to In Review handoff, branch naming from gitBranchName, and the issue body/comment templates. Read when working in a repo whose feature-lifecycle.md sets linearTeam, or when another skill points here.
+description: The Linear-mode contract every lifecycle skill defers to — gating on linearTeam, sync-thread comments, standalone and workload Code Review to In Review handoffs, branch naming from gitBranchName, and issue body/comment templates. Read when working in a repo whose feature-lifecycle.md sets linearTeam, or when another skill points here.
 ---
 
 # Linear mode
@@ -87,15 +87,24 @@ crossover; duplicating produces two copies on the GitHub side.
 | `Backlog` | real work, not scheduled | `plan` |
 | `Todo` | specified enough for an agent to start cold | `plan`, `to-spec`, `to-tickets` |
 | `In Progress` | actively being worked | auto on branch push; skills also set it explicitly |
-| `Code Review` | implementation complete, **awaiting an independent AI code review** | `implement`; PR automation may also set it when configured |
-| `In Review` | AI code review complete, **awaiting human review** | `code-review`; non-code work may hand off here directly |
+| `Code Review` | implementation complete, **awaiting independent AI review**; reviewed workload items remain here until combined integration passes | `implement`; PR automation may also set it when configured |
+| `In Review` | AI review complete and, for a workload, its integration branch is ready for human testing | `code-review` for standalone work; `orchestrate-queue` for a workload batch |
 | `Done` | merged, or human-verified | **never an agent** — merge or the user |
 | `Canceled` / `Duplicate` | triage outcomes | proposed by `board`, applied on approval |
 
 **Implementation and review are separate handoffs.** The implementation agent
 stops at `Code Review`; it does not review its own work. A later code-review
-agent completes the full review and moves the issue to `In Review`. An agent
-never marks work `Done`; that remains the merge's or the user's decision.
+agent completes the full review. Standalone work moves to `In Review`;
+workload work waits for the combined integration gate. An agent never marks
+work `Done`; that remains the merge's or the user's decision.
+
+For a multi-issue `orchestrate-queue` workload, individual review completion
+is a manifest-only `reviewed-pending-integration` state. Keep every included
+issue in `Code Review` until the integration branch is created from current
+main, all reviewed heads are combined, conflict resolutions are independently
+reviewed, combined verification passes, and one umbrella PR exists. The
+coordinator then moves the included issues to `In Review` as one reconciled
+batch. It never sets `Done` or merges the umbrella PR.
 
 Non-code work that has no code-review phase (for example, a research or audit
 deliverable) may move directly to `In Review` when it needs human review.
@@ -107,9 +116,10 @@ handoff. It resolves the current repository from git, lists the team's issues
 in the exact `Code Review` status, and keeps only issues whose synced GitHub
 attachment/PR or branch belongs to this repository. It performs the full
 Standards + Spec review for every match. A completed review moves to
-`In Review`; a review blocked by a missing or inaccessible diff stays in
-`Code Review` with a durable blocked comment. One blocked issue does not stop
-the rest of the queue.
+`In Review` unless it belongs to an active workload; workload reviews stay in
+`Code Review` and record `reviewed-pending-integration`. A review blocked by a
+missing or inaccessible diff stays in `Code Review` with a durable blocked
+comment. One blocked issue does not stop the rest of the queue.
 
 ### Resolving status names
 
@@ -143,7 +153,8 @@ Linear then auto-links the resulting PR. Configure PR-open automation to use
 `Code Review`, not `In Review`; regardless of automation, `implement` explicitly
 sets `Code Review` after its final update so an older integration cannot skip
 the independent review queue. The code-review agent explicitly sets `In Review`
-afterward. Merge automation may still set `Done`.
+for standalone work; the workload orchestrator does so after its combined
+gate. Merge automation may still set `Done`.
 
 Work folders keep `<gh#>-<slug>` naming so nothing else has to change. Where a
 folder exists, its header carries both keys (`IRP-13` / `#40`).
@@ -337,11 +348,38 @@ Set `Code Review` after posting this shape.
 1. **<finding or decision to inspect>** — <why it needs a human>.
 ````
 
-After a complete review, post the second shape, set `In Review`, and stop. Open
-findings do not make the review incomplete; report them precisely for the human.
-If the review itself cannot be completed (missing diff, inaccessible branch,
-missing required context), leave the issue in `Code Review`, post a blocked
-update, and do not promote it. Never close or set `Done`.
+For standalone work, after a complete review with no unresolved material
+finding, post the second shape, set `In Review`, and stop. For a workload item,
+post a **Code review complete — awaiting workload integration** checkpoint,
+keep `Code Review`, and record the final-SHA receipt in the workload manifest.
+
+After the combined workload gate, post this shape to every included issue:
+
+````markdown
+## Workload ready — human review
+
+This issue is included in `<integration-branch>` at `<head-sha>`.
+
+### Issue review
+- Implementer: <provider>
+- Reviewer: <provider>
+- Receipt: <base/head and result>
+
+### Combined verification
+```
+<command>   <result>
+```
+
+### Test this workload
+- Umbrella PR: <reachable URL>
+- Checkout: `<integration-branch>`
+- Status: not merged to main
+````
+
+Then move every still-`Code Review` included issue to `In Review`. If a status
+changed concurrently, stop and reconcile rather than overwriting it. If review
+or integration cannot complete, leave the issue in `Code Review`, post a
+blocked update, and do not promote it. Never close or set `Done`.
 
 ## 10. Known limitations
 

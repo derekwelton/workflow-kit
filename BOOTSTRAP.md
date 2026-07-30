@@ -46,6 +46,18 @@ Tell the user if an install/update happened: skills load at session start, so
 `/workflow-kit:*` commands appear next session. **Do not stop** — Step 2 works
 without the loaded skills.
 
+If Codex is installed, expose the portable workload entry points too. Run the
+installer from this marketplace checkout:
+
+```powershell
+node "$HOME/.claude/plugins/marketplaces/derekwelton/scripts/install-codex-skills.mjs"
+```
+
+It creates or verifies user-skill links for `$orchestrate-queue`,
+`$integrate-reviewed`, and `$workflow-doctor`. It never overwrites a conflicting
+directory; report a conflict and leave it untouched. Restart Codex after an
+install so its skill catalog refreshes.
+
 ## Step 2 — Initialize or refresh this repo
 
 Choose by repo state:
@@ -127,9 +139,10 @@ If it is bound:
 2. **Claude** reaches Linear through its Linear MCP connector. If it isn't
    authorized, say so — the capability is unavailable until the user connects
    it in their claude.ai connector settings or via `/mcp`.
-3. **Codex has no Linear MCP by default.** Adding this to `~/.codex/config.toml`
-   plus a one-time OAuth login gives Codex the same tool surface, so a single
-   set of instructions serves both agents:
+3. **Codex** should use its installed Linear app/connector and OAuth flow when
+   that tool surface is available. Only when the harness has no Linear app,
+   use this explicit remote-MCP fallback in `~/.codex/config.toml` and complete
+   its one-time OAuth login:
 
    ```toml
    [mcp_servers.linear]
@@ -146,9 +159,12 @@ If it is bound:
 - If this file was **copied into the repo**, delete the copy — the stamped
   `feature-lifecycle.md` supersedes it; this file lives only in
   `derekwelton/workflow-kit` (one source, no drift).
-- Report: plugin status (installed/updated/current), whether the repo was
+- Report: plugin status (installed/updated/current), Codex skill-link status,
+  whether the repo was
   initialized or refreshed, files changed vs. preserved, which entrypoint has
   the pointer, and any legacy mess found. Remind the user: new work starts
   with `/workflow-kit:new-feature <slug>`, future repo refreshes use
-  `/workflow-kit:workflow-update`, and newly installed skills appear after a
+  `/workflow-kit:workflow-update`; multi-issue work starts with
+  `/workflow-kit:orchestrate --name <name> ...` in Claude or
+  `$orchestrate-queue` in Codex, and newly installed skills appear after a
   session restart.

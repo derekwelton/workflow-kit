@@ -1,0 +1,4 @@
+interface:
+  display_name: "Workflow Doctor"
+  short_description: "Audit workflow, tracker, jobs, and worktrees"
+  default_prompt: "Use $workflow-doctor to run a read-only workflow health audit for this repository."

@@ -129,7 +129,10 @@ the richer one and it syncs, so the GitHub sub-issues appear on their own.
   set. Replace the parent's `## Tasks` checklist with a one-line pointer to
   the sub-issues rather than duplicating the breakdown.
 
-The frontier rule is unchanged, except a ticket's blockers are "all `Done` or
-`In Review`" rather than "all closed". Implementation completion alone leaves
-a ticket in `Code Review` and does **not** clear the blocker; the independent
-code-review pass moves it to `In Review`. An agent never sets `Done`.
+The frontier rule is unchanged, except a standalone ticket's blockers are
+"all `Done` or `In Review`" rather than "all closed". Implementation
+completion alone leaves a ticket in `Code Review` and does **not** clear the
+blocker. In a managed workload, a validated final-SHA
+`reviewed-pending-integration` manifest receipt clears the execution dependency
+without changing the issue from `Code Review`; the batch reaches `In Review`
+only after combined integration. An agent never sets `Done`.

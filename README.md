@@ -1,7 +1,7 @@
 # workflow-kit
 
 Issue-driven feature workflow for all my repos: **one issue, one folder, one
-lifecycle**. A Claude Code plugin.
+lifecycle**. A Claude Code plugin with portable Codex orchestration skills.
 
 ```
 idea → issue ⇄ updates → folder → build → present → wrap
@@ -29,9 +29,10 @@ change that GitHub alone can't do:
 
 - **`Code Review` and `In Review` are distinct.** An implementation agent moves
   finished code from `In Progress` to `Code Review`. A separate review agent
-  can sweep every `Code Review` issue tied to this repository, perform the
-  full review, and move each completed review to `In Review` for a human.
-  Agents never mark their own work `Done`.
+  reviews the final issue SHA. Standalone issues then move to `In Review`; a
+  workload issue stays in `Code Review` until every included issue is reviewed,
+  the current-main integration branch passes its combined gate, and one
+  umbrella PR is ready for the human. Agents never mark their own work `Done`.
 - **Specs and plans live in the issue**, not the repo: the body carries goal,
   scope, acceptance criteria, and a tickable `## Tasks` checklist; comments
   carry the reasoning and the running timeline. No `spec.md`/`plan.md`/
@@ -71,30 +72,37 @@ already-adopted project, run:
 ```
 
 Use `/workflow-kit:workflow-update --check` to report drift without editing.
+If the machine also uses Codex, refresh the three durable Codex entry points:
 
-### Why it's two steps — and what reaches Codex
+```powershell
+node "$HOME/.claude/plugins/marketplaces/derekwelton/scripts/install-codex-skills.mjs"
+```
+
+That exposes `$orchestrate-queue`, `$integrate-reviewed`, and
+`$workflow-doctor` without relying on deprecated custom prompts.
+
+### Why there are machine and repository steps
 
 Claude and every other agent learn this workflow through **different
 mechanisms**, and updating one does nothing for the other:
 
-| | Claude Code | Codex / Gemini / Cursor |
-|---|---|---|
-| Reads | `SKILL.md` files in the installed plugin | `AGENTS.md` → the repo's `feature-lifecycle.md` |
-| Lives | `~/.claude/plugins/` — per machine | committed in the repo — travels via git |
-| Refreshed by | `claude plugin update` + a new session | `/workflow-kit:workflow-update`, **then commit** |
+| | Claude Code | Codex | Gemini / Cursor |
+|---|---|---|---|
+| Reads | plugin `SKILL.md` files | three linked user skills + `AGENTS.md` lifecycle | `AGENTS.md` lifecycle |
+| Lives | `~/.claude/plugins/` | `~/.agents/skills/` links plus committed repo policy | committed repo policy |
+| Refreshed by | plugin update + new session | link installer + new session; repo refresh for policy | repo refresh, then commit |
 
-So there is **no command you give Codex to update itself.** It has no plugin
-and no cache; it reads whatever markdown is in the repo at that moment. The way
-Codex learns a new version is that a Claude session runs `workflow-update` in
-that repo and someone commits the result — after which every agent, on every
-machine, picks it up on the next `git pull`.
+The orchestration engine, provider pairing, resumable manifest, integration
+gate, and diagnostics are portable machine skills. Repository-specific status
+names, branch conventions, and test commands remain committed in the repo's
+lifecycle document so every agent sees the same local policy.
 
 Full sequence after a new release:
 
-1. **Per machine, once** — `marketplace update` + `plugin update`, then start a
-   new session. Claude now has the new skills.
+1. **Per machine, once** — update the Claude marketplace/plugin, run the Codex
+   skill-link installer, then start new Claude/Codex sessions.
 2. **Per repo, once** — run `/workflow-kit:workflow-update`, review the diff,
-   **commit it**. Codex now has the new contract.
+   and **commit it** so all agents receive the repository contract.
 
 Step 2 is the one that's easy to skip, and it's the only one that helps
 non-Claude agents. An uncommitted refresh has updated nothing for them.
@@ -124,6 +132,9 @@ Lifecycle (the container of work):
 | `/workflow-kit:workflow-init` | One-time repo bootstrap (scaffold, gitignore, labels, lifecycle doc, AGENTS.md pointer) |
 | `/workflow-kit:workflow-update [--check]` | Refresh an adopted repo from the installed plugin without overwriting repo-specific configuration |
 | `/workflow-kit:plan` | Bulk dump of work → deduped, classified, prioritized issues in one approval-gated pass |
+| `/workflow-kit:orchestrate --name <name> ...` | Freeze and run a bounded issue workload through isolated implementation, opposite-provider review, one integration branch, combined verification, umbrella PR, then batch `In Review` |
+| `/workflow-kit:integrate-reviewed --run <id> --mode <merged\|local-main>` | After explicit human acceptance, refresh and merge only the named workload; retest/re-review on drift |
+| `/workflow-kit:workflow-doctor` | Read-only health check for lifecycle drift, Linear/GitHub sync, workload manifests, Codex jobs, plugins, permissions, and worktrees |
 | `/workflow-kit:new-feature <slug>` | File issue + create feature folder with stub spec/notes |
 | `/workflow-kit:update-issue` | Keep the issue current at starts, checkpoints, decisions, pauses, and completion |
 | `/workflow-kit:present [topic]` | Generate a self-contained HTML review doc from feature state |
@@ -143,7 +154,7 @@ Craft (inside the build; adapted from [mattpocock/skills](https://github.com/mat
 | `/workflow-kit:implement` | Build one ticket/spec per fresh session — ponytail + TDD; default mode reviews/commits, Linear mode commits and hands off at `Code Review` |
 | `/workflow-kit:ponytail [lite\|full\|ultra]` | Persistent lazy-senior-dev mode: the laziest solution that works (auto-active on coding) |
 | `/workflow-kit:tdd` | Test-first reference: seams, red–green tracer bullets, anti-patterns |
-| `/workflow-kit:code-review [queue]` | Two-axis review (Standards + smell baseline / Spec fidelity); `queue` reviews this repo's Linear `Code Review` issues and advances completed reviews to `In Review` |
+| `/workflow-kit:code-review [queue]` | Independent Standards + Spec review; standalone work advances to `In Review`, while workload work records a final-SHA receipt and waits for integration |
 | `/workflow-kit:codebase-design` | Deep-module vocabulary: module, interface, seam, depth, leverage, locality |
 | `/workflow-kit:domain-modeling` | Maintain the domain glossary + sparing ADRs as decisions crystallize |
 | `/workflow-kit:improve-codebase-architecture` | Scan for deepening opportunities → visual HTML report → grill through one |
@@ -159,7 +170,10 @@ walkthroughs from tiny bug to foggy epic.
 
 ## Layout
 
-- `skills/` — the twenty-four skills above
+- `skills/` — twenty-eight skill packages, including the portable workload
+  orchestrator, integration finisher, and workflow doctor
+- `scripts/workload-manifest.mjs` — deterministic, worktree-shared workload state
+- `scripts/install-codex-skills.mjs` — idempotent Codex user-skill links
 - `skills/linear-mode/SKILL.md` — the Linear-mode contract every skill defers to
   (gating, sync-thread rule, status contract, templates). Not a skill; a shared reference.
 - `templates/feature-lifecycle.md` — per-repo convention doc stamped by `workflow-init`

@@ -1,5 +1,6 @@
 {
   "name": "derekwelton",
+  "description": "Reusable issue-driven delivery workflows for Claude Code and Codex.",
   "owner": {
     "name": "Derek Welton"
   },
@@ -7,7 +8,7 @@
     {
       "name": "workflow-kit",
       "source": "./",
-      "description": "Issue-driven feature workflow: one issue, one folder, one lifecycle."
+      "description": "Issue-driven lifecycle plus resumable, model-paired multi-issue workloads."
     }
   ]
 }

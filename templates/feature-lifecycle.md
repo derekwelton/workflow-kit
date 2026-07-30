@@ -7,7 +7,7 @@ adrDir: docs/adr
 # linearTeam: ABC    # uncomment + set to bind this repo to a Linear team (see "Linear mode")
 ---
 
-<!-- workflow-kit:managed-start version=0.7.0 -->
+<!-- workflow-kit:managed-start version=0.8.1 -->
 
 # Feature Lifecycle
 
@@ -102,10 +102,11 @@ below override the corresponding rules above.
 Tool names differ per harness, so this doc names them **logically** — Linear
 `save_issue`, `get_issue`, `list_issues`, `list_comments`, `save_comment`,
 `list_issue_statuses`, `list_issue_labels`. Map them to whatever your harness
-exposes. Claude has these via the Linear MCP connector; Codex needs
-`[mcp_servers.linear]` in `~/.codex/config.toml` (see the plugin's
-`BOOTSTRAP.md`). Without a Linear tool surface, fall back to `gh` against the
-GitHub twin and tell the user the Linear side was not touched.
+exposes. Claude has these via the Linear MCP connector. Codex should use the
+installed Linear app/OAuth tool surface first; explicit MCP configuration is a
+fallback (see the plugin's `BOOTSTRAP.md`). Without a Linear tool surface, fall
+back to `gh` against the GitHub twin and tell the user the Linear side was not
+touched.
 
 ### L1. The sync-thread rule — only replies to one thread reach GitHub
 
@@ -137,23 +138,33 @@ duplicating produces two copies on the GitHub side.
 | `Backlog` | real work, not scheduled | `plan` |
 | `Todo` | specified enough for an agent to start cold | `plan`, `to-spec`, `to-tickets` |
 | `In Progress` | actively being worked | auto on branch push; skills also set it explicitly |
-| `Code Review` | implementation complete, **awaiting an independent AI code review** | `implement`; PR automation may set it when configured |
-| `In Review` | AI code review complete, **awaiting human review** | `code-review`; non-code work may hand off here directly |
+| `Code Review` | implementation complete, **awaiting independent AI review**; reviewed workload items remain here until combined integration passes | `implement`; PR automation may set it when configured |
+| `In Review` | AI review complete and, for a workload, its integration branch is ready for human testing | `code-review` for standalone work; `orchestrate-queue` for a workload batch |
 | `Done` | merged, or human-verified | **never an agent** — merge or the user |
 | `Canceled` / `Duplicate` | triage outcomes | proposed by `board`, applied on approval |
 
 The implementation agent stops at `Code Review` and does not review its own
-work. A later `code-review` agent sweeps this repo's queue, performs the full
-two-axis review, and moves completed reviews to `In Review`. Non-code work with
-no code-review phase can go directly to `In Review`. An agent never sets
-`Done`; that belongs to a merge or the user.
+work. A later `code-review` agent sweeps this repo's queue and performs the
+full two-axis review. Completed standalone reviews move to `In Review`;
+workload reviews wait at `Code Review` for the combined integration gate.
+Non-code work with no code-review phase can go directly to `In Review`. An
+agent never sets `Done`; that belongs to a merge or the user.
+
+For a multi-issue `orchestrate-queue` workload, individual review completion
+is a manifest-only `reviewed-pending-integration` state. Keep every included
+issue in `Code Review` until the integration branch is created from current
+main, all reviewed heads are combined, conflict resolutions are independently
+reviewed, combined verification passes, and one umbrella PR exists. The
+coordinator then moves the included issues to `In Review` as one reconciled
+batch. It never sets `Done` or merges the umbrella PR.
 
 `/workflow-kit:code-review queue` resolves the current repository from git,
 lists the Linear team's exact `Code Review` status, and filters to issues whose
 synced GitHub attachment/PR or branch belongs to this repository. It performs
-the full Standards + Spec review for every match. Completed reviews move to
-`In Review`; blocked reviews stay in `Code Review` with a durable comment, and
-do not prevent the rest of the queue from running.
+the full Standards + Spec review for every match. Completed standalone reviews
+move to `In Review`; workload reviews stay in `Code Review` as
+`reviewed-pending-integration`. Blocked reviews stay in `Code Review` with a
+durable comment and do not prevent the rest of the queue from running.
 
 Status names vary by team. Resolve via `list_issue_statuses({ team })` and
 match on `type` (`triage` / `backlog` / `unstarted` / `started` / `completed` /
@@ -169,8 +180,9 @@ Branches come from the issue's **`gitBranchName`** field (e.g.
 `feat/<issue#>-<slug>`. Linear auto-links the PR. Configure PR-open automation
 to use `Code Review`, not `In Review`; `implement` still sets `Code Review`
 explicitly so older automation cannot skip the independent review queue.
-`code-review` sets `In Review` after its pass, and merge automation may set
-`Done`.
+`code-review` sets `In Review` after a standalone pass; for a workload,
+`orchestrate-queue` sets it only after the combined integration gate. Merge
+automation may set `Done`.
 
 PR bodies use `Refs #<gh#>`. **Never `Closes`** — closing the GitHub twin drags
 the Linear issue to `Done`, which is the user's call.
@@ -227,6 +239,9 @@ Lifecycle (container of work):
 | `wrap-feature` | Work shipped → close (or preserve Linear's human-review boundary), clean, archive, prune; never bypass `Code Review` |
 | `work-audit` | Repo clutter check / migration sweep — proposes, never auto-deletes |
 | `board` | "What should I work on / what's pending?" — tracker read: awaiting-you, awaiting AI code review, available, in-flight, recently shipped. `board audit` sweeps for stale work and unfiled follow-ups |
+| `orchestrate-queue` | A filtered or explicit multi-issue workload → bounded implementation, opposite-provider review, one current-main integration branch, combined verification, and batch `In Review` handoff |
+| `integrate-reviewed` | A human-tested workload branch is accepted → refresh main, reverify, merge the umbrella PR only with explicit authorization, reconcile tracker/PRs, and clean leases |
+| `workflow-doctor` | Read-only health check for workflow/plugin versions, tracker statuses/sync, stale jobs, run manifests, worktrees, and configuration drift |
 
 Craft (inside the build):
 
@@ -240,7 +255,7 @@ Craft (inside the build):
 | `implement` | A spec/ticket is ready to build — one ticket per fresh session, ponytail + TDD; default mode reviews/commits, Linear mode commits and hands off at `Code Review` |
 | `ponytail` | ALL code writing (auto-active): laziest solution that works — reuse > stdlib > native > installed dep > one line > minimum code; never simplifies away spec requirements |
 | `tdd` | Building test-first: seams confirmed up front, red–green tracer bullets, no implementation-coupled or tautological tests (outranks ponytail's one-check minimum at agreed seams) |
-| `code-review` | Review one branch/PR, or sweep this repo's Linear `Code Review` queue: two axes in parallel, durable findings, then hand off completed reviews at `In Review` |
+| `code-review` | Independently review/fix one branch/PR or sweep this repo's `Code Review` queue; standalone work hands off at `In Review`, workload items wait for combined integration |
 | `codebase-design` | Designing or restructuring modules — the deep-module vocabulary (module/interface/seam/depth/leverage/locality) |
 | `domain-modeling` | Terms are being sharpened or hard-to-reverse decisions made → glossary updates + sparing ADRs |
 | `ponytail-audit` | Repo-wide bloat scan → ranked delete/stdlib/native/yagni/shrink list; run BEFORE improve-codebase-architecture (subtract, then deepen) |

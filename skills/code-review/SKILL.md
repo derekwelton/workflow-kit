@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Review a branch or PR along two axes — Standards and Spec — or sweep this repository's Linear Code Review queue. Runs both axes in parallel sub-agents, reports them side by side, and hands completed Linear reviews to In Review.
+description: Independently review and optionally fix a branch, PR, or repository-scoped Linear Code Review queue along Standards and Spec axes. Supports Codex, Claude, and cross-provider workload review receipts; standalone reviews hand completed work to In Review, while multi-issue workloads remain in Code Review until their integration branch passes.
 ---
 
 Two-axis review of a diff between a completed implementation and its fixed
@@ -9,14 +9,16 @@ point:
 - **Standards** — does the code conform to this repo's documented coding standards?
 - **Spec** — does the code faithfully implement the feature's spec?
 
-Both axes run as **parallel sub-agents** so they don't pollute each other's
-context; this skill aggregates their findings. The implementation agent must
-not use this skill to approve its own work under Linear mode. `Code Review` is
-an independent queue owned by a later review agent.
+Both axes use fresh independent review context. Claude review runs them as
+parallel sub-agents; a Codex adapter may cover both in one structured
+adversarial pass. This skill aggregates and adjudicates their findings. The
+implementation agent must not use this skill to approve its own work under
+Linear mode. `Code Review` is an independent queue owned by a later review
+agent.
 
 ## Process
 
-### 0. Choose targeted or queue mode
+### 0. Choose targeted, queue, or workload mode
 
 - **Targeted mode** — the user names a branch, PR, issue, review head, or fixed
   point. Review only that change.
@@ -28,6 +30,18 @@ an independent queue owned by a later review agent.
   attachment/PR repository first, then the issue's branch repository. A Linear
   team can span repos: never treat the whole team as this repo, and never infer
   repo membership from the title alone.
+- **Workload mode** — the user passes `--workload <id>` or arrives from
+  `orchestrate-queue`. Read the workload manifest with that skill's helper.
+  Review only the frozen issue heads. A completed issue review records
+  `reviewed-pending-integration` and remains in Linear `Code Review`; the
+  workload coordinator owns the later batch transition to `In Review`.
+
+Accept `--reviewer auto|codex|claude` and `--fix`. In workload mode, `auto`
+means the provider opposite the actual implementation author recorded in the
+manifest. Outside a workload, use repo/model-routing policy. `--fix` means a
+fresh receiving agent adjudicates findings, applies safe fixes, verifies them,
+and obtains a receipt for the final head; it never lets the original
+implementer approve its own change.
 
 For queue mode, identify the current repository and default branch from its git
 remote or `gh repo view`. Process every matching issue independently; one
@@ -128,7 +142,23 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 - **Middle Man** — a class or function that mostly just delegates onward. → cut it, call the real target direct.
 - **Refused Bequest** — a subclass or implementer that ignores or overrides most of what it inherits. → drop the inheritance, use composition.
 
-### 4. Spawn both sub-agents in parallel
+### 4. Run an independent reviewer
+
+Choose the provider before launching review:
+
+- Codex-authored implementation → fresh Claude Opus reviewer by default.
+- Claude-authored implementation → fresh Codex Sol reviewer by default.
+- `codex-only` / `claude-only` workloads → a fresh, context-independent
+  session of that provider.
+
+The reviewer must cover both axes below. With Claude, run the two axis prompts
+as parallel fresh Opus sub-agents. With Codex, use the dedicated Codex reviewer
+adapter once with the exact worktree `--cwd`, fixed base/head SHAs, Standards
+sources, issue body/spec comment, and an instruction to report both axes. Do
+not call the low-level companion runtime from an ordinary sub-agent, inspect
+its state directory, or poll it manually.
+
+#### Claude two-axis prompts
 
 Send a single message with two Agent tool calls (general-purpose subagents).
 
@@ -158,6 +188,19 @@ Send a single message with two Agent tool calls (general-purpose subagents).
 
 If the spec is missing, skip the Spec sub-agent and note this in the report.
 
+#### Receiving and fixing findings
+
+Treat reviewer output as evidence, not authority. Re-derive each material
+finding against the code and spec. Reject false positives with a short reason.
+When `--fix` is active, apply or delegate accepted fixes in the issue worktree,
+audit untracked files, run focused verification, and commit/push according to
+repo policy. If the head SHA changed, review the final diff or record an
+explicit re-review/adjudication receipt keyed to the new head.
+
+Leave work with uncorrected material findings or incomplete verification in
+`Code Review`. Non-material findings may remain only when the durable review
+receipt explains why they do not block human testing.
+
 ### 5. Aggregate
 
 Present the two reports under `## Standards` and `## Spec` headings, verbatim
@@ -174,20 +217,23 @@ When the review resolves to a feature/ticket issue, apply `update-issue` with a
 **Code review complete — ready for human review** comment. Preserve the two
 axes, include the finding counts and worst finding in each, state what remains
 open, link the exact reviewed branch/PR and fixed point, and give the human's
-next action. Do not make a local report the only record. Open findings do not
-make the review incomplete: surface them clearly for human review.
+next action. Do not make a local report the only record. Surface intentionally
+open non-material findings clearly for human review.
 
-Under Linear mode, re-fetch the issue immediately before the status write. If
-it is still in `Code Review` and both review axes completed (or Spec was
-explicitly skipped because no spec exists), move it to `In Review`. If the
-review itself could not complete, post a **Blocked** update and leave it in
-`Code Review`. Never move an issue from some other status as a side effect, and
-never set `Done`.
+Under Linear mode, re-fetch the issue immediately before any status write. For
+a standalone review, if it is still in `Code Review`, both axes completed (or
+Spec was explicitly unavailable), and no material finding remains, move it to
+`In Review`. For workload mode, do not change its status: record provider,
+base/head SHAs, verification, and the final review receipt as
+`reviewed-pending-integration` in the workload manifest. If review or required
+fixing could not complete, post a **Blocked** update and leave it in
+`Code Review`. Never overwrite another status and never set `Done`.
 
 For a standalone review with no originating issue, report in chat without
 inventing a tracker item. In queue mode, repeat the full process for every
-repository-scoped candidate, then finish with counts for `In Review`, left in
-`Code Review`, and skipped as out-of-repo.
+repository-scoped candidate, then finish with counts for `In Review`, reviewed
+pending workload integration, left in `Code Review`, and skipped as
+out-of-repo.
 
 ## Why two axes
 

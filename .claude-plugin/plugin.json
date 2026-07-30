@@ -1,6 +1,6 @@
 {
   "name": "workflow-kit",
-  "description": "Issue-driven feature workflow: one issue, one folder, one lifecycle — plus the craft inside the build phase (grilling, research, spec, tickets, TDD implementation, two-axis review, prototyping, architecture, handoffs, wayfinding), adapted from mattpocock/skills. Optional Linear mode makes Linear the control plane with specs and plans in the issue.",
-  "version": "0.7.0",
+  "description": "Issue-driven feature workflow with Linear/GitHub control-plane support, isolated implementation, independent model-paired review, resumable multi-issue workloads, integration branches, and human-review handoffs.",
+  "version": "0.8.1",
   "author": { "name": "Derek Welton" }
 }

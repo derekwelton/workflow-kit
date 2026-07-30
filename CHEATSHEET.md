@@ -40,7 +40,14 @@ is the full reference.)
   ▼ Linear mode: implementation agent stops at Code Review
  code-review ──────── independent agent, one target or repo queue
   │                    two axes in parallel: Standards (+smells) │ Spec fidelity
-  ▼ Linear mode: completed review moves to In Review for the human
+  ├─ standalone ─────► In Review for the human
+  └─ workload ───────► reviewed-pending-integration (stays Code Review)
+                         │ all issue reviews complete
+                         ▼
+                       integration/<workload> from current main
+                         │ conflicts reviewed · combined gate · umbrella PR
+                         ▼
+                       every workload issue moves to In Review together
   │
   ▼
  present ──────────── anything needing the user's eyes → review/*.html
@@ -75,6 +82,9 @@ is the full reference.)
 | `workflow-init` | ✔ auto (adopting the workflow) | Once per repo. `BOOTSTRAP.md` is the machine-level wrapper around it. |
 | `workflow-update` | ✔ auto (refreshing an adopted repo) | Replaces the versioned managed lifecycle block; preserves repo config/additions. `--check` is read-only. |
 | `plan` | ✋ manual `/workflow-kit:plan` | A bulk dump, not one unit of work. Dedupes, classifies, prioritizes; ONE approval before creating anything. |
+| `orchestrate-queue` | ✋ manual `/workflow-kit:orchestrate` or Codex `$orchestrate-queue` | Freeze a filtered/explicit issue set; run bounded isolated implementation and opposite-provider review; assemble one current-main integration branch; hand the whole batch to `In Review`. |
+| `integrate-reviewed` | ✋ explicit `/workflow-kit:integrate-reviewed` or Codex `$integrate-reviewed` | Merge or locally integrate one named, human-accepted workload. Refreshes main and stops for a new test pass if the accepted head changes materially. |
+| `workflow-doctor` | ✔ auto (workflow/plugin/job diagnosis) | Read-only health report across repo policy, Linear/GitHub sync, workload manifests, plugins, Codex jobs, permissions, and worktrees. |
 | `new-feature` | ✔ auto (starting any unit of work) | ALWAYS the first step for ONE unit of work. Issue → folder only if artifacts will exist. |
 | `update-issue` | ✔ auto (issue-backed work changes state) | Durable progress, decisions, evidence, artifact links, and next action on the issue. |
 | `present` | ✔ auto (something needs the user's review) | Renders decisions/evidence as review-doc HTML. |
@@ -92,7 +102,7 @@ is the full reference.)
 | `to-spec` | ✋ manual `/workflow-kit:to-spec` | Crystallize the conversation into `spec.md`. No interview. |
 | `to-tickets` | ✋ manual `/workflow-kit:to-tickets` | Escalate: spec → vertical-slice sub-issues. Only when > one session. |
 | `implement` | ✋ manual `/workflow-kit:implement` | Build one ticket/spec. Runs ponytail + tdd; in Linear mode hands off at `Code Review`. |
-| `code-review` | ✔ auto (reviewing a branch/diff) | Two parallel axes: Standards / Spec. `queue` reviews this repo's Linear `Code Review` items and moves completed reviews to `In Review`. |
+| `code-review` | ✔ auto (reviewing a branch/diff) | Independent Standards / Spec review. Standalone work moves to `In Review`; workload work records a final-SHA receipt and waits for the integration gate. |
 | `handoff` | ✋ manual `/workflow-kit:handoff` | Session ending mid-work → committed `handoff-<date>.md` (syncs machines). |
 | `wayfinder` | ✋ manual `/workflow-kit:wayfinder` | Epic too foggy for one session → map + decision tickets. |
 | `ponytail-audit` | ✔ auto ("find bloat", "what can I delete") | Repo-wide subtraction report. One-shot, applies nothing. |
@@ -127,7 +137,7 @@ GitHub is the execution surface, and these deltas apply:
 | Branch | `feat/<n>-<slug>` | the issue's `gitBranchName` (Linear auto-links the PR) |
 | PR body | `Refs`/`Closes #n` | `Refs #n` only — never `Closes` |
 | Implementation finishes by | closing the issue | setting **`Code Review`** and stopping |
-| Code review finishes by | reporting findings | setting **`In Review`** for human review |
+| Code review finishes by | reporting findings | standalone: **`In Review`**; workload: receipt at `Code Review` until combined gate |
 | Sub-issues | GitHub `addSubIssue` | Linear `parentId` + `blockedBy`/`blocks` relations |
 
 Two rules do the heavy lifting:
@@ -136,9 +146,11 @@ Two rules do the heavy lifting:
    root comment with `parentId === null` matching `/synced to a corresponding/i`,
    and `save_comment({ parentId: <it>, body })`. A top-level comment is
    silently Linear-only. Never also post it with `gh` — that double-posts.
-2. **Implementation and review are separate.** The implementation agent stops
-   at `Code Review`; the independent review agent stops at `In Review`. No
-   agent sets `Done`; that belongs to a merge or the user.
+2. **Implementation, independent review, and workload integration are separate.**
+   The implementation agent stops at `Code Review`. A standalone review moves
+   to `In Review`; a workload review records its final-SHA receipt but stays in
+   `Code Review` until the current-main integration branch, conflicts, combined
+   verification, and umbrella PR are ready. No agent sets `Done`.
 
 Full contract: `skills/linear-mode/SKILL.md`; the repo-facing version is
 stamped into `feature-lifecycle.md` so Codex and Gemini follow the same rules.
@@ -169,10 +181,13 @@ what was actually read versus sampled.
   against what's happening — you don't have to type anything. Skills marked ✋
   manual are deliberate acts (`disable-model-invocation: true`); type
   `/workflow-kit:<name>`. Any auto skill can also be invoked manually.
-- **Codex / Gemini / Cursor / humans**: can't see the plugin. They learn the
-  system from the repo itself: `AGENTS.md`/`CLAUDE.md` points at
-  `feature-lifecycle.md`, whose catalog names each skill; they follow the
-  steps by hand with `gh` + file operations.
+- **Codex**: the bootstrap installer links the portable `$orchestrate-queue`,
+  `$integrate-reviewed`, and `$workflow-doctor` skills into
+  `~/.agents/skills`. Repository `AGENTS.md`/`feature-lifecycle.md` still owns
+  project-specific statuses, branch rules, and verification commands.
+- **Gemini / Cursor / humans**: learn the system from the repo itself via
+  `AGENTS.md`/`CLAUDE.md` → `feature-lifecycle.md` and follow it with their
+  available tracker/Git tools.
 - **A repo that hasn't adopted yet**: give the agent
   `BOOTSTRAP.md` (fetch from this repo via `gh`) — it validates/installs the
   plugin, runs `workflow-init`, and wires the entrypoints.
@@ -189,8 +204,10 @@ issue-backed lifecycle transitions ──invoke──► update-issue
                               │ ──may spawn──► research · prototype
 to-spec ──feeds──► to-tickets ──feeds──► implement
 implement ──runs──► ponytail + tdd
-  ├─ default ──► code-review in the same workflow
-  └─ Linear ───► Code Review queue ──independent review──► In Review (human queue)
+  ├─ standalone ──► code-review ──► In Review (human queue)
+  └─ workload ────► Code Review ──independent review receipt──┐
+orchestrate-queue ──all receipts──► current-main integration ──┴─► umbrella PR + batch In Review
+integrate-reviewed ──explicit human acceptance──► refresh/retest ──► merge or local main
 wayfinder ──tickets invoke──► grilling · research · prototype · domain-modeling
 improve-codebase-architecture ──uses──► codebase-design · present · grilling · domain-modeling
 ponytail-audit / work-audit / improve-arch ──approved findings──► new-feature (chore) → the normal loop
@@ -220,6 +237,12 @@ Key boundaries (the ones that prevent fights between skills):
 - **plan vs new-feature**: plan is many units of work at once and batches its
   questions to the end; new-feature is one, and can suggest the next step.
   Don't loop new-feature over a list — that's what plan is for.
+- **plan vs orchestrate-queue**: plan creates/shapes the issue set;
+  orchestrate-queue freezes and executes an already approved set. They can run
+  back-to-back, but planning never silently starts implementation.
+- **code-review vs orchestrate-queue**: code-review owns each final-SHA review
+  receipt. The orchestrator alone owns the workload manifest, tracker writes,
+  integration branch, conflict resolutions, umbrella PR, and batch handoff.
 - **ADRs outrank all audits**: a decision an ADR made deliberately is not a
   finding.
 
@@ -258,8 +281,12 @@ as Big feature.
 
 **A pile of work at once** (post-meeting brain-dump, bug sweep, leftovers):
 `plan` — one pass: dedupe against existing issues, classify, prioritize,
-batch the questions, **one approval** → the whole set is filed. Then each
-issue runs the normal loop above at whatever size it deserves.
+batch the questions, **one approval** → the whole set is filed. To deliver it
+as one testable bucket, run `orchestrate-queue --name <name> --issues <keys>`:
+bounded issue worktrees → opposite-provider final-SHA reviews → one
+`integration/<name>` branch from current main → combined verification → one
+umbrella PR → every included issue enters `In Review` together. After the user
+tests that exact head, `integrate-reviewed` performs the explicit merge flow.
 
 **Maintenance day**:
 `board` (what fell through the tracker) → `work-audit` (approve the cleanup) →
@@ -270,5 +297,6 @@ chore issue) → each chore runs the normal loop.
 **Session ending mid-anything**: `handoff` — the next session (either machine)
 picks up from the committed doc.
 
-**Existing repo upgrade**: machine marketplace/plugin update → new session →
-`workflow-update` in the repo → review/commit the project integration diff.
+**Existing repo upgrade**: machine marketplace/plugin update → Codex skill-link
+installer → new sessions → `workflow-update` in the repo → review/commit the
+project integration diff.
