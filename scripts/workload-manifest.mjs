@@ -7,7 +7,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 const SCHEMA_VERSION = 1;
-const WORKFLOW_KIT_VERSION = "0.8.1";
+const WORKFLOW_KIT_VERSION = "0.8.2";
 const PAIR_MODES = new Set(["cross", "codex-only", "claude-only"]);
 const ISSUE_STATES = new Set([
   "selected",
@@ -172,6 +172,54 @@ function atomicWriteJson(filePath, value) {
   fs.renameSync(temporaryPath, filePath);
 }
 
+const LOCK_SLEEP = new Int32Array(new SharedArrayBuffer(4));
+
+function sleepSync(milliseconds) {
+  Atomics.wait(LOCK_SLEEP, 0, 0, milliseconds);
+}
+
+function withFileLock(filePath, callback, options = {}) {
+  const lockPath = `${filePath}.lock`;
+  const timeoutMs = options.timeoutMs ?? 10_000;
+  const staleMs = options.staleMs ?? 5 * 60_000;
+  const deadline = Date.now() + timeoutMs;
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+
+  let handle = null;
+  while (handle == null) {
+    try {
+      handle = fs.openSync(lockPath, "wx");
+      fs.writeFileSync(handle, `${JSON.stringify({ pid: process.pid, createdAt: nowIso() })}\n`, "utf8");
+    } catch (error) {
+      if (error?.code !== "EEXIST") throw error;
+      try {
+        if (Date.now() - fs.statSync(lockPath).mtimeMs >= staleMs) {
+          fs.unlinkSync(lockPath);
+          continue;
+        }
+      } catch (statError) {
+        if (statError?.code === "ENOENT") continue;
+        throw statError;
+      }
+      if (Date.now() >= deadline) {
+        fail(`Timed out waiting for workload manifest lock ${lockPath}.`);
+      }
+      sleepSync(50);
+    }
+  }
+
+  try {
+    return callback();
+  } finally {
+    fs.closeSync(handle);
+    try {
+      fs.unlinkSync(lockPath);
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+  }
+}
+
 function readManifest(repository, runReference) {
   const filePath = manifestPath(repository, runReference);
   if (!fs.existsSync(filePath)) {
@@ -330,13 +378,16 @@ function commandInit(cwd, options) {
   };
 
   const filePath = manifestPath(repository, id);
-  if (fs.existsSync(filePath) && !options.force) {
-    fail(`Workload "${id}" already exists. Use --resume ${id}, or pass --force intentionally.`);
+  if (options["dry-run"]) {
+    return { filePath, written: false, manifest };
   }
-  if (!options["dry-run"]) {
+  withFileLock(filePath, () => {
+    if (fs.existsSync(filePath) && !options.force) {
+      fail(`Workload "${id}" already exists. Use --resume ${id}, or pass --force intentionally.`);
+    }
     atomicWriteJson(filePath, manifest);
-  }
-  return { filePath, written: !options["dry-run"], manifest };
+  });
+  return { filePath, written: true, manifest };
 }
 
 function assignIfPresent(target, property, value, transform = (item) => item) {
@@ -352,40 +403,44 @@ function commandSetIssue(cwd, options) {
   if (!runReference || !issueKey) {
     fail("set-issue requires --run <id> and --issue <key>.");
   }
-  const { filePath, manifest } = readManifest(repository, runReference);
-  const issue = manifest.issues.find((candidate) => candidate.key.toLowerCase() === issueKey.toLowerCase());
-  if (!issue) {
-    fail(`Issue "${issueKey}" is not in workload "${manifest.id}".`);
-  }
-
-  if (options.state !== undefined) {
-    const state = String(options.state);
-    if (!ISSUE_STATES.has(state)) {
-      fail(`Unsupported issue state "${state}".`);
+  const filePath = manifestPath(repository, runReference);
+  return withFileLock(filePath, () => {
+    const { manifest } = readManifest(repository, runReference);
+    const issue = manifest.issues.find((candidate) => candidate.key.toLowerCase() === issueKey.toLowerCase());
+    if (!issue) {
+      fail(`Issue "${issueKey}" is not in workload "${manifest.id}".`);
     }
-    issue.state = state;
-  }
-  assignIfPresent(issue, "branch", options.branch, String);
-  assignIfPresent(issue, "worktree", options.worktree, (value) => path.resolve(repository.root, String(value)));
-  assignIfPresent(issue, "baseSha", options["base-sha"], String);
-  assignIfPresent(issue, "headSha", options["head-sha"], String);
-  assignIfPresent(issue, "pullRequest", options.pr, String);
-  assignIfPresent(issue, "implementationProvider", options.implementer, (value) => normalizeProvider(value, { allowAuto: false }));
-  assignIfPresent(issue, "reviewProvider", options.reviewer, (value) => normalizeProvider(value, { allowAuto: false }));
-  assignIfPresent(issue, "reviewReceipt", options["review-receipt"], String);
-  assignIfPresent(issue, "tests", options.tests, String);
-  assignIfPresent(issue, "blocker", options.blocker, String);
-  if (options["clear-blocker"]) {
-    issue.blocker = null;
-  }
 
-  if (issue.implementationProvider && !issue.reviewProvider) {
-    issue.reviewProvider = reviewerFor(manifest.policy.pairMode, issue.implementationProvider);
-  }
-  issue.updatedAt = nowIso();
-  manifest.updatedAt = issue.updatedAt;
-  atomicWriteJson(filePath, manifest);
-  return { filePath, issue, manifestId: manifest.id };
+    if (options.state !== undefined) {
+      const state = String(options.state);
+      if (!ISSUE_STATES.has(state)) {
+        fail(`Unsupported issue state "${state}".`);
+      }
+      issue.state = state;
+    }
+    assignIfPresent(issue, "branch", options.branch, String);
+    assignIfPresent(issue, "worktree", options.worktree, (value) => path.resolve(repository.root, String(value)));
+    assignIfPresent(issue, "baseSha", options["base-sha"], String);
+    assignIfPresent(issue, "headSha", options["head-sha"], String);
+    assignIfPresent(issue, "pullRequest", options.pr, String);
+    assignIfPresent(issue, "implementationProvider", options.implementer, (value) => normalizeProvider(value, { allowAuto: false }));
+    assignIfPresent(issue, "reviewProvider", options.reviewer, (value) => normalizeProvider(value, { allowAuto: false }));
+    assignIfPresent(issue, "reviewReceipt", options["review-receipt"], String);
+    assignIfPresent(issue, "tests", options.tests, String);
+    assignIfPresent(issue, "blocker", options.blocker, String);
+    if (options["clear-blocker"]) {
+      issue.blocker = null;
+    }
+
+    if (issue.implementationProvider && !issue.reviewProvider) {
+      issue.reviewProvider = reviewerFor(manifest.policy.pairMode, issue.implementationProvider);
+    }
+    issue.updatedAt = nowIso();
+    manifest.updatedAt = issue.updatedAt;
+    assertManifestValid(manifest);
+    atomicWriteJson(filePath, manifest);
+    return { filePath, issue, manifestId: manifest.id };
+  });
 }
 
 function commandSetIntegration(cwd, options) {
@@ -393,40 +448,44 @@ function commandSetIntegration(cwd, options) {
   if (!options.run) {
     fail("set-integration requires --run <id>.");
   }
-  const { filePath, manifest } = readManifest(repository, options.run);
-  const integration = manifest.integration;
+  const filePath = manifestPath(repository, options.run);
+  return withFileLock(filePath, () => {
+    const { manifest } = readManifest(repository, options.run);
+    const integration = manifest.integration;
 
-  if (options.state !== undefined) {
-    const state = String(options.state);
-    if (!INTEGRATION_STATES.has(state)) {
-      fail(`Unsupported integration state "${state}".`);
+    if (options.state !== undefined) {
+      const state = String(options.state);
+      if (!INTEGRATION_STATES.has(state)) {
+        fail(`Unsupported integration state "${state}".`);
+      }
+      integration.state = state;
     }
-    integration.state = state;
-  }
-  assignIfPresent(integration, "branch", options.branch, String);
-  assignIfPresent(integration, "baseRef", options.base, String);
-  assignIfPresent(integration, "baseSha", options["base-sha"], String);
-  assignIfPresent(integration, "headSha", options["head-sha"], String);
-  assignIfPresent(integration, "pullRequest", options.pr, String);
-  assignIfPresent(integration, "tests", options.tests, String);
-  assignIfPresent(integration, "blocker", options.blocker, String);
-  if (options["clear-blocker"]) {
-    integration.blocker = null;
-  }
-  if (options["conflict-review-complete"]) {
-    integration.conflictResolutionReviewed = true;
-  }
-  if (options["conflicts-occurred"]) {
-    integration.conflictsOccurred = true;
-  }
-  if (options["no-conflicts"]) {
-    integration.conflictsOccurred = false;
-    integration.conflictResolutionReviewed = false;
-  }
-  integration.updatedAt = nowIso();
-  manifest.updatedAt = integration.updatedAt;
-  atomicWriteJson(filePath, manifest);
-  return { filePath, integration, manifestId: manifest.id };
+    assignIfPresent(integration, "branch", options.branch, String);
+    assignIfPresent(integration, "baseRef", options.base, String);
+    assignIfPresent(integration, "baseSha", options["base-sha"], String);
+    assignIfPresent(integration, "headSha", options["head-sha"], String);
+    assignIfPresent(integration, "pullRequest", options.pr, String);
+    assignIfPresent(integration, "tests", options.tests, String);
+    assignIfPresent(integration, "blocker", options.blocker, String);
+    if (options["clear-blocker"]) {
+      integration.blocker = null;
+    }
+    if (options["conflict-review-complete"]) {
+      integration.conflictResolutionReviewed = true;
+    }
+    if (options["conflicts-occurred"]) {
+      integration.conflictsOccurred = true;
+    }
+    if (options["no-conflicts"]) {
+      integration.conflictsOccurred = false;
+      integration.conflictResolutionReviewed = false;
+    }
+    integration.updatedAt = nowIso();
+    manifest.updatedAt = integration.updatedAt;
+    assertManifestValid(manifest);
+    atomicWriteJson(filePath, manifest);
+    return { filePath, integration, manifestId: manifest.id };
+  });
 }
 
 function validateManifest(manifest) {
@@ -448,11 +507,15 @@ function validateManifest(manifest) {
     if (!ISSUE_STATES.has(issue.state)) {
       errors.push(`${issue.key}: invalid state ${issue.state}`);
     }
-    if (["reviewed-pending-integration", "in-review", "done"].includes(issue.state)) {
+    if (["code-review", "reviewed-pending-integration", "in-review", "done"].includes(issue.state)) {
+      if (!issue.baseSha) errors.push(`${issue.key}: completed implementation requires baseSha`);
       if (!issue.headSha) errors.push(`${issue.key}: reviewed work requires headSha`);
+      if (!issue.implementationProvider) errors.push(`${issue.key}: completed implementation requires implementationProvider`);
+      if (!issue.tests) errors.push(`${issue.key}: completed implementation requires tests`);
+    }
+    if (["reviewed-pending-integration", "in-review", "done"].includes(issue.state)) {
       if (!issue.reviewReceipt) errors.push(`${issue.key}: reviewed work requires reviewReceipt`);
       if (!issue.reviewProvider) errors.push(`${issue.key}: reviewed work requires reviewProvider`);
-      if (!issue.tests) errors.push(`${issue.key}: reviewed work requires tests`);
     }
     if (
       manifest.policy?.pairMode === "cross" &&
@@ -464,9 +527,10 @@ function validateManifest(manifest) {
     }
   }
 
-  if (manifest.integration?.state === "ready-for-human-review") {
-    if (manifest.issues.some((issue) => issue.state !== "in-review")) {
-      errors.push("every issue must be in-review before the integration branch is ready for human review");
+  if (["ready-for-human-review", "merged"].includes(manifest.integration?.state)) {
+    const allowedStates = manifest.integration.state === "merged" ? new Set(["in-review", "done"]) : new Set(["in-review"]);
+    if (manifest.issues.some((issue) => !allowedStates.has(issue.state))) {
+      errors.push(`every issue must be ${manifest.integration.state === "merged" ? "in-review or done" : "in-review"} before integration is ${manifest.integration.state}`);
     }
     if (!manifest.integration.baseSha) errors.push("integration.baseSha is required");
     if (!manifest.integration.headSha) errors.push("integration.headSha is required");
@@ -478,6 +542,13 @@ function validateManifest(manifest) {
   }
 
   return errors;
+}
+
+function assertManifestValid(manifest) {
+  const errors = validateManifest(manifest);
+  if (errors.length > 0) {
+    fail(`Refusing to write an invalid workload manifest:\n- ${errors.join("\n- ")}`);
+  }
 }
 
 function commandShow(cwd, options) {
@@ -608,5 +679,6 @@ export {
   normalizeProvider,
   reviewerFor,
   slugify,
-  validateManifest
+  validateManifest,
+  withFileLock
 };

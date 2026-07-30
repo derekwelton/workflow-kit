@@ -9,6 +9,10 @@ Run a bounded multi-issue workload. Keep one coordinator as the tracker,
 manifest, and integration writer. Use fresh workers for implementation and
 independent review.
 
+Surface names intentionally differ: Claude invokes the plugin directory as
+`/workflow-kit:orchestrate`; Codex invokes this portable skill by its manifest
+name as `$orchestrate-queue`.
+
 Read `references/workload-contract.md` before execution. Read the repository's
 workflow lifecycle completely. If `linearTeam` is set, also read
 `../linear-mode/SKILL.md`.
@@ -108,9 +112,12 @@ coordinator independently adjudicates findings, applies or delegates safe
 fixes, reruns focused tests, and obtains a receipt for the final head SHA.
 
 For Codex review from Claude, use the dedicated Codex reviewer adapter with the
-issue worktree as `--cwd`; do not hand-roll Codex CLI commands or poll state
-files. For Claude review, use fresh Opus reviewers. Same-provider modes still
-require a fresh session.
+issue worktree as `--cwd`. Before launching it, write the complete issue/spec,
+standards, base/head, and both review axes to a coordinator-owned focus file
+below the workload's Git-common state directory; pass only that safe absolute
+path to the adapter and remove it after recording the receipt. Do not hand-roll
+Codex CLI commands or poll state files. For Claude review, use fresh Opus
+reviewers. Same-provider modes still require a fresh session.
 
 Keep the Linear issue in `Code Review`. Record
 `reviewed-pending-integration`, provider, head SHA, tests, and review receipt in

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -7,7 +7,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { reconcileCodexSkillLinks } from "../scripts/install-codex-skills.mjs";
-import { reviewerFor, slugify, validateManifest } from "../scripts/workload-manifest.mjs";
+import { reviewerFor, slugify, validateManifest, withFileLock } from "../scripts/workload-manifest.mjs";
 
 const ROOT = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const SCRIPT = path.join(ROOT, "scripts", "workload-manifest.mjs");
@@ -26,6 +26,28 @@ function run(cwd, ...args) {
   });
 }
 
+function runAsync(cwd, ...args) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [SCRIPT, ...args, "--cwd", cwd], {
+      cwd,
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+    });
+    child.on("error", reject);
+    child.on("exit", (status) => resolve({ status, stdout, stderr }));
+  });
+}
+
 function withRepository(callback, { branch = "main" } = {}) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "workflow-kit-test-"));
   try {
@@ -37,6 +59,22 @@ function withRepository(callback, { branch = "main" } = {}) {
     git(directory, "update-ref", `refs/remotes/origin/${branch}`, "HEAD");
     git(directory, "symbolic-ref", "refs/remotes/origin/HEAD", `refs/remotes/origin/${branch}`);
     callback(directory);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+}
+
+async function withRepositoryAsync(callback, { branch = "main" } = {}) {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "workflow-kit-test-"));
+  try {
+    git(directory, "init", "-b", branch);
+    fs.writeFileSync(path.join(directory, "seed.txt"), "seed\n", "utf8");
+    git(directory, "add", "seed.txt");
+    git(directory, "-c", "user.name=Workflow Kit Tests", "-c", "user.email=tests@example.invalid", "commit", "-m", "seed");
+    git(directory, "remote", "add", "origin", directory);
+    git(directory, "update-ref", `refs/remotes/origin/${branch}`, "HEAD");
+    git(directory, "symbolic-ref", "refs/remotes/origin/HEAD", `refs/remotes/origin/${branch}`);
+    return await callback(directory);
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }
@@ -111,6 +149,117 @@ test("creates one manifest shared through the git common directory", () => {
   });
 });
 
+test("manifest mutations lock, re-read, and refuse incomplete gated states", () => {
+  withRepository((directory) => {
+    const init = run(directory, "init", "--name", "Guarded Batch", "--issues", "IRP-1");
+    assert.equal(init.status, 0, init.stderr);
+
+    const invalidIssue = run(
+      directory,
+      "set-issue",
+      "--run",
+      "guarded-batch",
+      "--issue",
+      "IRP-1",
+      "--state",
+      "reviewed-pending-integration"
+    );
+    assert.equal(invalidIssue.status, 1);
+    assert.match(invalidIssue.stderr, /Refusing to write an invalid workload manifest/);
+    assert.equal(JSON.parse(run(directory, "show", "--run", "guarded-batch").stdout).manifest.issues[0].state, "selected");
+
+    const reviewed = run(
+      directory,
+      "set-issue",
+      "--run",
+      "guarded-batch",
+      "--issue",
+      "IRP-1",
+      "--state",
+      "in-review",
+      "--branch",
+      "issue/1",
+      "--worktree",
+      directory,
+      "--base-sha",
+      "base",
+      "--head-sha",
+      "head",
+      "--implementer",
+      "codex",
+      "--reviewer",
+      "claude",
+      "--review-receipt",
+      "receipt",
+      "--tests",
+      "passed"
+    );
+    assert.equal(reviewed.status, 0, reviewed.stderr);
+
+    const invalidIntegration = run(
+      directory,
+      "set-integration",
+      "--run",
+      "guarded-batch",
+      "--state",
+      "ready-for-human-review"
+    );
+    assert.equal(invalidIntegration.status, 1);
+    const shown = JSON.parse(run(directory, "show", "--run", "guarded-batch").stdout).manifest;
+    assert.equal(shown.integration.state, "pending");
+  });
+});
+
+test("manifest lock refuses a second writer instead of racing", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "workflow-kit-lock-"));
+  const filePath = path.join(root, "run.json");
+  try {
+    withFileLock(filePath, () => {
+      assert.throws(
+        () => withFileLock(filePath, () => undefined, { timeoutMs: 25, staleMs: 60_000 }),
+        /Timed out waiting for workload manifest lock/
+      );
+    });
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("concurrent issue writers retain both final updates", async () => {
+  await withRepositoryAsync(async (directory) => {
+    const init = run(directory, "init", "--name", "Concurrent Batch", "--issues", "IRP-1,IRP-2");
+    assert.equal(init.status, 0, init.stderr);
+    const update = (issue, head) =>
+      runAsync(
+        directory,
+        "set-issue",
+        "--run",
+        "concurrent-batch",
+        "--issue",
+        issue,
+        "--state",
+        "code-review",
+        "--branch",
+        `issue/${issue}`,
+        "--worktree",
+        directory,
+        "--base-sha",
+        "base",
+        "--head-sha",
+        head,
+        "--implementer",
+        "codex",
+        "--tests",
+        "passed"
+      );
+    const results = await Promise.all([update("IRP-1", "head-1"), update("IRP-2", "head-2")]);
+    for (const result of results) assert.equal(result.status, 0, result.stderr);
+    const manifest = JSON.parse(run(directory, "show", "--run", "concurrent-batch").stdout).manifest;
+    assert.equal(manifest.issues.find((issue) => issue.key === "IRP-1").headSha, "head-1");
+    assert.equal(manifest.issues.find((issue) => issue.key === "IRP-2").headSha, "head-2");
+  });
+});
+
 test("detects a non-main default branch from origin HEAD", () => {
   withRepository(
     (directory) => {
@@ -132,6 +281,7 @@ test("integration-ready validation requires reviewed issues and a complete branc
       {
         key: "IRP-1",
         state: "in-review",
+        baseSha: "base",
         headSha: "abc",
         implementationProvider: "codex",
         reviewProvider: "claude",
@@ -163,6 +313,7 @@ test("integration-ready validation requires review of actual conflict resolution
       {
         key: "IRP-1",
         state: "in-review",
+        baseSha: "base",
         headSha: "abc",
         implementationProvider: "codex",
         reviewProvider: "claude",
