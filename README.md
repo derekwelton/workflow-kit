@@ -27,10 +27,11 @@ Set `linearTeam: <KEY>` in a repo's `feature-lifecycle.md` frontmatter and
 while GitHub stays the execution surface (branches, PRs, diffs). Two things
 change that GitHub alone can't do:
 
-- **`In Review` exists.** Open/closed can't express "finished, awaiting your
-  review", which is the most useful state in an agent-driven workflow. Under
-  Linear mode an agent's terminal state is `In Review` — it never marks its
-  own work `Done`.
+- **`Code Review` and `In Review` are distinct.** An implementation agent moves
+  finished code from `In Progress` to `Code Review`. A separate review agent
+  can sweep every `Code Review` issue tied to this repository, perform the
+  full review, and move each completed review to `In Review` for a human.
+  Agents never mark their own work `Done`.
 - **Specs and plans live in the issue**, not the repo: the body carries goal,
   scope, acceptance criteria, and a tickable `## Tasks` checklist; comments
   carry the reasoning and the running timeline. No `spec.md`/`plan.md`/
@@ -126,9 +127,9 @@ Lifecycle (the container of work):
 | `/workflow-kit:new-feature <slug>` | File issue + create feature folder with stub spec/notes |
 | `/workflow-kit:update-issue` | Keep the issue current at starts, checkpoints, decisions, pauses, and completion |
 | `/workflow-kit:present [topic]` | Generate a self-contained HTML review doc from feature state |
-| `/workflow-kit:wrap-feature <issue#>` | Verify shipped → close issue (or hand off at `In Review`) → delete ephemera → archive folder → prune git |
+| `/workflow-kit:wrap-feature <issue#>` | Verify shipped → close issue (or preserve Linear's `In Review`/`Done` boundary) → delete ephemera → archive folder → prune git |
 | `/workflow-kit:work-audit` | Propose cleanup of stale work in the repo (never deletes without approval) |
-| `/workflow-kit:board [audit]` | "What should I work on?" — awaiting-you, available, in-flight, recently shipped. `audit` adds the stale-work sweep |
+| `/workflow-kit:board [audit]` | "What should I work on?" — awaiting-you, awaiting AI code review, available, in-flight, recently shipped. `audit` adds the stale-work sweep |
 
 Craft (inside the build; adapted from [mattpocock/skills](https://github.com/mattpocock/skills), MIT — see `UPSTREAM.md`):
 
@@ -139,10 +140,10 @@ Craft (inside the build; adapted from [mattpocock/skills](https://github.com/mat
 | `/workflow-kit:prototype` | Throwaway code that answers a design question (logic or UI branch) |
 | `/workflow-kit:to-spec` | Crystallize the conversation into the folder's `spec.md`, or the issue body + spec comment under Linear mode (no interview) |
 | `/workflow-kit:to-tickets` | Escalate a big feature into tracer-bullet vertical-slice sub-issues with blocking edges |
-| `/workflow-kit:implement` | Build one ticket/spec per fresh session — ponytail + TDD at pre-agreed seams, review, commit |
+| `/workflow-kit:implement` | Build one ticket/spec per fresh session — ponytail + TDD; default mode reviews/commits, Linear mode commits and hands off at `Code Review` |
 | `/workflow-kit:ponytail [lite\|full\|ultra]` | Persistent lazy-senior-dev mode: the laziest solution that works (auto-active on coding) |
 | `/workflow-kit:tdd` | Test-first reference: seams, red–green tracer bullets, anti-patterns |
-| `/workflow-kit:code-review` | Two-axis review (Standards + smell baseline / Spec fidelity) in parallel subagents |
+| `/workflow-kit:code-review [queue]` | Two-axis review (Standards + smell baseline / Spec fidelity); `queue` reviews this repo's Linear `Code Review` issues and advances completed reviews to `In Review` |
 | `/workflow-kit:codebase-design` | Deep-module vocabulary: module, interface, seam, depth, leverage, locality |
 | `/workflow-kit:domain-modeling` | Maintain the domain glossary + sparing ADRs as decisions crystallize |
 | `/workflow-kit:improve-codebase-architecture` | Scan for deepening opportunities → visual HTML report → grill through one |
@@ -165,7 +166,7 @@ walkthroughs from tiny bug to foggy epic.
   (config frontmatter: `workDir`, `docsHome`, `labels`, `glossary`, `adrDir`, optional
   `linearTeam`; body carries the skills catalog so non-Claude agents learn the system
   from the repo itself)
-- `templates/report-checkin.html` — `board`'s check-in (awaiting-you first, history last)
+- `templates/report-checkin.html` — `board`'s check-in (awaiting-you first, AI review queue second, history last)
 - `templates/report-audit.html` — ranked proposals awaiting one approval (`board audit`, `work-audit`, `ponytail-audit`)
 - `templates/report-findings.html` — evidence-and-confidence findings, optional two axes (`code-review`, `research`, `plan`)
 - `templates/review-doc.html` — the general visual shell (screenshot grid, comparison columns)

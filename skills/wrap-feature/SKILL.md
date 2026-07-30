@@ -1,6 +1,6 @@
 ---
 name: wrap-feature
-description: Close out a finished unit of work — verifies merge + checklist, records outcomes and closes the issue with a summary (under Linear mode, hands off at In Review instead of closing), deletes ephemera (scratch/qa/review), archives any folder, prunes branch and worktree. Use when the user declares a feature/bug/chore done.
+description: Close out a finished unit of work — verifies merge + checklist, records outcomes and closes the issue with a summary (under Linear mode, preserves the human-review boundary and never sets Done), deletes ephemera, archives any folder, and prunes git. Use when the user declares a feature/bug/chore done.
 ---
 
 # wrap-feature
@@ -64,25 +64,32 @@ change:
 holds only `research/` and ephemera. Durable gotchas still go to the agent's
 persistent memory when they aren't derivable from the repo.
 
-**4. Stop at `In Review` and hand off. Do not close the issue, do not set
-`Done`.** This is the central behavior change of Linear mode: the terminal
-state for an agent is `In Review`, because "finished, awaiting your review" is
-a real state and only a human can move past it.
+**4. Preserve the human-review boundary. Do not close the issue and do not set
+`Done`.** Code must already have completed the independent AI review before
+wrap can proceed. Re-fetch the current status:
 
-Post a `Done — ready for review` comment on the sync thread (linear-mode
-§3 and §9) covering:
+- `In Progress` or `Code Review` → stop without cleanup; implementation or code
+  review is still unfinished.
+- `In Review` → write the wrap record and leave the status unchanged for the
+  human.
+- `Done` → write the wrap record and leave the status unchanged; never regress
+  it to `In Review`.
+
+For `In Review` or `Done`, post a `Wrap complete` comment on the sync thread
+(linear-mode §3) covering:
 
 - what shipped, with PR/commit links,
 - each acceptance criterion and how it was satisfied,
 - verification actually run, with real output — distinguish implemented
   behavior from checks that merely passed,
 - checklist disposition, including anything explicitly dropped,
-- **what still needs a human** and why an agent can't settle it. If nothing
-  does, say that plainly — but "nothing" is rarer than it looks.
+- what still needs the human if the status is `In Review`, or that human review
+  is already complete if the status is `Done`.
 
-Then set the status to `In Review` and stop. Report to the user that the issue
-is awaiting their review, with its URL, rather than reporting it closed.
+If the issue remains `In Review`, report that it is awaiting the human's
+review, with its URL, rather than reporting it closed.
 
-Steps 5–7 (delete ephemera, archive any folder that exists, prune branch and
-worktree) still run — the disk cleanup is not contingent on the issue closing.
-Where the branch came from `gitBranchName`, prune that branch.
+After the status gate permits wrap, steps 5–7 (delete ephemera, archive any
+folder that exists, prune branch and worktree) still run — cleanup is not
+contingent on the issue closing. Where the branch came from `gitBranchName`,
+prune that branch.

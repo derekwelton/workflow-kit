@@ -7,7 +7,7 @@ adrDir: docs/adr
 # linearTeam: ABC    # uncomment + set to bind this repo to a Linear team (see "Linear mode")
 ---
 
-<!-- workflow-kit:managed-start version=0.6.0 -->
+<!-- workflow-kit:managed-start version=0.7.0 -->
 
 # Feature Lifecycle
 
@@ -129,7 +129,7 @@ When Linear syncs an issue it plants a root comment with `parentId: null` and
 **Never** post the same comment to GitHub with `gh` as well. Sync handles it;
 duplicating produces two copies on the GitHub side.
 
-### L2. Status contract — an agent's terminal state is `In Review`
+### L2. Status contract — implementation and review are separate handoffs
 
 | Status | Meaning | Set by |
 |---|---|---|
@@ -137,27 +137,40 @@ duplicating produces two copies on the GitHub side.
 | `Backlog` | real work, not scheduled | `plan` |
 | `Todo` | specified enough for an agent to start cold | `plan`, `to-spec`, `to-tickets` |
 | `In Progress` | actively being worked | auto on branch push; skills also set it explicitly |
-| `In Review` | code complete, **awaiting human review** | auto on PR open; skills set it when there is no PR |
+| `Code Review` | implementation complete, **awaiting an independent AI code review** | `implement`; PR automation may set it when configured |
+| `In Review` | AI code review complete, **awaiting human review** | `code-review`; non-code work may hand off here directly |
 | `Done` | merged, or human-verified | **never an agent** — merge or the user |
 | `Canceled` / `Duplicate` | triage outcomes | proposed by `board`, applied on approval |
 
-**An agent never marks its own work `Done`.** This is the point of Linear mode:
-GitHub's open/closed can't express "finished, awaiting your review", which is
-the most useful state in an agent-driven workflow.
+The implementation agent stops at `Code Review` and does not review its own
+work. A later `code-review` agent sweeps this repo's queue, performs the full
+two-axis review, and moves completed reviews to `In Review`. Non-code work with
+no code-review phase can go directly to `In Review`. An agent never sets
+`Done`; that belongs to a merge or the user.
+
+`/workflow-kit:code-review queue` resolves the current repository from git,
+lists the Linear team's exact `Code Review` status, and filters to issues whose
+synced GitHub attachment/PR or branch belongs to this repository. It performs
+the full Standards + Spec review for every match. Completed reviews move to
+`In Review`; blocked reviews stay in `Code Review` with a durable comment, and
+do not prevent the rest of the queue from running.
 
 Status names vary by team. Resolve via `list_issue_statuses({ team })` and
 match on `type` (`triage` / `backlog` / `unstarted` / `started` / `completed` /
-`canceled` / `duplicate`), falling back to name. `In Progress` and `In Review`
-**both** have `type: "started"` — disambiguate by name. If a team has no
-`In Review` equivalent, say so rather than guessing.
+`canceled` / `duplicate`), falling back to name. `In Progress`, `Code Review`,
+and `In Review` all have `type: "started"` — disambiguate by exact name. If a
+team lacks either review status, say so and leave the issue in its prior state
+rather than guessing.
 
 ### L3. Branch naming — overrides Rule 5
 
 Branches come from the issue's **`gitBranchName`** field (e.g.
 `derekswelton/irp-13-rework-purchase-order-editing…`), **not**
-`feat/<issue#>-<slug>`. Linear then auto-links the PR and drives
-`In Progress` / `In Review` / `Done` on push, PR open, and merge — making
-explicit status flips a backup rather than the only mechanism.
+`feat/<issue#>-<slug>`. Linear auto-links the PR. Configure PR-open automation
+to use `Code Review`, not `In Review`; `implement` still sets `Code Review`
+explicitly so older automation cannot skip the independent review queue.
+`code-review` sets `In Review` after its pass, and merge automation may set
+`Done`.
 
 PR bodies use `Refs #<gh#>`. **Never `Closes`** — closing the GitHub twin drags
 the Linear issue to `Done`, which is the user's call.
@@ -211,9 +224,9 @@ Lifecycle (container of work):
 | `new-feature` | Starting ONE unit of work — files the issue, creates the folder if artifacts need one |
 | `update-issue` | Any issue-backed work starts/checkpoints/needs input/pauses/finishes → durable tracker comment + checklist sync |
 | `present` | Anything needs the user's review/decision → self-contained HTML in `review/` |
-| `wrap-feature` | Work shipped → close (or hand off at `In Review`), clean, archive, prune |
+| `wrap-feature` | Work shipped → close (or preserve Linear's human-review boundary), clean, archive, prune; never bypass `Code Review` |
 | `work-audit` | Repo clutter check / migration sweep — proposes, never auto-deletes |
-| `board` | "What should I work on / what's pending?" — tracker read: awaiting-you, available, in-flight, recently shipped. `board audit` sweeps for stale work and unfiled follow-ups |
+| `board` | "What should I work on / what's pending?" — tracker read: awaiting-you, awaiting AI code review, available, in-flight, recently shipped. `board audit` sweeps for stale work and unfiled follow-ups |
 
 Craft (inside the build):
 
@@ -224,10 +237,10 @@ Craft (inside the build):
 | `prototype` | "Does this logic feel right?" / "What should this look like?" → throwaway code that answers the question |
 | `to-spec` | Conversation is ready to crystallize → writes the folder's `spec.md`, or the issue body + spec comment under Linear mode (no interview) |
 | `to-tickets` | Feature exceeds one context window → tracer-bullet vertical-slice sub-issues with blocking edges |
-| `implement` | A spec/ticket is ready to build — one ticket per fresh session, ponytail governs the code, TDD at pre-agreed seams, then code-review, commit |
+| `implement` | A spec/ticket is ready to build — one ticket per fresh session, ponytail + TDD; default mode reviews/commits, Linear mode commits and hands off at `Code Review` |
 | `ponytail` | ALL code writing (auto-active): laziest solution that works — reuse > stdlib > native > installed dep > one line > minimum code; never simplifies away spec requirements |
 | `tdd` | Building test-first: seams confirmed up front, red–green tracer bullets, no implementation-coupled or tautological tests (outranks ponytail's one-check minimum at agreed seams) |
-| `code-review` | Before wrap / on any branch: two-axis review — Standards (+ smell baseline) and Spec fidelity — in parallel subagents |
+| `code-review` | Review one branch/PR, or sweep this repo's Linear `Code Review` queue: two axes in parallel, durable findings, then hand off completed reviews at `In Review` |
 | `codebase-design` | Designing or restructuring modules — the deep-module vocabulary (module/interface/seam/depth/leverage/locality) |
 | `domain-modeling` | Terms are being sharpened or hard-to-reverse decisions made → glossary updates + sparing ADRs |
 | `ponytail-audit` | Repo-wide bloat scan → ranked delete/stdlib/native/yagni/shrink list; run BEFORE improve-codebase-architecture (subtract, then deepen) |

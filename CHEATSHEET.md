@@ -37,8 +37,10 @@ is the full reference.)
   │     ├── ponytail (full) governs the code      ── the ladder: reuse > stdlib >
   │     ├── tdd at the spec's pre-agreed seams       native > dep > one line > minimum
   │     └── handoff if the session ends mid-ticket
-  ▼
- code-review ──────── two axes in parallel: Standards (+smells) │ Spec fidelity
+  ▼ Linear mode: implementation agent stops at Code Review
+ code-review ──────── independent agent, one target or repo queue
+  │                    two axes in parallel: Standards (+smells) │ Spec fidelity
+  ▼ Linear mode: completed review moves to In Review for the human
   │
   ▼
  present ──────────── anything needing the user's eyes → review/*.html
@@ -46,7 +48,7 @@ is the full reference.)
   ▼
  wrap-feature ─────── close issue · notes.md outcomes · delete ephemera ·
                       archive folder · prune branch/worktree
-                      (Linear mode: stops at In Review and hands off — never Done)
+                      (Linear mode: preserves In Review/Done — never sets Done)
 
  MAINTENANCE (own loop, issue-first when acted on):
    board audit ── what fell through on the TRACKER (stale, unanswered, unfiled)
@@ -76,7 +78,7 @@ is the full reference.)
 | `new-feature` | ✔ auto (starting any unit of work) | ALWAYS the first step for ONE unit of work. Issue → folder only if artifacts will exist. |
 | `update-issue` | ✔ auto (issue-backed work changes state) | Durable progress, decisions, evidence, artifact links, and next action on the issue. |
 | `present` | ✔ auto (something needs the user's review) | Renders decisions/evidence as review-doc HTML. |
-| `wrap-feature` | ✔ auto (user declares work done) | The only way work ends. Verifies before deleting. Under Linear mode, hands off at `In Review`. |
+| `wrap-feature` | ✔ auto (user declares work done) | The only way work ends. Verifies before deleting. Under Linear mode, requires AI review complete and preserves `In Review`/`Done`. |
 | `work-audit` | ✔ auto (clutter, migration) | Proposes cleanup of the REPO; never deletes without approval. |
 | `board` | ✔ auto ("what should I work on?", "what's pending?", "where are we?") | The daily check-in — reads the TRACKER: awaiting-you, available, in-flight, recently shipped. `board audit` = the stale-work sweep. |
 
@@ -89,8 +91,8 @@ is the full reference.)
 | `prototype` | ✔ auto (design question needs concrete code) | Throwaway code that answers ONE question (logic or UI branch). |
 | `to-spec` | ✋ manual `/workflow-kit:to-spec` | Crystallize the conversation into `spec.md`. No interview. |
 | `to-tickets` | ✋ manual `/workflow-kit:to-tickets` | Escalate: spec → vertical-slice sub-issues. Only when > one session. |
-| `implement` | ✋ manual `/workflow-kit:implement` | Build one ticket/spec. Runs ponytail + tdd, ends in code-review. |
-| `code-review` | ✔ auto (reviewing a branch/diff) | Two parallel axes: Standards / Spec. Never merged into one ranking. |
+| `implement` | ✋ manual `/workflow-kit:implement` | Build one ticket/spec. Runs ponytail + tdd; in Linear mode hands off at `Code Review`. |
+| `code-review` | ✔ auto (reviewing a branch/diff) | Two parallel axes: Standards / Spec. `queue` reviews this repo's Linear `Code Review` items and moves completed reviews to `In Review`. |
 | `handoff` | ✋ manual `/workflow-kit:handoff` | Session ending mid-work → committed `handoff-<date>.md` (syncs machines). |
 | `wayfinder` | ✋ manual `/workflow-kit:wayfinder` | Epic too foggy for one session → map + decision tickets. |
 | `ponytail-audit` | ✔ auto ("find bloat", "what can I delete") | Repo-wide subtraction report. One-shot, applies nothing. |
@@ -124,7 +126,8 @@ GitHub is the execution surface, and these deltas apply:
 | Feature folder | usually created | created only when a real artifact needs it — usually never |
 | Branch | `feat/<n>-<slug>` | the issue's `gitBranchName` (Linear auto-links the PR) |
 | PR body | `Refs`/`Closes #n` | `Refs #n` only — never `Closes` |
-| Agent finishes by | closing the issue | setting **`In Review`** and stopping |
+| Implementation finishes by | closing the issue | setting **`Code Review`** and stopping |
+| Code review finishes by | reporting findings | setting **`In Review`** for human review |
 | Sub-issues | GitHub `addSubIssue` | Linear `parentId` + `blockedBy`/`blocks` relations |
 
 Two rules do the heavy lifting:
@@ -133,8 +136,9 @@ Two rules do the heavy lifting:
    root comment with `parentId === null` matching `/synced to a corresponding/i`,
    and `save_comment({ parentId: <it>, body })`. A top-level comment is
    silently Linear-only. Never also post it with `gh` — that double-posts.
-2. **An agent never sets `Done`.** `In Review` is the terminal agent state.
-   `Done` belongs to a merge or the user.
+2. **Implementation and review are separate.** The implementation agent stops
+   at `Code Review`; the independent review agent stops at `In Review`. No
+   agent sets `Done`; that belongs to a merge or the user.
 
 Full contract: `skills/linear-mode/SKILL.md`; the repo-facing version is
 stamped into `feature-lifecycle.md` so Codex and Gemini follow the same rules.
@@ -184,7 +188,9 @@ new-feature ──suggests──► grilling ──uses──► domain-modeling
 issue-backed lifecycle transitions ──invoke──► update-issue
                               │ ──may spawn──► research · prototype
 to-spec ──feeds──► to-tickets ──feeds──► implement
-implement ──runs──► ponytail + tdd ──then──► code-review
+implement ──runs──► ponytail + tdd
+  ├─ default ──► code-review in the same workflow
+  └─ Linear ───► Code Review queue ──independent review──► In Review (human queue)
 wayfinder ──tickets invoke──► grilling · research · prototype · domain-modeling
 improve-codebase-architecture ──uses──► codebase-design · present · grilling · domain-modeling
 ponytail-audit / work-audit / improve-arch ──approved findings──► new-feature (chore) → the normal loop
@@ -222,21 +228,28 @@ Key boundaries (the ones that prevent fights between skills):
 **Tiny bug** (one-file fix):
 `new-feature` (issue only, no folder) → fix on a branch (ponytail auto-applies)
 → `update-issue` with verification → PR `Closes #n`. Done — no spec, no
-folder, no wrap ceremony.
+folder, no wrap ceremony. Under Linear mode, use `Refs #n`, hand implementation
+to `Code Review`, then let the independent review pass move it to `In Review`.
 
 **Small feature** (fits one session):
 `new-feature` → quick `grilling` round if anything's unclear → build (ponytail;
-tdd if seams are obvious) → `code-review` → PR → `wrap-feature`.
+tdd if seams are obvious) → `code-review` → PR → `wrap-feature`. Under Linear
+mode, implementation stops at `Code Review`; the independent review moves it to
+`In Review` before human review and wrap.
 
 **Medium feature** (one-to-few sessions, decisions involved):
 `new-feature` → `grilling` (+ `research`/`prototype` for the unknowns) →
 `to-spec` → checklist in issue → `implement` → `code-review` → `present` if
-something needs eyes → `wrap-feature`.
+something needs eyes → `wrap-feature`. Under Linear mode, the two explicit
+handoffs are `Code Review` after implementation and `In Review` after the
+independent review.
 
 **Big feature** (many sessions):
 Same through `to-spec`, then `to-tickets` → repeat per ticket: fresh session →
 `implement` (ticket) → `code-review` → close sub-issue → `handoff` if stopping
-mid-ticket → … → `present` → `wrap-feature`.
+mid-ticket → … → `present` → `wrap-feature`. Under Linear mode, each ticket
+waits in `Code Review` for the independent pass, then in `In Review` for the
+human; agents never close it.
 
 **Foggy epic** (can't even spec it yet):
 `wayfinder` (chart) → one ticket per session (each is a grilling/research/

@@ -16,9 +16,10 @@
   Light mode only. Mobile-first; the desk layout kicks in at 720px.
 
   Status vocabulary → class:
-    In Review  → .s-review    In Progress → .s-active
-    Todo       → .s-todo      Triage      → .s-triage
-    Done       → .s-done      Blocked     → .s-blocked
+    In Review  → .s-review    Code Review → .s-code-review
+    In Progress → .s-active   Todo        → .s-todo
+    Triage     → .s-triage    Done        → .s-done
+    Blocked    → .s-blocked
 -->
 <style>
   :root{
@@ -28,6 +29,7 @@
     --red:#a03f2c; --red-soft:#fbeae5;
     --green:#2f6f4f; --green-soft:#e6f2ec;
     --blue:#2f5f8a; --blue-soft:#e6eef6;
+    --purple:#65508f; --purple-soft:#efebf7;
     --mono:ui-monospace,'Cascadia Code',Consolas,monospace;
     --shadow:0 1px 2px rgba(16,20,28,.05),0 1px 8px rgba(16,20,28,.03);
   }
@@ -74,6 +76,7 @@
   .tag{font:600 .66rem/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;
     padding:.4em .6em;border-radius:5px;white-space:nowrap}
   .s-review{background:var(--red-soft);color:var(--red)}
+  .s-code-review{background:var(--purple-soft);color:var(--purple)}
   .s-active{background:var(--blue-soft);color:var(--blue)}
   .s-todo{background:var(--gold-soft);color:var(--gold)}
   .s-triage{background:#f0eef5;color:#5b4c7d}
@@ -128,6 +131,7 @@
     <p>{{One sentence: the state of play. e.g. "Two things need you; three are ready to start; nothing is stuck."}}</p>
     <ul class="tally">
       <li class="hot"><b>{{n}}</b> awaiting you</li>
+      <li><b>{{n}}</b> awaiting AI review</li>
       <li><b>{{n}}</b> available</li>
       <li><b>{{n}}</b> in progress</li>
       <li><b>{{n}}</b> shipped this fortnight</li>
@@ -164,10 +168,29 @@
     <p class="empty">{{Delete this line unless the section is genuinely empty — "Nothing is waiting on you."}}</p>
   </section>
 
-  <!-- ============ 2 · AVAILABLE ============ -->
+  <!-- ============ 2 · AWAITING AI CODE REVIEW ============ -->
   <section>
     <div class="head">
-      <span class="n">02</span><h2>Available to pick up</h2>
+      <span class="n">02</span><h2>Awaiting AI code review</h2>
+      <span class="sub">oldest first</span>
+    </div>
+    <p class="why">Implementation is complete; an independent review agent owns the next transition.</p>
+
+    <article class="item">
+      <div class="row">
+        <a class="key" href="{{URL}}">{{IRP-19}}</a>
+        <span class="ttl">{{Issue title}}</span>
+        <span class="tag s-code-review">Code Review</span>
+      </div>
+      <p class="note">{{Implementation-complete checkpoint and review target.}}</p>
+      <ul class="facts"><li>PR {{#44}}</li><li>{{branch-name}}</li><li>waiting {{2}}d</li></ul>
+    </article>
+  </section>
+
+  <!-- ============ 3 · AVAILABLE ============ -->
+  <section>
+    <div class="head">
+      <span class="n">03</span><h2>Available to pick up</h2>
       <span class="sub">highest priority first</span>
     </div>
 
@@ -182,10 +205,10 @@
     </article>
   </section>
 
-  <!-- ============ 3 · IN PROGRESS ============ -->
+  <!-- ============ 4 · IN PROGRESS ============ -->
   <section>
     <div class="head">
-      <span class="n">03</span><h2>In progress</h2>
+      <span class="n">04</span><h2>In progress</h2>
       <span class="sub">already started</span>
     </div>
 
@@ -200,10 +223,10 @@
     </article>
   </section>
 
-  <!-- ============ 4 · RECENTLY SHIPPED — context, keep short ============ -->
+  <!-- ============ 5 · RECENTLY SHIPPED — context, keep short ============ -->
   <section>
     <div class="head">
-      <span class="n">04</span><h2>Recently shipped</h2>
+      <span class="n">05</span><h2>Recently shipped</h2>
       <span class="sub">last ~2 weeks</span>
     </div>
     <article class="item">
@@ -215,10 +238,10 @@
     </article>
   </section>
 
-  <!-- ============ 5 · NEEDS SHAPING ============ -->
+  <!-- ============ 6 · NEEDS SHAPING ============ -->
   <section>
     <div class="head">
-      <span class="n">05</span><h2>Needs shaping</h2>
+      <span class="n">06</span><h2>Needs shaping</h2>
       <span class="sub">too vague to start</span>
     </div>
     <article class="item">
@@ -235,13 +258,13 @@
   <div class="next">
     <h2>Recommended next</h2>
     <p class="lede">{{The single thing worth picking up now — or "nothing is ready; three things need your input."}}</p>
-    <p>{{Why this one, in a sentence.}} <code>/workflow-kit:implement {{IRP-21}}</code></p>
+    <p>{{Why this one, in a sentence.}} <code>{{COMMAND}}</code></p>
     <p class="alt">{{Runner-up, if worth naming.}}</p>
   </div>
 
   <p class="coverage">
-    <b>Coverage.</b> {{Say what was actually read: "Comments read in full on In Review
-    and In Progress; Todo sampled." If anything was skipped, say so here — a report
+    <b>Coverage.</b> {{Say what was actually read: "Comments read in full on In Review,
+    Code Review, and In Progress; Todo sampled." If anything was skipped, say so here — a report
     that looks complete but isn't is worse than one that states its limits.}}
   </p>
 

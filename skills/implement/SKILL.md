@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Implement a piece of work from the feature spec or a sub-issue ticket — TDD at pre-agreed seams, verify, review, commit, and update the tracker. Use when a spec or ticket is ready to build.
+description: Implement a piece of work from the feature spec or a sub-issue ticket — TDD at pre-agreed seams, verify, review, commit, and update the tracker; Linear mode hands implementation to an independent Code Review queue. Use when a spec or ticket is ready to build.
 disable-model-invocation: true
 ---
 
@@ -26,14 +26,18 @@ context; hand off between them.
   ponytail's — its one-check minimum applies only where tdd isn't in play.
 - Run typechecking regularly, single test files regularly, and the full test
   suite once at the end.
-- Once done, run the `code-review` skill on the work and address what it
-  surfaces.
+- With Linear mode off, run `code-review` on the completed work and address what
+  it surfaces, as before. With Linear mode on, do **not** self-review: the
+  independent review agent owns the `Code Review` queue.
 - Commit to the current branch. Apply `update-issue`: summarize what changed,
-  verification and review results, link only pushed/reachable artifacts, and
-  tick the completed checklist item. Close the sub-issue (`Closes #n` in the
-  PR/commit, or `gh issue close`) when its acceptance criteria are satisfied —
-  never close the parent feature issue. Under Linear mode, nothing is closed:
-  move the sub-issue to `In Review` and use `Refs #<gh#>`, never `Closes`.
+  verification results, the exact branch/PR and fixed point for the later
+  review, link only pushed/reachable artifacts, and tick the completed
+  checklist item. Close the sub-issue (`Closes #n` in the PR/commit, or
+  `gh issue close`) when its acceptance criteria are satisfied — never close
+  the parent feature issue. Under Linear mode, nothing is closed: use
+  `Refs #<gh#>`, never `Closes`, and move the implemented issue to
+  `Code Review`. The implementation agent must not run `code-review` on its
+  own work; an independent review agent owns the next transition.
 - If implementation pauses, blocks, or needs the user's verification or a
   decision, apply `update-issue` before ending the session. Put the exact ask,
   recommendation, current state, and resumption step in the issue comment.

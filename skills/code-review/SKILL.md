@@ -1,30 +1,63 @@
 ---
 name: code-review
-description: Review the changes since a fixed point along two axes — Standards (repo coding standards + a Fowler smell baseline) and Spec (does the code match the feature's spec.md?). Runs both reviews in parallel sub-agents and reports them side by side. Use when reviewing a branch, a PR, or work-in-progress before wrap.
+description: Review a branch or PR along two axes — Standards and Spec — or sweep this repository's Linear Code Review queue. Runs both axes in parallel sub-agents, reports them side by side, and hands completed Linear reviews to In Review.
 ---
 
-Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
+Two-axis review of a diff between a completed implementation and its fixed
+point:
 
 - **Standards** — does the code conform to this repo's documented coding standards?
 - **Spec** — does the code faithfully implement the feature's spec?
 
 Both axes run as **parallel sub-agents** so they don't pollute each other's
-context; this skill aggregates their findings.
+context; this skill aggregates their findings. The implementation agent must
+not use this skill to approve its own work under Linear mode. `Code Review` is
+an independent queue owned by a later review agent.
 
 ## Process
 
+### 0. Choose targeted or queue mode
+
+- **Targeted mode** — the user names a branch, PR, issue, review head, or fixed
+  point. Review only that change.
+- **Linear queue mode** — the user asks for `/workflow-kit:code-review queue`, every item
+  awaiting code review, or a repository-wide review pass. Read `linearTeam`
+  from the lifecycle doc, resolve the exact `Code Review` status with
+  `list_issue_statuses({ team })`, then query the team's issues in that status.
+  Scope the results to the **current repository** using the synced GitHub
+  attachment/PR repository first, then the issue's branch repository. A Linear
+  team can span repos: never treat the whole team as this repo, and never infer
+  repo membership from the title alone.
+
+For queue mode, identify the current repository and default branch from its git
+remote or `gh repo view`. Process every matching issue independently; one
+blocked review must not prevent the rest of the queue from being reviewed.
+Report both the reviewed and skipped keys at the end. If `Code Review` does not
+exist, stop and report the missing status rather than substituting `In Review`.
+
 ### 1. Pin the fixed point
 
-Whatever the user said is the fixed point — a commit SHA, branch name, tag,
-`main`, `HEAD~5`, etc. If they didn't specify one, ask for it.
+In targeted mode, distinguish the review head from the fixed point. If the user
+gave only a fixed point (`main`, a SHA, `HEAD~5`), review `<fixed-point>...HEAD`.
+If they gave a PR, use its head and base. If they gave only a branch or issue,
+use that branch as the review head and the repository default branch as the
+fixed point. Ask only when neither side can be resolved safely.
 
-Capture the diff command once: `git diff <fixed-point>...HEAD` (three-dot, so
-the comparison is against the merge-base). Note the commit list via
-`git log <fixed-point>..HEAD --oneline`.
+In queue mode, resolve each issue's linked PR or `gitBranchName` without
+checking out or mutating the branch. Use the PR base branch as the fixed point;
+if there is no PR, use the repository's default branch. Fetch the relevant
+remote refs, then compare `<base>...<issue-branch>`. If the branch/ref cannot be
+resolved or the diff is empty, post a blocked update and leave that issue in
+`Code Review`.
 
-Before going further, confirm the fixed point resolves (`git rev-parse`) and
-the diff is non-empty. A bad ref or empty diff fails here — not inside two
-parallel sub-agents.
+Capture the diff command once per review: `git diff
+<fixed-point>...<review-head>` (three-dot, so the comparison is against the
+merge-base). Note the commit list via `git log
+<fixed-point>..<review-head> --oneline`.
+
+Before going further, confirm both refs resolve (`git rev-parse`) and the diff
+is non-empty. A bad ref or empty diff fails here — not inside two parallel
+sub-agents.
 
 ### 2. Identify the spec source
 
@@ -137,12 +170,24 @@ End with a one-line summary: total findings per axis, and the worst issue
 *within each axis*. Don't pick a single winner across axes — that's the
 reranking the separation exists to prevent.
 
-When the review resolves to a feature/ticket issue, apply `update-issue` with
-a checkpoint or **Needs decision** comment. Preserve the two axes, include the
-finding counts and worst finding in each, state what was fixed versus still
-open, and give the exact next action. Do not make a local report the only
-record. For a standalone review with no originating issue, report in chat
-without inventing a tracker item.
+When the review resolves to a feature/ticket issue, apply `update-issue` with a
+**Code review complete — ready for human review** comment. Preserve the two
+axes, include the finding counts and worst finding in each, state what remains
+open, link the exact reviewed branch/PR and fixed point, and give the human's
+next action. Do not make a local report the only record. Open findings do not
+make the review incomplete: surface them clearly for human review.
+
+Under Linear mode, re-fetch the issue immediately before the status write. If
+it is still in `Code Review` and both review axes completed (or Spec was
+explicitly skipped because no spec exists), move it to `In Review`. If the
+review itself could not complete, post a **Blocked** update and leave it in
+`Code Review`. Never move an issue from some other status as a side effect, and
+never set `Done`.
+
+For a standalone review with no originating issue, report in chat without
+inventing a tracker item. In queue mode, repeat the full process for every
+repository-scoped candidate, then finish with counts for `In Review`, left in
+`Code Review`, and skipped as out-of-repo.
 
 ## Why two axes
 

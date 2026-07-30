@@ -42,8 +42,9 @@ lifecycle doc overrides):
 **Linear mode** (`linearTeam` in the lifecycle doc's frontmatter — see
 `../linear-mode/SKILL.md`): audit the **board** as well as the repo.
 Item 2 above becomes richer than open-vs-closed — add stale `In Progress` (no
-activity in ~2 weeks), issues whose PR merged but whose status never moved, and
-`In Review` items sitting past ~1 week awaiting the user. Expect most units of
+activity in ~2 weeks), stale `Code Review` items awaiting the independent AI
+review, issues whose PR merged but whose status never moved, and `In Review`
+items sitting past ~1 week awaiting the user. Expect most units of
 work to have **no** feature folder; a missing folder is not a finding.
 `/workflow-kit:board` goes deeper on the tracker — unanswered questions and
 unfiled follow-ups buried in comments — and pairs with this sweep.

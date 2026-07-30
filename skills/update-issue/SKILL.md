@@ -33,8 +33,8 @@ Post an issue update at each of these transitions:
    when it is reachable on GitHub.
 5. **Finished** — summarize the outcome and verification. Close the issue only
    when the lifecycle says it is done; a completed phase does not close a
-   parent feature issue. (In Linear mode an agent never closes: it sets
-   `In Review` and hands off.)
+   parent feature issue. (In Linear mode completed implementation moves to
+   `Code Review`; a completed code review moves to `In Review`.)
 
 Do not post minute-by-minute narration. One comment per meaningful phase or
 session is normally enough. Before writing, fetch the issue body and recent
@@ -46,7 +46,7 @@ concurrent tracker edits.
 Use only the sections that apply, but make the comment standalone:
 
 ```markdown
-## Status — <Started | Checkpoint | Needs decision | Blocked | Ready for review | Complete>
+## Status — <Started | Checkpoint | Needs decision | Blocked | Ready for code review | Ready for human review | Complete>
 
 <One-sentence outcome/current state.>
 
@@ -136,8 +136,11 @@ resolving status names per team):
 | Checkpoint | leave as-is |
 | Needs input | leave as-is — the comment is the signal |
 | Paused or blocked | leave as-is; say so in the comment |
-| Finished | `In Review` |
+| Implementation complete | `Code Review` |
+| Code review complete | `In Review` |
+| Finished non-code work needing human review | `In Review` |
 
-**Never set `Done`.** `In Review` is where an agent stops; `Done` is the
-user's, or a merge's. A finished-work comment says what was verified and what
-still needs a human — it does not close anything.
+**Never set `Done`.** `Code Review` is where implementation stops; `In Review`
+is where completed AI review (or non-code work with no code-review phase)
+hands off to the human. A finished-work comment says what was verified and
+what comes next — it does not close anything.

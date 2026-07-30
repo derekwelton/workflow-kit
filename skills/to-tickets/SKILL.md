@@ -130,5 +130,6 @@ the richer one and it syncs, so the GitHub sub-issues appear on their own.
   the sub-issues rather than duplicating the breakdown.
 
 The frontier rule is unchanged, except a ticket's blockers are "all `Done` or
-`In Review`" rather than "all closed" — and, as everywhere, an agent finishing
-a ticket leaves it in `In Review`, never `Done`.
+`In Review`" rather than "all closed". Implementation completion alone leaves
+a ticket in `Code Review` and does **not** clear the blocker; the independent
+code-review pass moves it to `In Review`. An agent never sets `Done`.

@@ -1,6 +1,6 @@
 ---
 name: linear-mode
-description: The Linear-mode contract every lifecycle skill defers to — gating on linearTeam, the sync-thread comment rule, the status contract (an agent's terminal state is In Review, never Done), branch naming from gitBranchName, and the issue body/comment templates. Read when working in a repo whose feature-lifecycle.md sets linearTeam, or when another skill points here.
+description: The Linear-mode contract every lifecycle skill defers to — gating on linearTeam, the sync-thread comment rule, the Code Review to In Review handoff, branch naming from gitBranchName, and the issue body/comment templates. Read when working in a repo whose feature-lifecycle.md sets linearTeam, or when another skill points here.
 ---
 
 # Linear mode
@@ -87,14 +87,29 @@ crossover; duplicating produces two copies on the GitHub side.
 | `Backlog` | real work, not scheduled | `plan` |
 | `Todo` | specified enough for an agent to start cold | `plan`, `to-spec`, `to-tickets` |
 | `In Progress` | actively being worked | auto on branch push; skills also set it explicitly |
-| `In Review` | code complete, **awaiting human review** | auto on PR open; skills set it explicitly when there is no PR |
+| `Code Review` | implementation complete, **awaiting an independent AI code review** | `implement`; PR automation may also set it when configured |
+| `In Review` | AI code review complete, **awaiting human review** | `code-review`; non-code work may hand off here directly |
 | `Done` | merged, or human-verified | **never an agent** — merge or the user |
 | `Canceled` / `Duplicate` | triage outcomes | proposed by `board`, applied on approval |
 
-**The terminal state for any agent is `In Review`.** An agent never marks its
-own work `Done`. This is the reason Linear mode exists: GitHub's open/closed
-cannot express "finished, awaiting your review", which is the most useful state
-in an agent-driven workflow.
+**Implementation and review are separate handoffs.** The implementation agent
+stops at `Code Review`; it does not review its own work. A later code-review
+agent completes the full review and moves the issue to `In Review`. An agent
+never marks work `Done`; that remains the merge's or the user's decision.
+
+Non-code work that has no code-review phase (for example, a research or audit
+deliverable) may move directly to `In Review` when it needs human review.
+
+### Code-review queue ownership
+
+`/workflow-kit:code-review queue` is the repository-scoped worker for this
+handoff. It resolves the current repository from git, lists the team's issues
+in the exact `Code Review` status, and keeps only issues whose synced GitHub
+attachment/PR or branch belongs to this repository. It performs the full
+Standards + Spec review for every match. A completed review moves to
+`In Review`; a review blocked by a missing or inaccessible diff stays in
+`Code Review` with a durable blocked comment. One blocked issue does not stop
+the rest of the queue.
 
 ### Resolving status names
 
@@ -106,15 +121,17 @@ Status names are not guaranteed across teams. Resolve via
 | `triage` | Triage |
 | `backlog` | Backlog |
 | `unstarted` | Todo |
-| `started` | In Progress **and** In Review — two share this type |
+| `started` | In Progress, Code Review, **and** In Review — all three share this type |
 | `completed` | Done |
 | `canceled` | Canceled |
 | `duplicate` | Duplicate |
 
-Because `In Progress` and `In Review` share `type: "started"`, disambiguate by
-name. If a team has no `In Review` equivalent, **say so rather than guessing** —
-leave the issue in `In Progress`, and tell the user the awaiting-review signal
-has nowhere to live on this team.
+Because all three active/review states share `type: "started"`, disambiguate by
+exact name. If a team has no `Code Review` equivalent, **say so rather than
+guessing** — leave completed implementation in `In Progress` and tell the user
+the AI-review queue has nowhere to live. If it has no `In Review` equivalent,
+leave a completed code review in `Code Review` and report that the human-review
+handoff could not be represented.
 
 ## 5. Branch naming — overrides lifecycle Rule 5
 
@@ -122,10 +139,11 @@ In Linear mode, branches come from the issue's **`gitBranchName`** field
 (e.g. `derekswelton/irp-13-rework-purchase-order-editing-and-fix-rtf-note-rendering`),
 not `feat/<issue#>-<slug>`. Read it from `get_issue`.
 
-Linear then auto-links the resulting PR and drives `In Progress` / `In Review` /
-`Done` transitions on push, PR open, and merge — which makes the explicit status
-flips in this document a **backup**, not the only mechanism. Setting a status
-that automation already set is harmless.
+Linear then auto-links the resulting PR. Configure PR-open automation to use
+`Code Review`, not `In Review`; regardless of automation, `implement` explicitly
+sets `Code Review` after its final update so an older integration cannot skip
+the independent review queue. The code-review agent explicitly sets `In Review`
+afterward. Merge automation may still set `Done`.
 
 Work folders keep `<gh#>-<slug>` naming so nothing else has to change. Where a
 folder exists, its header carries both keys (`IRP-13` / `#40`).
@@ -275,12 +293,12 @@ Branch: `<gitBranchName>`
 <What happens once answered, and who owns it.>
 ```
 
-**Done — ready for review**
+**Implementation complete — ready for code review**
 
-```markdown
-## Done — ready for review
+````markdown
+## Implementation complete — ready for code review
 
-<What shipped.>
+<What changed.>
 
 ### Acceptance criteria
 **<criterion>** — <how it was satisfied.>
@@ -290,12 +308,40 @@ Branch: `<gitBranchName>`
 <command>   <result>
 ```
 
-### Needs your review
-1. **<what needs a human>** — <why an agent can't settle it>.
+### Review target
+- Branch/PR: <reachable link or branch>
+- Fixed point: <base branch or commit>
+````
+
+Set `Code Review` after posting this shape.
+
+**Code review complete — ready for human review**
+
+````markdown
+## Code review complete — ready for human review
+
+<What was reviewed and the overall result.>
+
+### Standards
+- <finding count and worst finding, or pass>
+
+### Spec
+- <finding count and worst finding, or pass>
+
+### Verification
+```
+<command>   <result>
 ```
 
-The last shape ends the agent's involvement: set `In Review` and stop. Do not
-close, do not set `Done`.
+### Needs your review
+1. **<finding or decision to inspect>** — <why it needs a human>.
+````
+
+After a complete review, post the second shape, set `In Review`, and stop. Open
+findings do not make the review incomplete; report them precisely for the human.
+If the review itself cannot be completed (missing diff, inaccessible branch,
+missing required context), leave the issue in `Code Review`, post a blocked
+update, and do not promote it. Never close or set `Done`.
 
 ## 10. Known limitations
 
