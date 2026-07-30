@@ -98,7 +98,9 @@ discoveries to the coordinator for deduplication.
 After validating its envelope and auditing untracked files, commit/push as the
 repository policy allows, post the implementation checkpoint on the sync
 thread, and set the issue to `Code Review`. Record `code-review` in the
-manifest.
+manifest with `--base-sha`, `--head-sha`, `--implementer`, and `--tests`. The
+helper resolves both SHAs through Git. Test evidence must include the exact
+tested head SHA so a later head change invalidates the old evidence.
 
 ## 5. Review and fix
 
@@ -121,7 +123,10 @@ reviewers. Same-provider modes still require a fresh session.
 
 Keep the Linear issue in `Code Review`. Record
 `reviewed-pending-integration`, provider, head SHA, tests, and review receipt in
-the manifest. A blocked review remains `Code Review` with a durable checkpoint.
+the manifest. Format the receipt as
+`<review-provider>:<full-head-sha>:<durable-receipt-id>`; the helper rejects a
+receipt not bound to the recorded provider and final head. A blocked review
+remains `Code Review` with a durable checkpoint.
 
 ## 6. Assemble the workload branch
 
@@ -136,8 +141,11 @@ commit set and changed files against manifest membership.
 
 Review any manual merge-resolution diff with the provider opposite its author.
 Run the repository's integration verification commands once, serially where
-build outputs can lock. Record base SHA, head SHA, tests, conflict receipt, and
-integration state.
+build outputs can lock. Move integration from `pending` to `assembling`, then
+record base SHA, head SHA, tests containing that head SHA, and PR. If conflicts
+occurred, pass `--conflicts-occurred` plus
+`--conflict-review-receipt <provider:head-sha:receipt-id>`; a bare completion
+boolean is not accepted and recorded conflict history cannot be cleared.
 
 Push the integration branch and open one draft umbrella PR to the default
 branch. Reference every issue with `Refs`; never use `Closes` under Linear

@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 const SCHEMA_VERSION = 1;
-const WORKFLOW_KIT_VERSION = "0.8.2";
+const WORKFLOW_KIT_VERSION = "0.8.3";
 const PAIR_MODES = new Set(["cross", "codex-only", "claude-only"]);
 const ISSUE_STATES = new Set([
   "selected",
@@ -82,7 +83,7 @@ function runGit(cwd, args, { allowFailure = false } = {}) {
 function resolveRepository(cwd) {
   const root = runGit(cwd, ["rev-parse", "--show-toplevel"]).stdout;
   const commonDirValue = runGit(cwd, ["rev-parse", "--git-common-dir"]).stdout;
-  const commonDir = path.resolve(root, commonDirValue);
+  const commonDir = path.resolve(cwd, commonDirValue);
   const remote = runGit(root, ["remote", "get-url", "origin"], { allowFailure: true }).stdout || null;
   return { root, commonDir, remote };
 }
@@ -114,11 +115,26 @@ function parsePositiveInteger(value, fallback, name) {
   if (value == null) {
     return fallback;
   }
-  const parsed = Number.parseInt(String(value), 10);
-  if (!Number.isInteger(parsed) || parsed < 1) {
+  if (typeof value !== "string" || !/^[1-9]\d*$/.test(value)) {
     fail(`${name} must be a positive integer.`);
   }
+  const parsed = Number(value);
   return parsed;
+}
+
+function booleanOption(options, name) {
+  const value = options[name];
+  if (value === undefined) return false;
+  if (value === true || value === "true") return true;
+  if (value === "false") return false;
+  fail(`--${name} must be true or false.`);
+}
+
+function requireTextOption(value, name) {
+  if (typeof value !== "string" || value.trim() === "") {
+    fail(`--${name} requires a non-empty value.`);
+  }
+  return value.trim();
 }
 
 function normalizeProvider(value, { allowAuto = true } = {}) {
@@ -169,7 +185,15 @@ function atomicWriteJson(filePath, value) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   const temporaryPath = `${filePath}.${process.pid}.tmp`;
   fs.writeFileSync(temporaryPath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
-  fs.renameSync(temporaryPath, filePath);
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      fs.renameSync(temporaryPath, filePath);
+      break;
+    } catch (error) {
+      if (!["EPERM", "EBUSY"].includes(error?.code) || attempt >= 4) throw error;
+      sleepSync(25 * (attempt + 1));
+    }
+  }
 }
 
 const LOCK_SLEEP = new Int32Array(new SharedArrayBuffer(4));
@@ -178,24 +202,51 @@ function sleepSync(milliseconds) {
   Atomics.wait(LOCK_SLEEP, 0, 0, milliseconds);
 }
 
+function isProcessAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    if (error?.code === "ESRCH") return false;
+    return true;
+  }
+}
+
+function readLockOwner(lockPath) {
+  try {
+    return JSON.parse(fs.readFileSync(lockPath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
 function withFileLock(filePath, callback, options = {}) {
   const lockPath = `${filePath}.lock`;
   const timeoutMs = options.timeoutMs ?? 10_000;
   const staleMs = options.staleMs ?? 5 * 60_000;
   const deadline = Date.now() + timeoutMs;
+  const ownerToken = randomUUID();
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
 
   let handle = null;
   while (handle == null) {
     try {
       handle = fs.openSync(lockPath, "wx");
-      fs.writeFileSync(handle, `${JSON.stringify({ pid: process.pid, createdAt: nowIso() })}\n`, "utf8");
+      fs.writeFileSync(
+        handle,
+        `${JSON.stringify({ token: ownerToken, pid: process.pid, createdAt: nowIso() })}\n`,
+        "utf8"
+      );
     } catch (error) {
       if (error?.code !== "EEXIST") throw error;
       try {
         if (Date.now() - fs.statSync(lockPath).mtimeMs >= staleMs) {
-          fs.unlinkSync(lockPath);
-          continue;
+          const owner = readLockOwner(lockPath);
+          if (!owner || !isProcessAlive(owner.pid)) {
+            fs.unlinkSync(lockPath);
+            continue;
+          }
         }
       } catch (statError) {
         if (statError?.code === "ENOENT") continue;
@@ -213,7 +264,9 @@ function withFileLock(filePath, callback, options = {}) {
   } finally {
     fs.closeSync(handle);
     try {
-      fs.unlinkSync(lockPath);
+      if (readLockOwner(lockPath)?.token === ownerToken) {
+        fs.unlinkSync(lockPath);
+      }
     } catch (error) {
       if (error?.code !== "ENOENT") throw error;
     }
@@ -239,14 +292,21 @@ function validateBranchName(repository, branch) {
   }
 }
 
-function resolveCommit(repository, reference) {
+function resolveCommit(repository, reference, label = "Base ref") {
   const result = runGit(repository.root, ["rev-parse", "--verify", `${reference}^{commit}`], {
     allowFailure: true
   });
   if (result.status !== 0) {
-    fail(`Base ref "${reference}" does not resolve to a commit. Fetch it or pass --base explicitly.`);
+    fail(`${label} "${reference}" does not resolve to a commit.`);
   }
   return result.stdout;
+}
+
+function assertAncestor(repository, baseSha, headSha, label) {
+  const result = runGit(repository.root, ["merge-base", "--is-ancestor", baseSha, headSha], { allowFailure: true });
+  if (result.status !== 0) {
+    fail(`${label} baseSha ${baseSha} is not an ancestor of headSha ${headSha}.`);
+  }
 }
 
 function detectDefaultBaseRef(repository) {
@@ -299,7 +359,7 @@ function normalizePairSelection(pairMode, implementerValue, reviewerValue) {
 
 function commandInit(cwd, options) {
   const repository = resolveRepository(cwd);
-  const name = String(options.name ?? "").trim();
+  const name = requireTextOption(options.name, "name");
   const id = slugify(name);
   const issues = parseList(options.issues);
   if (issues.length === 0) {
@@ -344,7 +404,7 @@ function commandInit(cwd, options) {
       reviewProvider,
       maxImplementers: parsePositiveInteger(options["max-implementers"], 4, "max-implementers"),
       maxReviewers: parsePositiveInteger(options["max-reviewers"], 2, "max-reviewers"),
-      allowPartial: Boolean(options["allow-partial"]),
+      allowPartial: booleanOption(options, "allow-partial"),
       terminal: "integrated-in-review"
     },
     issues: issues.map((key) => ({
@@ -371,18 +431,18 @@ function commandInit(cwd, options) {
       pullRequest: null,
       tests: null,
       conflictsOccurred: false,
-      conflictResolutionReviewed: false,
+      conflictReviewReceipt: null,
       blocker: null,
       updatedAt: timestamp
     }
   };
 
   const filePath = manifestPath(repository, id);
-  if (options["dry-run"]) {
+  if (booleanOption(options, "dry-run")) {
     return { filePath, written: false, manifest };
   }
   withFileLock(filePath, () => {
-    if (fs.existsSync(filePath) && !options.force) {
+    if (fs.existsSync(filePath) && !booleanOption(options, "force")) {
       fail(`Workload "${id}" already exists. Use --resume ${id}, or pass --force intentionally.`);
     }
     atomicWriteJson(filePath, manifest);
@@ -390,19 +450,19 @@ function commandInit(cwd, options) {
   return { filePath, written: true, manifest };
 }
 
-function assignIfPresent(target, property, value, transform = (item) => item) {
+function assignIfPresent(target, property, value, transform = (item) => item, optionName = property) {
   if (value !== undefined) {
-    target[property] = transform(value);
+    if (typeof value !== "string" || value.trim() === "") {
+      fail(`--${optionName} requires a non-empty value.`);
+    }
+    target[property] = transform(value.trim());
   }
 }
 
 function commandSetIssue(cwd, options) {
   const repository = resolveRepository(cwd);
-  const runReference = options.run;
-  const issueKey = String(options.issue ?? "").trim();
-  if (!runReference || !issueKey) {
-    fail("set-issue requires --run <id> and --issue <key>.");
-  }
+  const runReference = requireTextOption(options.run, "run");
+  const issueKey = requireTextOption(options.issue, "issue");
   const filePath = manifestPath(repository, runReference);
   return withFileLock(filePath, () => {
     const { manifest } = readManifest(repository, runReference);
@@ -420,20 +480,23 @@ function commandSetIssue(cwd, options) {
     }
     assignIfPresent(issue, "branch", options.branch, String);
     assignIfPresent(issue, "worktree", options.worktree, (value) => path.resolve(repository.root, String(value)));
-    assignIfPresent(issue, "baseSha", options["base-sha"], String);
-    assignIfPresent(issue, "headSha", options["head-sha"], String);
+    assignIfPresent(issue, "baseSha", options["base-sha"], (value) => resolveCommit(repository, value, "--base-sha"), "base-sha");
+    assignIfPresent(issue, "headSha", options["head-sha"], (value) => resolveCommit(repository, value, "--head-sha"), "head-sha");
     assignIfPresent(issue, "pullRequest", options.pr, String);
     assignIfPresent(issue, "implementationProvider", options.implementer, (value) => normalizeProvider(value, { allowAuto: false }));
     assignIfPresent(issue, "reviewProvider", options.reviewer, (value) => normalizeProvider(value, { allowAuto: false }));
-    assignIfPresent(issue, "reviewReceipt", options["review-receipt"], String);
+    assignIfPresent(issue, "reviewReceipt", options["review-receipt"], String, "review-receipt");
     assignIfPresent(issue, "tests", options.tests, String);
     assignIfPresent(issue, "blocker", options.blocker, String);
-    if (options["clear-blocker"]) {
+    if (booleanOption(options, "clear-blocker")) {
       issue.blocker = null;
     }
 
     if (issue.implementationProvider && !issue.reviewProvider) {
       issue.reviewProvider = reviewerFor(manifest.policy.pairMode, issue.implementationProvider);
+    }
+    if (issue.baseSha && issue.headSha) {
+      assertAncestor(repository, issue.baseSha, issue.headSha, issue.key);
     }
     issue.updatedAt = nowIso();
     manifest.updatedAt = issue.updatedAt;
@@ -445,40 +508,66 @@ function commandSetIssue(cwd, options) {
 
 function commandSetIntegration(cwd, options) {
   const repository = resolveRepository(cwd);
-  if (!options.run) {
-    fail("set-integration requires --run <id>.");
-  }
-  const filePath = manifestPath(repository, options.run);
+  const runReference = requireTextOption(options.run, "run");
+  const filePath = manifestPath(repository, runReference);
   return withFileLock(filePath, () => {
-    const { manifest } = readManifest(repository, options.run);
+    const { manifest } = readManifest(repository, runReference);
     const integration = manifest.integration;
+    const previousState = integration.state;
+    const conflictsOccurred = booleanOption(options, "conflicts-occurred");
+    const noConflicts = booleanOption(options, "no-conflicts");
+    if (conflictsOccurred && noConflicts) {
+      fail("--conflicts-occurred and --no-conflicts are mutually exclusive.");
+    }
 
     if (options.state !== undefined) {
       const state = String(options.state);
       if (!INTEGRATION_STATES.has(state)) {
         fail(`Unsupported integration state "${state}".`);
       }
+      const allowedTransitions = {
+        pending: new Set(["pending", "assembling", "blocked"]),
+        assembling: new Set(["assembling", "blocked", "ready-for-human-review"]),
+        blocked: new Set(["blocked", "assembling"]),
+        "ready-for-human-review": new Set(["ready-for-human-review", "assembling", "merged"]),
+        merged: new Set(["merged"])
+      };
+      if (!allowedTransitions[previousState]?.has(state)) {
+        fail(`Invalid integration transition ${previousState} -> ${state}.`);
+      }
       integration.state = state;
     }
     assignIfPresent(integration, "branch", options.branch, String);
     assignIfPresent(integration, "baseRef", options.base, String);
-    assignIfPresent(integration, "baseSha", options["base-sha"], String);
-    assignIfPresent(integration, "headSha", options["head-sha"], String);
+    assignIfPresent(integration, "baseSha", options["base-sha"], (value) => resolveCommit(repository, value, "--base-sha"), "base-sha");
+    assignIfPresent(integration, "headSha", options["head-sha"], (value) => resolveCommit(repository, value, "--head-sha"), "head-sha");
     assignIfPresent(integration, "pullRequest", options.pr, String);
     assignIfPresent(integration, "tests", options.tests, String);
     assignIfPresent(integration, "blocker", options.blocker, String);
-    if (options["clear-blocker"]) {
+    if (booleanOption(options, "clear-blocker")) {
       integration.blocker = null;
     }
-    if (options["conflict-review-complete"]) {
-      integration.conflictResolutionReviewed = true;
+    if (booleanOption(options, "conflict-review-complete")) {
+      fail("--conflict-review-complete is unsafe because it is not a receipt. Pass --conflict-review-receipt <provider:head-sha:receipt-id>.");
     }
-    if (options["conflicts-occurred"]) {
+    assignIfPresent(
+      integration,
+      "conflictReviewReceipt",
+      options["conflict-review-receipt"],
+      String,
+      "conflict-review-receipt"
+    );
+    if (conflictsOccurred) {
       integration.conflictsOccurred = true;
     }
-    if (options["no-conflicts"]) {
+    if (noConflicts) {
+      if (integration.conflictsOccurred) {
+        fail("--no-conflicts cannot erase recorded conflict history.");
+      }
       integration.conflictsOccurred = false;
-      integration.conflictResolutionReviewed = false;
+    }
+    if (integration.baseSha && integration.headSha) {
+      assertAncestor(repository, integration.baseSha, integration.headSha, "integration");
     }
     integration.updatedAt = nowIso();
     manifest.updatedAt = integration.updatedAt;
@@ -490,6 +579,11 @@ function commandSetIntegration(cwd, options) {
 
 function validateManifest(manifest) {
   const errors = [];
+  const isFullCommitSha = (value) => typeof value === "string" && /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(value);
+  const evidenceBindsHead = (receipt, headSha) =>
+    typeof receipt === "string" && typeof headSha === "string" && receipt.includes(headSha);
+  const receiptBindsReview = (receipt, provider, headSha) =>
+    evidenceBindsHead(receipt, headSha) && typeof provider === "string" && receipt.toLowerCase().includes(provider);
   if (manifest.schemaVersion !== SCHEMA_VERSION) {
     errors.push(`schemaVersion must be ${SCHEMA_VERSION}`);
   }
@@ -512,10 +606,41 @@ function validateManifest(manifest) {
       if (!issue.headSha) errors.push(`${issue.key}: reviewed work requires headSha`);
       if (!issue.implementationProvider) errors.push(`${issue.key}: completed implementation requires implementationProvider`);
       if (!issue.tests) errors.push(`${issue.key}: completed implementation requires tests`);
+      if (issue.baseSha && !isFullCommitSha(issue.baseSha)) errors.push(`${issue.key}: baseSha must be a full commit SHA`);
+      if (issue.headSha && !isFullCommitSha(issue.headSha)) errors.push(`${issue.key}: headSha must be a full commit SHA`);
+      if (issue.tests && issue.headSha && !evidenceBindsHead(issue.tests, issue.headSha)) {
+        errors.push(`${issue.key}: tests evidence must include the tested headSha`);
+      }
+    }
+    if (issue.state === "in-review" && !["assembling", "ready-for-human-review", "merged"].includes(manifest.integration?.state)) {
+      errors.push(`${issue.key}: in-review requires an assembling or completed integration branch`);
+    }
+    if (issue.state === "in-review" && manifest.integration?.state === "assembling") {
+      if (!manifest.integration.baseSha) errors.push(`${issue.key}: in-review requires integration.baseSha`);
+      if (!manifest.integration.headSha) errors.push(`${issue.key}: in-review requires integration.headSha`);
+      if (!manifest.integration.pullRequest) errors.push(`${issue.key}: in-review requires integration.pullRequest`);
+      if (!manifest.integration.tests) errors.push(`${issue.key}: in-review requires integration.tests`);
+      if (
+        manifest.integration.tests &&
+        manifest.integration.headSha &&
+        !evidenceBindsHead(manifest.integration.tests, manifest.integration.headSha)
+      ) {
+        errors.push(`${issue.key}: integration.tests must include the tested integration headSha`);
+      }
+      if (manifest.integration.conflictsOccurred && !manifest.integration.conflictReviewReceipt) {
+        errors.push(`${issue.key}: in-review requires the integration conflict review receipt`);
+      }
     }
     if (["reviewed-pending-integration", "in-review", "done"].includes(issue.state)) {
       if (!issue.reviewReceipt) errors.push(`${issue.key}: reviewed work requires reviewReceipt`);
       if (!issue.reviewProvider) errors.push(`${issue.key}: reviewed work requires reviewProvider`);
+      if (
+        issue.reviewReceipt &&
+        issue.headSha &&
+        !receiptBindsReview(issue.reviewReceipt, issue.reviewProvider, issue.headSha)
+      ) {
+        errors.push(`${issue.key}: reviewReceipt must include the review provider and reviewed headSha`);
+      }
     }
     if (
       manifest.policy?.pairMode === "cross" &&
@@ -536,8 +661,29 @@ function validateManifest(manifest) {
     if (!manifest.integration.headSha) errors.push("integration.headSha is required");
     if (!manifest.integration.pullRequest) errors.push("integration.pullRequest is required");
     if (!manifest.integration.tests) errors.push("integration.tests is required");
-    if (manifest.integration.conflictsOccurred && !manifest.integration.conflictResolutionReviewed) {
+    if (
+      manifest.integration.tests &&
+      manifest.integration.headSha &&
+      !evidenceBindsHead(manifest.integration.tests, manifest.integration.headSha)
+    ) {
+      errors.push("integration.tests evidence must include the tested headSha");
+    }
+    if (manifest.integration.baseSha && !isFullCommitSha(manifest.integration.baseSha)) {
+      errors.push("integration.baseSha must be a full commit SHA");
+    }
+    if (manifest.integration.headSha && !isFullCommitSha(manifest.integration.headSha)) {
+      errors.push("integration.headSha must be a full commit SHA");
+    }
+    if (manifest.integration.conflictsOccurred && !manifest.integration.conflictReviewReceipt) {
       errors.push("integration conflict resolutions require an independent review receipt");
+    }
+    if (
+      manifest.integration.conflictsOccurred &&
+      manifest.integration.conflictReviewReceipt &&
+      manifest.integration.headSha &&
+      !evidenceBindsHead(manifest.integration.conflictReviewReceipt, manifest.integration.headSha)
+    ) {
+      errors.push("integration conflict review receipt must include the reviewed headSha");
     }
   }
 
@@ -553,10 +699,8 @@ function assertManifestValid(manifest) {
 
 function commandShow(cwd, options) {
   const repository = resolveRepository(cwd);
-  if (!options.run) {
-    fail("show requires --run <id>.");
-  }
-  const { filePath, manifest } = readManifest(repository, options.run);
+  const runReference = requireTextOption(options.run, "run");
+  const { filePath, manifest } = readManifest(repository, runReference);
   return { filePath, manifest };
 }
 
@@ -616,7 +760,9 @@ function printUsage() {
       "  workload-manifest.mjs validate --run <id>",
       "  workload-manifest.mjs list",
       "",
-      "All commands accept --cwd <repository-or-worktree>. Output is JSON."
+      "Review receipts use <provider>:<full-head-sha>:<receipt-id>; test evidence must include the tested full head SHA.",
+      "Integration must transition pending -> assembling -> ready-for-human-review -> merged.",
+      "All commands accept --cwd <repository-or-worktree-or-subdirectory>. Output is JSON."
     ].join("\n") + "\n"
   );
 }
@@ -628,7 +774,7 @@ function main() {
     return;
   }
   const { options } = parseArgs(argv);
-  const cwd = options.cwd ? path.resolve(process.cwd(), String(options.cwd)) : process.cwd();
+  const cwd = options.cwd === undefined ? process.cwd() : path.resolve(process.cwd(), requireTextOption(options.cwd, "cwd"));
   let result;
 
   switch (command) {

@@ -7,7 +7,7 @@ adrDir: docs/adr
 # linearTeam: ABC    # uncomment + set to bind this repo to a Linear team (see "Linear mode")
 ---
 
-<!-- workflow-kit:managed-start version=0.8.2 -->
+<!-- workflow-kit:managed-start version=0.8.3 -->
 
 # Feature Lifecycle
 
@@ -239,7 +239,7 @@ Lifecycle (container of work):
 | `wrap-feature` | Work shipped → close (or preserve Linear's human-review boundary), clean, archive, prune; never bypass `Code Review` |
 | `work-audit` | Repo clutter check / migration sweep — proposes, never auto-deletes |
 | `board` | "What should I work on / what's pending?" — tracker read: awaiting-you, awaiting AI code review, available, in-flight, recently shipped. `board audit` sweeps for stale work and unfiled follow-ups |
-| `orchestrate-queue` | A filtered or explicit multi-issue workload → bounded implementation, opposite-provider review, one current-main integration branch, combined verification, and batch `In Review` handoff |
+| Claude `/workflow-kit:orchestrate`; Codex `$orchestrate-queue` | A filtered or explicit multi-issue workload → bounded implementation, opposite-provider review, one current-main integration branch, combined verification, and batch `In Review` handoff |
 | `integrate-reviewed` | A human-tested workload branch is accepted → refresh main, reverify, merge the umbrella PR only with explicit authorization, reconcile tracker/PRs, and clean leases |
 | `workflow-doctor` | Read-only health check for workflow/plugin versions, tracker statuses/sync, stale jobs, run manifests, worktrees, and configuration drift |
 

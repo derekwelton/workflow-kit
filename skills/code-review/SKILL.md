@@ -43,6 +43,13 @@ fresh receiving agent adjudicates findings, applies safe fixes, verifies them,
 and obtains a receipt for the final head; it never lets the original
 implementer approve its own change.
 
+In workload mode, the `code-review` manifest state requires full Git-resolved
+`baseSha`/`headSha`, the implementation provider, and test evidence containing
+the tested head SHA. `reviewed-pending-integration` additionally requires the
+review provider and a receipt formatted
+`<review-provider>:<full-head-sha>:<durable-receipt-id>`. Replace both tests and
+receipt whenever a fix changes the head.
+
 For queue mode, identify the current repository and default branch from its git
 remote or `gh repo view`. Process every matching issue independently; one
 blocked review must not prevent the rest of the queue from being reviewed.

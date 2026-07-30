@@ -111,6 +111,13 @@ Require every implementation and review worker to return:
 The coordinator validates the envelope against Git and the manifest. Do not
 trust a prose-only completion claim.
 
+When persisting the envelope, record full Git-resolved base/head commits. The
+`tests` evidence must include the exact tested head SHA. A final review receipt
+must use `<review-provider>:<full-head-sha>:<durable-receipt-id>`. Changing the
+head invalidates both old values. The manifest helper enforces integration
+state order (`pending → assembling → ready-for-human-review → merged`) and
+requires a head-bound conflict review receipt when conflicts occurred.
+
 ## Final handoff
 
 Show one table with issue, implementer, reviewer, issue branch, review receipt,

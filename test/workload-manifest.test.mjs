@@ -149,8 +149,22 @@ test("creates one manifest shared through the git common directory", () => {
   });
 });
 
+test("repository subdirectories resolve the same git-common manifest directory", () => {
+  withRepository((directory) => {
+    const nested = path.join(directory, "DOCS", "nested");
+    fs.mkdirSync(nested, { recursive: true });
+    const init = run(directory, "init", "--name", "Nested Batch", "--issues", "IRP-1");
+    assert.equal(init.status, 0, init.stderr);
+
+    const show = run(nested, "show", "--run", "nested-batch");
+    assert.equal(show.status, 0, show.stderr);
+    assert.equal(JSON.parse(show.stdout).filePath, JSON.parse(init.stdout).filePath);
+  });
+});
+
 test("manifest mutations lock, re-read, and refuse incomplete gated states", () => {
   withRepository((directory) => {
+    const commit = git(directory, "rev-parse", "HEAD");
     const init = run(directory, "init", "--name", "Guarded Batch", "--issues", "IRP-1");
     assert.equal(init.status, 0, init.stderr);
 
@@ -176,23 +190,23 @@ test("manifest mutations lock, re-read, and refuse incomplete gated states", () 
       "--issue",
       "IRP-1",
       "--state",
-      "in-review",
+      "reviewed-pending-integration",
       "--branch",
       "issue/1",
       "--worktree",
       directory,
       "--base-sha",
-      "base",
+      commit,
       "--head-sha",
-      "head",
+      commit,
       "--implementer",
       "codex",
       "--reviewer",
       "claude",
       "--review-receipt",
-      "receipt",
+      `claude:${commit}:review-1`,
       "--tests",
-      "passed"
+      `${commit}: node --test passed`
     );
     assert.equal(reviewed.status, 0, reviewed.stderr);
 
@@ -207,6 +221,20 @@ test("manifest mutations lock, re-read, and refuse incomplete gated states", () 
     assert.equal(invalidIntegration.status, 1);
     const shown = JSON.parse(run(directory, "show", "--run", "guarded-batch").stdout).manifest;
     assert.equal(shown.integration.state, "pending");
+
+    const missingValue = run(
+      directory,
+      "set-issue",
+      "--run",
+      "guarded-batch",
+      "--issue",
+      "IRP-1",
+      "--head-sha",
+      "--implementer",
+      "codex"
+    );
+    assert.equal(missingValue.status, 1);
+    assert.match(missingValue.stderr, /--head-sha requires a non-empty value/);
   });
 });
 
@@ -216,7 +244,7 @@ test("manifest lock refuses a second writer instead of racing", () => {
   try {
     withFileLock(filePath, () => {
       assert.throws(
-        () => withFileLock(filePath, () => undefined, { timeoutMs: 25, staleMs: 60_000 }),
+        () => withFileLock(filePath, () => undefined, { timeoutMs: 25, staleMs: 0 }),
         /Timed out waiting for workload manifest lock/
       );
     });
@@ -225,11 +253,81 @@ test("manifest lock refuses a second writer instead of racing", () => {
   }
 });
 
+test("integration handoff follows ordered, SHA-bound state transitions", () => {
+  withRepository((directory) => {
+    const commit = git(directory, "rev-parse", "HEAD");
+    assert.equal(run(directory, "init", "--name", "Ordered Batch", "--issues", "IRP-1").status, 0);
+    const reviewed = run(
+      directory,
+      "set-issue",
+      "--run",
+      "ordered-batch",
+      "--issue",
+      "IRP-1",
+      "--state",
+      "reviewed-pending-integration",
+      "--base-sha",
+      commit,
+      "--head-sha",
+      commit,
+      "--implementer",
+      "codex",
+      "--reviewer",
+      "claude",
+      "--tests",
+      `${commit}: focused tests passed`,
+      "--review-receipt",
+      `claude:${commit}:review-1`
+    );
+    assert.equal(reviewed.status, 0, reviewed.stderr);
+
+    const assembling = run(
+      directory,
+      "set-integration",
+      "--run",
+      "ordered-batch",
+      "--state",
+      "assembling",
+      "--base-sha",
+      commit,
+      "--head-sha",
+      commit,
+      "--pr",
+      "https://example.invalid/pr/1",
+      "--tests",
+      `${commit}: combined tests passed`,
+      "--no-conflicts"
+    );
+    assert.equal(assembling.status, 0, assembling.stderr);
+
+    const handedOff = run(directory, "set-issue", "--run", "ordered-batch", "--issue", "IRP-1", "--state", "in-review");
+    assert.equal(handedOff.status, 0, handedOff.stderr);
+    assert.equal(run(directory, "set-integration", "--run", "ordered-batch", "--state", "ready-for-human-review").status, 0);
+    assert.equal(run(directory, "set-integration", "--run", "ordered-batch", "--state", "assembling").status, 0);
+    assert.equal(run(directory, "set-integration", "--run", "ordered-batch", "--state", "ready-for-human-review").status, 0);
+    assert.equal(run(directory, "set-integration", "--run", "ordered-batch", "--state", "merged").status, 0);
+
+    const invalidSha = run(
+      directory,
+      "set-issue",
+      "--run",
+      "ordered-batch",
+      "--issue",
+      "IRP-1",
+      "--head-sha",
+      "deadbeef"
+    );
+    assert.equal(invalidSha.status, 1);
+    assert.match(invalidSha.stderr, /does not resolve to a commit/);
+  });
+});
+
 test("concurrent issue writers retain both final updates", async () => {
   await withRepositoryAsync(async (directory) => {
+    const commit = git(directory, "rev-parse", "HEAD");
     const init = run(directory, "init", "--name", "Concurrent Batch", "--issues", "IRP-1,IRP-2");
     assert.equal(init.status, 0, init.stderr);
-    const update = (issue, head) =>
+    const update = (issue) =>
       runAsync(
         directory,
         "set-issue",
@@ -244,19 +342,19 @@ test("concurrent issue writers retain both final updates", async () => {
         "--worktree",
         directory,
         "--base-sha",
-        "base",
+        commit,
         "--head-sha",
-        head,
+        commit,
         "--implementer",
         "codex",
         "--tests",
-        "passed"
+        `${commit}: node --test passed`
       );
-    const results = await Promise.all([update("IRP-1", "head-1"), update("IRP-2", "head-2")]);
+    const results = await Promise.all([update("IRP-1"), update("IRP-2")]);
     for (const result of results) assert.equal(result.status, 0, result.stderr);
     const manifest = JSON.parse(run(directory, "show", "--run", "concurrent-batch").stdout).manifest;
-    assert.equal(manifest.issues.find((issue) => issue.key === "IRP-1").headSha, "head-1");
-    assert.equal(manifest.issues.find((issue) => issue.key === "IRP-2").headSha, "head-2");
+    assert.equal(manifest.issues.find((issue) => issue.key === "IRP-1").headSha, commit);
+    assert.equal(manifest.issues.find((issue) => issue.key === "IRP-2").headSha, commit);
   });
 });
 
@@ -272,6 +370,8 @@ test("detects a non-main default branch from origin HEAD", () => {
 });
 
 test("integration-ready validation requires reviewed issues and a complete branch receipt", () => {
+  const baseSha = "a".repeat(40);
+  const headSha = "b".repeat(40);
   const manifest = {
     schemaVersion: 1,
     id: "batch",
@@ -281,20 +381,20 @@ test("integration-ready validation requires reviewed issues and a complete branc
       {
         key: "IRP-1",
         state: "in-review",
-        baseSha: "base",
-        headSha: "abc",
+        baseSha,
+        headSha,
         implementationProvider: "codex",
         reviewProvider: "claude",
-        reviewReceipt: "receipt",
-        tests: "passed"
+        reviewReceipt: `claude:${headSha}:review-1`,
+        tests: `${headSha}: passed`
       }
     ],
     integration: {
       state: "ready-for-human-review",
-      baseSha: "base",
-      headSha: "head",
+      baseSha,
+      headSha,
       pullRequest: "https://example.invalid/pr/1",
-      tests: "passed"
+      tests: `${headSha}: passed`
     }
   };
   assert.deepEqual(validateManifest(manifest), []);
@@ -304,6 +404,8 @@ test("integration-ready validation requires reviewed issues and a complete branc
 });
 
 test("integration-ready validation requires review of actual conflict resolutions", () => {
+  const baseSha = "a".repeat(40);
+  const headSha = "b".repeat(40);
   const manifest = {
     schemaVersion: 1,
     id: "conflicted-batch",
@@ -313,26 +415,26 @@ test("integration-ready validation requires review of actual conflict resolution
       {
         key: "IRP-1",
         state: "in-review",
-        baseSha: "base",
-        headSha: "abc",
+        baseSha,
+        headSha,
         implementationProvider: "codex",
         reviewProvider: "claude",
-        reviewReceipt: "receipt",
-        tests: "passed"
+        reviewReceipt: `claude:${headSha}:review-1`,
+        tests: `${headSha}: passed`
       }
     ],
     integration: {
       state: "ready-for-human-review",
-      baseSha: "base",
-      headSha: "head",
+      baseSha,
+      headSha,
       pullRequest: "https://example.invalid/pr/1",
-      tests: "passed",
+      tests: `${headSha}: passed`,
       conflictsOccurred: true,
-      conflictResolutionReviewed: false
+      conflictReviewReceipt: null
     }
   };
   assert.match(validateManifest(manifest).join("\n"), /conflict resolutions require/);
-  manifest.integration.conflictResolutionReviewed = true;
+  manifest.integration.conflictReviewReceipt = `codex:${headSha}:conflict-review-1`;
   assert.deepEqual(validateManifest(manifest), []);
 });
 
