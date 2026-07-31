@@ -98,6 +98,7 @@ test("redacts absolute paths and technical identifiers from every default text s
     "/opt/build/irp",
     "/srv/data/x",
     "/mnt/c/Users/derek/secret",
+    "/token.txt",
     "~/Development/IRP-workloads/batch"
   ];
   for (const absolutePath of paths) {
@@ -109,9 +110,32 @@ test("redacts absolute paths and technical identifiers from every default text s
       tests: [{ status: "passed", command: `verify ${absolutePath}` }]
     });
     assert.doesNotMatch(output, /34f94e11a081060d4e2c5697c5e5f9c522afd515/);
-    assert.doesNotMatch(output, /Program Files|server\\share|var\/folders|opt\/build|srv\/data|mnt\/c|Development\/IRP-workloads/);
+    assert.doesNotMatch(output, /Program Files|Files\\IRP|server\\share|name\\IRP|var\/folders|opt\/build|srv\/data|mnt\/c|token\.txt|Documents\/secret|Development\/IRP-workloads/);
     assert.match(output, /<absolute path>/);
   }
+});
+
+test("redacts path tails containing spaces without corrupting URLs or relative paths", () => {
+  const output = renderWorkerResult({
+    issue: "IRP-85",
+    stage: "implementation",
+    state: "complete",
+    summary: [
+      "Wrote to C:\\Users\\Derek Welton\\secrets\\token.txt today.",
+      "Ran C:\\Program Files\\IRP\\run.exe and it passed.",
+      "Copied \\\\server\\share name\\IRP\\run.exe to the host.",
+      "Read /home/derek/My Documents/secret.txt safely.",
+      "Followed https://docs.example.com/v2/setup to fix the build.",
+      "Tracking https://github.com/org/repo/issues/12.",
+      "Ran ./scripts/run.sh and inspected ../lib/x.ts."
+    ],
+    tests: [{ status: "passed", command: "npm test" }]
+  });
+  assert.doesNotMatch(output, /Welton\\secrets|Files\\IRP|name\\IRP|Documents\/secret/);
+  assert.match(output, /https:\/\/docs\.example\.com\/v2\/setup/);
+  assert.match(output, /https:\/\/github\.com\/org\/repo\/issues\/12/);
+  assert.match(output, /\.\/scripts\/run\.sh/);
+  assert.match(output, /\.\.\/lib\/x\.ts/);
 });
 
 test("redacts paths in punctuation contexts without deleting following evidence", () => {

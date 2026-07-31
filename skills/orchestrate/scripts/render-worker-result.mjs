@@ -27,10 +27,12 @@ function safeText(value, technical = false) {
       /(["'])(?:(?:[A-Za-z]:[\\/])|(?:\\\\)|(?:~[\\/])|(?:\/(?!\/))).*?\1/g,
       "$1<absolute path>$1"
     )
-    .replace(/(?:[A-Za-z]:[\\/]|\\\\)[^\s,;|)\]}]+/g, "<absolute path>")
-    .replace(/~[\\/][^\s,;|)\]}]+/g, "<absolute path>")
     .replace(
-      /(^|[^A-Za-z0-9:/])\/(?!\/)(?:[^/\s,;|)\]}]+\/)+[^/\s,;|)\]}]*/g,
+      /(^|[^A-Za-z0-9])((?:[A-Za-z]:[\\/](?![\\/])|\\\\)[^\s,;|)\]}]+(?:\s+(?=[^\s,;|)\]}]*(?:[\\/]|\.(?:exe|dll|csproj|sln|json|md|txt|log|js|mjs|ts|tsx|cs|py|sh|yml|yaml|xml|config)\b))[^\s,;|)\]}]+)*)/gi,
+      "$1<absolute path>"
+    )
+    .replace(
+      /(^|[^A-Za-z0-9:/.])((?:\/|~[\\/])[^\s,;|)\]}]+(?:\s+(?=[^\s,;|)\]}]*(?:[\\/]|\.(?:exe|dll|json|md|txt|log|js|mjs|ts|tsx|py|sh|yml|yaml|xml|config)\b))[^\s,;|)\]}]+)*)/gi,
       "$1<absolute path>"
     );
 }
