@@ -5,6 +5,9 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
+const PASSED_STATUSES = new Set(["pass", "passed", "success", "succeeded"]);
+const FAILED_STATUSES = new Set(["fail", "failed", "failure", "error", "blocked"]);
+
 function values(value) {
   if (Array.isArray(value)) return value.filter((item) => item != null && String(item).trim());
   if (value == null || String(value).trim() === "") return [];
@@ -13,6 +16,22 @@ function values(value) {
 
 function plainText(value) {
   return String(value).replace(/\s+/g, " ").trim();
+}
+
+function safeText(value, technical = false) {
+  const text = plainText(value);
+  if (technical) return text;
+  return text
+    .replace(
+      /(["'])(?:(?:[A-Za-z]:[\\/])|(?:\\\\)|(?:\/(?:Users|home|tmp|private\/tmp|var\/tmp)\/)).*?\1/g,
+      "$1<absolute path>$1"
+    )
+    .replace(/(?:[A-Za-z]:[\\/]|\\\\)[^\s,;|)]+/g, "<absolute path>")
+    .replace(
+      /(^|[\s(])\/(?:Users|home|tmp|private\/tmp|var\/tmp)\/[^\s,;|)]+/g,
+      "$1<absolute path>"
+    )
+    .replace(/\b[0-9a-f]{40,64}\b/gi, (sha) => `${sha.slice(0, 12)}…`);
 }
 
 function inlineCode(value) {
@@ -41,12 +60,12 @@ function stageFor(result, override) {
   return "unknown";
 }
 
-function titleFor(result, stage, hasVerification) {
+function titleFor(result, stage, ready) {
   const issue = plainText(result.issue ?? "Worker");
   switch (normalizedStatus(result.status ?? result.state)) {
     case "completed":
     case "complete":
-      if (!hasVerification) return `${issue} returned an incomplete worker checkpoint`;
+      if (!ready) return `${issue} returned an incomplete worker checkpoint`;
       if (stage === "implementation") return `${issue} implementation is ready for coordinator review`;
       if (stage === "review") return `${issue} independent review is complete`;
       if (stage === "integration") return `${issue} integration checkpoint is complete`;
@@ -60,15 +79,21 @@ function titleFor(result, stage, hasVerification) {
   }
 }
 
-function leadFor(result, stage, hasVerification, verificationFailed) {
+function leadFor(result, stage, verification, hasChangeSummary) {
   switch (normalizedStatus(result.status ?? result.state)) {
     case "completed":
     case "complete":
-      if (!hasVerification) {
+      if (verification === "missing") {
         return "The worker reported completion without verification evidence. The coordinator must treat this as incomplete.";
       }
-      if (verificationFailed) {
+      if (verification === "failed") {
         return "The worker reported completion with unsuccessful verification. The coordinator must treat this as incomplete.";
+      }
+      if (verification === "incomplete") {
+        return "The worker reported completion without conclusive passing verification. The coordinator must treat this as incomplete.";
+      }
+      if (!hasChangeSummary) {
+        return "The worker reported completion without a change summary. The coordinator must inspect the diff before continuing.";
       }
       if (stage === "implementation") {
         return "The implementation worker finished its pass. This is a worker checkpoint, not the final workload handoff.";
@@ -89,8 +114,29 @@ function leadFor(result, stage, hasVerification, verificationFailed) {
   }
 }
 
-function formatValidation(entry) {
-  if (typeof entry !== "object" || entry == null) return plainText(entry);
+function validationStatus(entry) {
+  if (typeof entry === "object" && entry != null) {
+    const status = normalizedStatus(entry.result ?? entry.status);
+    if (PASSED_STATUSES.has(status)) return "passed";
+    if (FAILED_STATUSES.has(status)) return "failed";
+    return "incomplete";
+  }
+  const text = String(entry);
+  if (/\b(pass(?:ed|ing)?|success(?:ful|fully)?|succeeded)\b/i.test(text)) return "passed";
+  if (/\b(fail(?:ed|ure)?|error|blocked)\b/i.test(text)) return "failed";
+  return "incomplete";
+}
+
+function verificationState(validation) {
+  if (validation.length === 0) return "missing";
+  const statuses = validation.map(validationStatus);
+  if (statuses.includes("failed")) return "failed";
+  if (statuses.includes("incomplete")) return "incomplete";
+  return "passed";
+}
+
+function formatValidation(entry, technical) {
+  if (typeof entry !== "object" || entry == null) return safeText(entry, technical);
   const rawStatus = normalizedStatus(entry.result ?? entry.status);
   const labels = {
     pass: "Passed",
@@ -99,40 +145,38 @@ function formatValidation(entry) {
     succeeded: "Passed",
     fail: "Failed",
     failed: "Failed",
+    failure: "Failed",
     error: "Failed",
     blocked: "Blocked",
     skipped: "Skipped",
     unknown: "Unknown"
   };
-  const label = labels[rawStatus] ?? plainText(entry.result ?? entry.status ?? "Unknown");
-  const testCount = Number(entry.tests);
-  const count = Number.isFinite(testCount) ? ` — ${testCount} tests` : "";
-  const command = entry.command ? ` — ${inlineCode(entry.command)}` : "";
-  const details = entry.details ? ` — ${plainText(entry.details)}` : "";
+  const label = labels[rawStatus] ?? safeText(entry.result ?? entry.status ?? "Unknown", technical);
+  const rawCount = entry.tests;
+  const hasCount =
+    (typeof rawCount === "number" && Number.isFinite(rawCount)) ||
+    (typeof rawCount === "string" && /^\d+$/.test(rawCount.trim()));
+  const count = hasCount ? ` — ${Number(rawCount)} tests` : "";
+  const commandText = safeText(entry.command ?? "", technical);
+  const command = commandText ? ` — ${inlineCode(commandText)}` : "";
+  const detailsText = safeText(entry.details ?? "", technical);
+  const details = detailsText ? ` — ${detailsText}` : "";
   return `${label}${count}${command}${details}`;
 }
 
-function hasFailedVerification(validation) {
-  return validation.some((entry) => {
-    if (typeof entry === "object" && entry != null) {
-      return ["fail", "failed", "error", "blocked"].includes(
-        normalizedStatus(entry.result ?? entry.status)
-      );
-    }
-    return /\b(fail(?:ed|ure)?|error|blocked)\b/i.test(String(entry));
-  });
-}
-
-function nextActionFor(result, stage, hasVerification, verificationFailed) {
+function nextActionFor(result, stage, verification, hasChangeSummary) {
   const status = normalizedStatus(result.status ?? result.state);
   if (status === "blocked" || status === "failed") {
     return "The orchestrator will inspect the blocker, record a durable checkpoint, and continue only when the issue is safe to resume.";
   }
-  if (!hasVerification) {
-    return "The orchestrator must obtain or rerun the required verification before advancing this issue.";
+  if (verification === "missing" || verification === "incomplete") {
+    return "The orchestrator must obtain or rerun conclusive passing verification before advancing this issue.";
   }
-  if (verificationFailed) {
+  if (verification === "failed") {
     return "The orchestrator must resolve the failing verification and rerun the affected checks before advancing this issue.";
+  }
+  if (!hasChangeSummary) {
+    return "The orchestrator must inspect the changed files and record a meaningful change summary before advancing this issue.";
   }
   if (stage === "implementation" && (result.commit_created === false || result.commitCreated === false)) {
     return "The orchestrator will audit the worktree, commit the accepted changes, and then move the issue into independent code review.";
@@ -154,36 +198,52 @@ export function renderWorkerResult(result, { technical = false, stage: stageOver
     throw new Error("Worker result must be a JSON object.");
   }
 
-  const summary = values(result.summary);
+  const suppliedSummary = values(result.summary);
+  const changedFiles = values(result.changedFiles ?? result.changed_files);
+  const changeItems = suppliedSummary.length > 0
+    ? suppliedSummary
+    : changedFiles.map((file) => `Changed ${file}.`);
   const primaryValidation = values(result.validation);
   const validation = primaryValidation.length > 0 ? primaryValidation : values(result.tests);
-  const notes = values(result.notes ?? result.discoveries);
+  const suppliedNotes = values(result.notes);
+  const discoveries = values(result.discoveries);
+  const blocker = values(result.blocker).map((item) => `Blocker: ${item}`);
+  const untrackedFiles = values(result.untrackedFiles ?? result.untracked_files);
+  const notes = [...blocker, ...suppliedNotes, ...discoveries];
+  if (untrackedFiles.length > 0) {
+    notes.push(`${untrackedFiles.length} untracked file${untrackedFiles.length === 1 ? "" : "s"} require coordinator audit.`);
+  }
+
   const stage = stageFor(result, stageOverride);
-  const hasVerification = validation.length > 0;
-  const verificationFailed = hasFailedVerification(validation);
-  const ready = hasVerification && !verificationFailed;
+  const verification = verificationState(validation);
+  const hasChangeSummary = changeItems.length > 0;
+  const ready = verification === "passed" && hasChangeSummary;
   const branch = result.branch ? String(result.branch) : null;
   const head = result.head_sha ?? result.headSha;
   const lines = [
     `## ${titleFor(result, stage, ready)}`,
     "",
-    leadFor(result, stage, hasVerification, verificationFailed)
+    leadFor(result, stage, verification, hasChangeSummary),
+    "",
+    "### What changed",
+    "",
+    ...(hasChangeSummary
+      ? changeItems.map((item) => `- ${safeText(item, technical)}`)
+      : ["- No change summary was returned; the coordinator must inspect the worker diff."])
   ];
 
-  if (summary.length > 0) {
-    lines.push("", "### What changed", "", ...summary.map((item) => `- ${plainText(item)}`));
-  }
-  const verificationLines = hasVerification
-    ? validation.map((item) => `- ${formatValidation(item)}`)
+  const verificationLines = validation.length > 0
+    ? validation.map((item) => `- ${formatValidation(item, technical)}`)
     : ["- No verification evidence was returned; the coordinator must not advance this issue from this checkpoint."];
   lines.push("", "### Verification", "", ...verificationLines);
   if (notes.length > 0) {
-    lines.push("", "### Notes", "", ...notes.map((item) => `- ${plainText(item)}`));
+    lines.push("", "### Notes", "", ...notes.map((item) => `- ${safeText(item, technical)}`));
   }
 
-  lines.push("", "### Next", "", nextActionFor(result, stage, hasVerification, verificationFailed));
+  lines.push("", "### Next", "", nextActionFor(result, stage, verification, hasChangeSummary));
 
   const details = [];
+  if (technical && result.provider) details.push(`Provider: ${inlineCode(result.provider)}`);
   if (technical && branch) details.push(`Branch: ${inlineCode(branch)}`);
   if (technical && head) details.push(`Head: ${inlineCode(head)}`);
   if (technical && (result.worktree || result.worktreePath)) {
@@ -191,6 +251,9 @@ export function renderWorkerResult(result, { technical = false, stage: stageOver
   }
   if (technical && (result.base_sha || result.baseSha)) {
     details.push(`Base: ${inlineCode(result.base_sha ?? result.baseSha)}`);
+  }
+  if (technical && (result.reviewReceipt || result.review_receipt)) {
+    details.push(`Review receipt: ${inlineCode(result.reviewReceipt ?? result.review_receipt)}`);
   }
   if (details.length > 0) {
     lines.push("", "### Technical details", "", ...details.map((item) => `- ${item}`));
@@ -220,7 +283,9 @@ export function parseArgs(argv) {
       options.stage = stage;
       index += 1;
     } else if (arg.startsWith("--stage=")) {
-      options.stage = arg.slice("--stage=".length);
+      const stage = arg.slice("--stage=".length);
+      if (!stage) throw new Error("--stage requires implementation, review, or integration.");
+      options.stage = stage;
     } else if (arg === "--help" || arg === "-h") {
       options.help = true;
     } else if (arg.startsWith("-")) {

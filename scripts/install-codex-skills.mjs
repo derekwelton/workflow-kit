@@ -7,14 +7,18 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PORTABLE_SKILLS = new Map([
-  ["orchestrate-queue", path.join(ROOT, "skills", "orchestrate")],
-  ["integrate-reviewed", path.join(ROOT, "skills", "integrate-reviewed")],
-  ["workflow-doctor", path.join(ROOT, "skills", "workflow-doctor")]
-]);
-const REQUIRED_FILES = new Map([
-  ["orchestrate-queue", ["SKILL.md", path.join("scripts", "render-worker-result.mjs")]],
-  ["integrate-reviewed", ["SKILL.md"]],
-  ["workflow-doctor", ["SKILL.md"]]
+  ["orchestrate-queue", {
+    sourcePath: path.join(ROOT, "skills", "orchestrate"),
+    requiredFiles: ["SKILL.md", path.join("scripts", "render-worker-result.mjs")]
+  }],
+  ["integrate-reviewed", {
+    sourcePath: path.join(ROOT, "skills", "integrate-reviewed"),
+    requiredFiles: ["SKILL.md"]
+  }],
+  ["workflow-doctor", {
+    sourcePath: path.join(ROOT, "skills", "workflow-doctor"),
+    requiredFiles: ["SKILL.md"]
+  }]
 ]);
 
 function parseArgs(argv) {
@@ -71,8 +75,8 @@ export function reconcileCodexSkillLinks(options = {}) {
     fs.mkdirSync(targetDir, { recursive: true });
   }
 
-  for (const [name, sourcePath] of PORTABLE_SKILLS) {
-    const missingFiles = REQUIRED_FILES.get(name).filter(
+  for (const [name, { sourcePath, requiredFiles }] of PORTABLE_SKILLS) {
+    const missingFiles = requiredFiles.filter(
       (relativePath) => !fs.existsSync(path.join(sourcePath, relativePath))
     );
     if (missingFiles.length > 0) {

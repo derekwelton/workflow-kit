@@ -168,6 +168,11 @@ Anti-over-engineering skills adapted from [DietrichGebert/ponytail](https://gith
 interact, when they auto-load vs. need a slash command, and ordered
 walkthroughs from tiny bug to foggy epic.
 
+## Validate workflow-kit changes
+
+Run `node --test test/*.test.mjs` and `claude plugin validate .` before
+publishing a change.
+
 ## Layout
 
 - `skills/` — twenty-eight skill packages, including the portable workload
