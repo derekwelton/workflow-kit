@@ -88,7 +88,7 @@ crossover; duplicating produces two copies on the GitHub side.
 | `Todo` | specified enough for an agent to start cold | `plan`, `to-spec`, `to-tickets` |
 | `In Progress` | actively being worked | auto on branch push; skills also set it explicitly |
 | `Code Review` | implementation complete, **awaiting independent AI review**; reviewed workload items remain here until combined integration passes | `implement`; PR automation may also set it when configured |
-| `In Review` | AI review complete and, for a workload, its integration branch is ready for human testing | `code-review` for standalone work; `orchestrate-queue` for a workload batch |
+| `In Review` | AI review complete and, for a workload, its integration branch is ready for human testing | `code-review` for standalone work; Claude `/workflow-kit:orchestrate` or Codex `$orchestrate-queue` for a workload batch |
 | `Done` | merged, or human-verified | **never an agent** — merge or the user |
 | `Canceled` / `Duplicate` | triage outcomes | proposed by `board`, applied on approval |
 
@@ -98,7 +98,8 @@ agent completes the full review. Standalone work moves to `In Review`;
 workload work waits for the combined integration gate. An agent never marks
 work `Done`; that remains the merge's or the user's decision.
 
-For a multi-issue `orchestrate-queue` workload, individual review completion
+For a multi-issue Claude `/workflow-kit:orchestrate` or Codex
+`$orchestrate-queue` workload, individual review completion
 is a manifest-only `reviewed-pending-integration` state. Keep every included
 issue in `Code Review` until the integration branch is created from current
 main, all reviewed heads are combined, conflict resolutions are independently
