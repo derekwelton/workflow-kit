@@ -93,6 +93,7 @@ Require every implementation and review worker to return:
 ```json
 {
   "issue": "KEY-123",
+  "stage": "implementation|review",
   "branch": "owner/key-123-slug",
   "worktree": "absolute path",
   "baseSha": "commit",
@@ -110,6 +111,12 @@ Require every implementation and review worker to return:
 
 The coordinator validates the envelope against Git and the manifest. Do not
 trust a prose-only completion claim.
+
+`stage` is required so the presentation layer never describes an independent
+review as an implementation pass. A legacy envelope without `stage` may be
+rendered generically, but the coordinator must supply the known stage to the
+renderer. A completed envelope without verification evidence is incomplete
+and cannot advance the issue.
 
 The envelope is an internal protocol, not a user report. Store and validate it
 as structured data, but never paste it into chat, a final answer, or a tracker

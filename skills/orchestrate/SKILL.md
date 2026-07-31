@@ -108,9 +108,11 @@ asks for the envelope. After validation, translate a worker checkpoint into:
 Do not imply the whole issue or workload is complete when only a worker pass
 finished. Omit schema names, absolute worktree paths, and full SHAs from the
 main narrative. Include branch and short SHA only when useful. Use
-`scripts/render-worker-result.mjs` as the deterministic fallback for a worker
-envelope, then tailor its prose to the actual stage. `--technical` is opt-in
-when the user asks for exact machine details.
+`<skill-dir>/scripts/render-worker-result.mjs --stage <implementation|review|integration>`
+as the deterministic fallback for a worker envelope, then tailor its prose to
+the actual stage. Always include `Verification`; missing evidence is an
+incomplete checkpoint and must not sound ready. `--technical` is opt-in when
+the user asks for exact machine details.
 
 After validating its envelope and auditing untracked files, commit/push as the
 repository policy allows, post the implementation checkpoint on the sync

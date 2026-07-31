@@ -174,6 +174,8 @@ walkthroughs from tiny bug to foggy epic.
   orchestrator, integration finisher, and workflow doctor
 - `scripts/workload-manifest.mjs` — deterministic, worktree-shared workload state
 - `scripts/install-codex-skills.mjs` — idempotent Codex user-skill links
+- `skills/orchestrate/scripts/render-worker-result.mjs` — converts private worker
+  JSON into stage-aware human checkpoints; exact machine details are opt-in
 - `skills/linear-mode/SKILL.md` — the Linear-mode contract every skill defers to
   (gating, sync-thread rule, status contract, templates). Not a skill; a shared reference.
 - `templates/feature-lifecycle.md` — per-repo convention doc stamped by `workflow-init`

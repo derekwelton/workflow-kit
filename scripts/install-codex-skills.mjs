@@ -11,6 +11,11 @@ const PORTABLE_SKILLS = new Map([
   ["integrate-reviewed", path.join(ROOT, "skills", "integrate-reviewed")],
   ["workflow-doctor", path.join(ROOT, "skills", "workflow-doctor")]
 ]);
+const REQUIRED_FILES = new Map([
+  ["orchestrate-queue", ["SKILL.md", path.join("scripts", "render-worker-result.mjs")]],
+  ["integrate-reviewed", ["SKILL.md"]],
+  ["workflow-doctor", ["SKILL.md"]]
+]);
 
 function parseArgs(argv) {
   const options = {
@@ -67,8 +72,11 @@ export function reconcileCodexSkillLinks(options = {}) {
   }
 
   for (const [name, sourcePath] of PORTABLE_SKILLS) {
-    if (!fs.existsSync(path.join(sourcePath, "SKILL.md"))) {
-      throw new Error(`Portable skill source is missing: ${sourcePath}`);
+    const missingFiles = REQUIRED_FILES.get(name).filter(
+      (relativePath) => !fs.existsSync(path.join(sourcePath, relativePath))
+    );
+    if (missingFiles.length > 0) {
+      throw new Error(`Portable skill source is incomplete: ${name} is missing ${missingFiles.join(", ")}`);
     }
 
     const linkPath = path.join(targetDir, name);
