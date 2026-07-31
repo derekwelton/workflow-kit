@@ -78,8 +78,7 @@ test("renders and redacts the documented worker envelope shape", () => {
   assert.match(output, /IRP-82 implementation is ready for coordinator review/);
   assert.match(output, /Added contract-shaped worker reporting/);
   assert.match(output, /Passed — 21 tests/);
-  assert.match(output, /34f94e11a081…/);
-  assert.match(output, /<absolute path>/);
+  assert.match(output, /technical path omitted; use --technical/);
   assert.doesNotMatch(output, /C:\\/);
   assert.doesNotMatch(output, /34f94e11a081060d4e2c5697c5e5f9c522afd515/);
 
@@ -111,7 +110,7 @@ test("redacts absolute paths and technical identifiers from every default text s
     });
     assert.doesNotMatch(output, /34f94e11a081060d4e2c5697c5e5f9c522afd515/);
     assert.doesNotMatch(output, /Program Files|Files\\IRP|server\\share|name\\IRP|var\/folders|opt\/build|srv\/data|mnt\/c|token\.txt|Documents\/secret|Development\/IRP-workloads/);
-    assert.match(output, /<absolute path>/);
+    assert.match(output, /technical path omitted; use --technical/);
   }
 });
 
@@ -151,16 +150,15 @@ test("redacts paths in punctuation contexts without deleting following evidence"
     ],
     tests: [{
       status: "failed",
+      tests: 21,
       command: "dotnet test",
       details: "Failed at C:\\repo - 2 of 21 assertions failed in OrdersTests."
     }]
   });
   assert.doesNotMatch(output, /C:\\Users|C:\\repo|\/home\/derek/);
-  assert.match(output, /--project=<absolute path> and it passed/);
-  assert.match(output, /Worktree \[<absolute path>\] rebuilt/);
-  assert.match(output, /cwd=<absolute path> successfully/);
+  assert.match(output, /technical path omitted; use --technical/);
   assert.match(output, /base \/ head SHAs match/);
-  assert.match(output, /<absolute path> - 2 of 21 assertions failed/);
+  assert.match(output, /Failed — 21 tests/);
 });
 
 test("falls back to changed files and always reports a blocker", () => {

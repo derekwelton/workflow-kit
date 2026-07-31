@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const PASSED_STATUSES = new Set(["pass", "passed", "success", "succeeded"]);
 const FAILED_STATUSES = new Set(["fail", "failed", "failure", "error", "blocked"]);
+const OMITTED_TECHNICAL_TEXT = "[technical path omitted; use --technical]";
 
 function values(value) {
   if (Array.isArray(value)) return value.filter((item) => item != null && String(item).trim());
@@ -18,23 +19,22 @@ function plainText(value) {
   return String(value).replace(/\s+/g, " ").trim();
 }
 
+function containsAbsolutePath(value) {
+  const text = String(value);
+  return (
+    /(^|[^A-Za-z0-9])[A-Za-z]:[\\/](?![\\/])/.test(text) ||
+    /\\\\(?=\S)/.test(text) ||
+    /(^|[^A-Za-z0-9:/.])\/(?![\/\s])/.test(text) ||
+    /(^|[^A-Za-z0-9])~[\\/](?=\S)/.test(text) ||
+    /\bfile:\/\/\//i.test(text)
+  );
+}
+
 function safeText(value, technical = false) {
   const text = plainText(value);
   if (technical) return text;
-  return text
-    .replace(/\b[0-9a-f]{40,64}\b/gi, (sha) => `${sha.slice(0, 12)}…`)
-    .replace(
-      /(["'])(?:(?:[A-Za-z]:[\\/])|(?:\\\\)|(?:~[\\/])|(?:\/(?!\/))).*?\1/g,
-      "$1<absolute path>$1"
-    )
-    .replace(
-      /(^|[^A-Za-z0-9])((?:[A-Za-z]:[\\/](?![\\/])|\\\\)[^\s,;|)\]}]+(?:\s+(?=[^\s,;|)\]}]*(?:[\\/]|\.(?:exe|dll|csproj|sln|json|md|txt|log|js|mjs|ts|tsx|cs|py|sh|yml|yaml|xml|config)\b))[^\s,;|)\]}]+)*)/gi,
-      "$1<absolute path>"
-    )
-    .replace(
-      /(^|[^A-Za-z0-9:/.])((?:\/|~[\\/])[^\s,;|)\]}]+(?:\s+(?=[^\s,;|)\]}]*(?:[\\/]|\.(?:exe|dll|json|md|txt|log|js|mjs|ts|tsx|py|sh|yml|yaml|xml|config)\b))[^\s,;|)\]}]+)*)/gi,
-      "$1<absolute path>"
-    );
+  if (containsAbsolutePath(text)) return OMITTED_TECHNICAL_TEXT;
+  return text.replace(/\b[0-9a-f]{40,64}\b/gi, (sha) => `${sha.slice(0, 12)}…`);
 }
 
 function inlineCode(value) {
@@ -149,7 +149,13 @@ function verificationState(validation) {
 }
 
 function formatValidation(entry, technical) {
-  if (typeof entry !== "object" || entry == null) return safeText(entry, technical);
+  if (typeof entry !== "object" || entry == null) {
+    const rendered = safeText(entry, technical);
+    if (rendered !== OMITTED_TECHNICAL_TEXT) return rendered;
+    const status = validationStatus(entry);
+    const label = status === "passed" ? "Passed" : status === "failed" ? "Failed" : "Inconclusive";
+    return `${label} — ${rendered}`;
+  }
   const rawStatus = normalizedStatus(entry.result ?? entry.status);
   const labels = {
     pass: "Passed",
@@ -228,7 +234,7 @@ export function renderWorkerResult(result, { technical = false, stage: stageOver
   const validation = primaryValidation.length > 0 ? primaryValidation : values(result.tests);
   const suppliedNotes = values(result.notes);
   const discoveries = values(result.discoveries);
-  const blocker = values(result.blocker).map((item) => `Blocker: ${item}`);
+  const blocker = values(result.blocker).map((item) => `Blocker: ${safeText(item, technical)}`);
   const untrackedFiles = values(result.untrackedFiles ?? result.untracked_files);
   const notes = [...blocker, ...suppliedNotes, ...discoveries];
   if (untrackedFiles.length > 0) {
@@ -237,7 +243,7 @@ export function renderWorkerResult(result, { technical = false, stage: stageOver
 
   const stage = stageFor(result, stageOverride);
   const verification = verificationState(validation);
-  const hasChangeSummary = suppliedSummary.length > 0;
+  const hasChangeSummary = suppliedSummary.some((item) => !containsAbsolutePath(plainText(item)));
   const hasChangeItems = changeItems.length > 0;
   const ready = verification === "passed" && hasChangeSummary;
   const branch = result.branch ? String(result.branch) : null;
