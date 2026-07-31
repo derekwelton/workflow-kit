@@ -114,6 +114,31 @@ test("redacts absolute paths and technical identifiers from every default text s
   }
 });
 
+test("redacts paths in punctuation contexts without deleting following evidence", () => {
+  const output = renderWorkerResult({
+    issue: "IRP-84",
+    stage: "implementation",
+    state: "complete",
+    summary: [
+      "Ran with --project=C:\\Users\\derek.welton\\secret\\IRP.csproj and it passed.",
+      "Worktree [C:\\Users\\derek.welton\\wk\\irp-84] rebuilt.",
+      "Used cwd=/home/derek/secrets/app successfully.",
+      "Confirmed the base / head SHAs match the manifest."
+    ],
+    tests: [{
+      status: "failed",
+      command: "dotnet test",
+      details: "Failed at C:\\repo - 2 of 21 assertions failed in OrdersTests."
+    }]
+  });
+  assert.doesNotMatch(output, /C:\\Users|C:\\repo|\/home\/derek/);
+  assert.match(output, /--project=<absolute path> and it passed/);
+  assert.match(output, /Worktree \[<absolute path>\] rebuilt/);
+  assert.match(output, /cwd=<absolute path> successfully/);
+  assert.match(output, /base \/ head SHAs match/);
+  assert.match(output, /<absolute path> - 2 of 21 assertions failed/);
+});
+
 test("falls back to changed files and always reports a blocker", () => {
   const completed = renderWorkerResult({
     ...CONTRACT_RESULT,
@@ -121,6 +146,8 @@ test("falls back to changed files and always reports a blocker", () => {
     changedFiles: ["src/project-documents.ts"]
   });
   assert.match(completed, /Changed src\/project-documents\.ts/);
+  assert.match(completed, /incomplete worker checkpoint/);
+  assert.match(completed, /record a meaningful change summary/);
 
   const blocked = renderWorkerResult({
     ...CONTRACT_RESULT,
@@ -195,6 +222,18 @@ test("failure wins over pass wording in legacy string evidence", () => {
     assert.match(output, /resolve the failing verification/);
     assert.doesNotMatch(output, /ready for coordinator review/);
   }
+});
+
+test("zero failures do not override explicit passing evidence", () => {
+  const output = renderWorkerResult({
+    issue: "IRP-80",
+    stage: "implementation",
+    state: "complete",
+    summary: ["Changed the endpoint."],
+    tests: ["npm test: 0 failed, 18 passed"]
+  });
+  assert.match(output, /ready for coordinator review/);
+  assert.doesNotMatch(output, /unsuccessful verification/);
 });
 
 test("does not present skipped or unknown verification as ready", () => {

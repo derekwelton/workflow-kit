@@ -27,8 +27,10 @@ function safeText(value, technical = false) {
       /(["'])(?:(?:[A-Za-z]:[\\/])|(?:\\\\)|(?:~[\\/])|(?:\/(?!\/))).*?\1/g,
       "$1<absolute path>$1"
     )
+    .replace(/(?:[A-Za-z]:[\\/]|\\\\)[^\s,;|)\]}]+/g, "<absolute path>")
+    .replace(/~[\\/][^\s,;|)\]}]+/g, "<absolute path>")
     .replace(
-      /(^|[\s(])(?:[A-Za-z]:[\\/]|\\\\|~[\\/]|\/(?!\/)).*$/g,
+      /(^|[^A-Za-z0-9:/])\/(?!\/)(?:[^/\s,;|)\]}]+\/)+[^/\s,;|)\]}]*/g,
       "$1<absolute path>"
     );
 }
@@ -127,7 +129,11 @@ function validationStatus(entry) {
     return "incomplete";
   }
   const text = String(entry);
-  if (/\b(fail(?:ed|ure)?|error|blocked)\b/i.test(text)) return "failed";
+  const failureText = text.replace(
+    /\b(?:0|no)\s+(?:tests?\s+)?(?:failed|failures?|errors?)\b/gi,
+    ""
+  );
+  if (/\b(fail(?:ed|ure)?|error|blocked)\b/i.test(failureText)) return "failed";
   if (/\b(pass(?:ed|ing)?|success(?:ful|fully)?|succeeded)\b/i.test(text)) return "passed";
   return "incomplete";
 }
@@ -229,7 +235,8 @@ export function renderWorkerResult(result, { technical = false, stage: stageOver
 
   const stage = stageFor(result, stageOverride);
   const verification = verificationState(validation);
-  const hasChangeSummary = changeItems.length > 0;
+  const hasChangeSummary = suppliedSummary.length > 0;
+  const hasChangeItems = changeItems.length > 0;
   const ready = verification === "passed" && hasChangeSummary;
   const branch = result.branch ? String(result.branch) : null;
   const head = result.head_sha ?? result.headSha;
@@ -240,7 +247,7 @@ export function renderWorkerResult(result, { technical = false, stage: stageOver
     "",
     "### What changed",
     "",
-    ...(hasChangeSummary
+    ...(hasChangeItems
       ? changeItems.map((item) => `- ${safeText(item, technical)}`)
       : ["- No change summary was returned; the coordinator must inspect the worker diff."])
   ];
