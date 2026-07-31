@@ -139,7 +139,7 @@ duplicating produces two copies on the GitHub side.
 | `Todo` | specified enough for an agent to start cold | `plan`, `to-spec`, `to-tickets` |
 | `In Progress` | actively being worked | auto on branch push; skills also set it explicitly |
 | `Code Review` | implementation complete, **awaiting independent AI review**; reviewed workload items remain here until combined integration passes | `implement`; PR automation may set it when configured |
-| `In Review` | AI review complete and, for a workload, its integration branch is ready for human testing | `code-review` for standalone work; `orchestrate-queue` for a workload batch |
+| `In Review` | AI review complete and, for a workload, its integration branch is ready for human testing | `code-review` for standalone work; Claude `/workflow-kit:orchestrate` or Codex `$orchestrate-queue` for a workload batch |
 | `Done` | merged, or human-verified | **never an agent** — merge or the user |
 | `Canceled` / `Duplicate` | triage outcomes | proposed by `board`, applied on approval |
 
@@ -150,7 +150,8 @@ workload reviews wait at `Code Review` for the combined integration gate.
 Non-code work with no code-review phase can go directly to `In Review`. An
 agent never sets `Done`; that belongs to a merge or the user.
 
-For a multi-issue `orchestrate-queue` workload, individual review completion
+For a multi-issue Claude `/workflow-kit:orchestrate` or Codex
+`$orchestrate-queue` workload, individual review completion
 is a manifest-only `reviewed-pending-integration` state. Keep every included
 issue in `Code Review` until the integration branch is created from current
 main, all reviewed heads are combined, conflict resolutions are independently
@@ -181,7 +182,8 @@ Branches come from the issue's **`gitBranchName`** field (e.g.
 to use `Code Review`, not `In Review`; `implement` still sets `Code Review`
 explicitly so older automation cannot skip the independent review queue.
 `code-review` sets `In Review` after a standalone pass; for a workload,
-`orchestrate-queue` sets it only after the combined integration gate. Merge
+Claude `/workflow-kit:orchestrate` or Codex `$orchestrate-queue` sets it only
+after the combined integration gate. Merge
 automation may set `Done`.
 
 PR bodies use `Refs #<gh#>`. **Never `Closes`** — closing the GitHub twin drags

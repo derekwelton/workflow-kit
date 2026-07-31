@@ -7,7 +7,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 const WORKFLOW_KIT_VERSION = "0.8.3";
 const PAIR_MODES = new Set(["cross", "codex-only", "claude-only"]);
 const ISSUE_STATES = new Set([
@@ -614,6 +614,9 @@ function validateManifest(manifest) {
     }
     if (issue.state === "in-review" && !["assembling", "ready-for-human-review", "merged"].includes(manifest.integration?.state)) {
       errors.push(`${issue.key}: in-review requires an assembling or completed integration branch`);
+    }
+    if (issue.state === "done" && manifest.integration?.state !== "merged") {
+      errors.push(`${issue.key}: done requires a merged integration branch`);
     }
     if (issue.state === "in-review" && manifest.integration?.state === "assembling") {
       if (!manifest.integration.baseSha) errors.push(`${issue.key}: in-review requires integration.baseSha`);

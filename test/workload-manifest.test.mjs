@@ -373,7 +373,7 @@ test("integration-ready validation requires reviewed issues and a complete branc
   const baseSha = "a".repeat(40);
   const headSha = "b".repeat(40);
   const manifest = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     id: "batch",
     name: "Batch",
     policy: { pairMode: "cross" },
@@ -401,13 +401,18 @@ test("integration-ready validation requires reviewed issues and a complete branc
 
   manifest.issues[0].reviewProvider = "codex";
   assert.match(validateManifest(manifest).join("\n"), /different review provider/);
+  manifest.issues[0].reviewProvider = "claude";
+  manifest.issues[0].state = "done";
+  assert.match(validateManifest(manifest).join("\n"), /done requires a merged integration branch/);
+  manifest.integration.state = "merged";
+  assert.deepEqual(validateManifest(manifest), []);
 });
 
 test("integration-ready validation requires review of actual conflict resolutions", () => {
   const baseSha = "a".repeat(40);
   const headSha = "b".repeat(40);
   const manifest = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     id: "conflicted-batch",
     name: "Conflicted Batch",
     policy: { pairMode: "cross" },
