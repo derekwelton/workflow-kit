@@ -95,6 +95,23 @@ The implementation worker must not change Linear, create issues, create or
 merge PRs, assemble the integration branch, or review its own work. It returns
 discoveries to the coordinator for deduplication.
 
+Treat every worker envelope as private machine-to-machine data. Never paste,
+forward, or wrap raw JSON in a user-facing message unless the user explicitly
+asks for the envelope. After validation, translate a worker checkpoint into:
+
+1. an outcome-led sentence that names the issue and current stage;
+2. `What changed` bullets in plain language;
+3. `Verification` with pass/fail, useful counts, and commands;
+4. `Notes` only for caveats, warnings, or decisions that matter;
+5. `Next` stating exactly what the coordinator will do next.
+
+Do not imply the whole issue or workload is complete when only a worker pass
+finished. Omit schema names, absolute worktree paths, and full SHAs from the
+main narrative. Include branch and short SHA only when useful. Use
+`scripts/render-worker-result.mjs` as the deterministic fallback for a worker
+envelope, then tailor its prose to the actual stage. `--technical` is opt-in
+when the user asks for exact machine details.
+
 After validating its envelope and auditing untracked files, commit/push as the
 repository policy allows, post the implementation checkpoint on the sync
 thread, and set the issue to `Code Review`. Record `code-review` in the
@@ -167,3 +184,8 @@ integration ready while manifest and tracker disagree.
 
 Finish with the workload dashboard required by the contract and state plainly:
 `Not merged to main.` Never set `Done`.
+
+The same presentation boundary applies to the final dashboard: derive it from
+the manifest and receipts, but never dump manifest JSON or worker envelopes as
+the answer. Lead with what is ready for the user, what passed, what remains,
+and the exact checkout/test action.

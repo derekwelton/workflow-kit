@@ -111,6 +111,13 @@ Require every implementation and review worker to return:
 The coordinator validates the envelope against Git and the manifest. Do not
 trust a prose-only completion claim.
 
+The envelope is an internal protocol, not a user report. Store and validate it
+as structured data, but never paste it into chat, a final answer, or a tracker
+checkpoint unless the user explicitly requests raw JSON. Render a human
+checkpoint with outcome, changes, verification, relevant notes, and next
+action. Keep absolute paths, schema fields, and full SHAs in the envelope; show
+them only when they are actionable or explicitly requested.
+
 When persisting the envelope, record full Git-resolved base/head commits. The
 `tests` evidence must include the exact tested head SHA. A final review receipt
 must use `<review-provider>:<full-head-sha>:<durable-receipt-id>`. Changing the

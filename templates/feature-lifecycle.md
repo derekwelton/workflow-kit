@@ -7,7 +7,7 @@ adrDir: docs/adr
 # linearTeam: ABC    # uncomment + set to bind this repo to a Linear team (see "Linear mode")
 ---
 
-<!-- workflow-kit:managed-start version=0.8.4 -->
+<!-- workflow-kit:managed-start version=0.8.5 -->
 
 # Feature Lifecycle
 
