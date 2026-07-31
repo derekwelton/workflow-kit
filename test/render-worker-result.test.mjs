@@ -42,7 +42,7 @@ const CONTRACT_RESULT = {
     command: "dotnet test C:\\Development\\CSharp\\IRP\\IRP.Api.Tests",
     status: "passed",
     tests: 21,
-    headSha: "34f94e11a081060d4e2c5697c5e5f9c522afd515",
+    headSha: "0000000000000000000000000000000000000bad",
     details: "Passed at 34f94e11a081060d4e2c5697c5e5f9c522afd515 in C:\\Development\\CSharp\\IRP-workloads\\batch\\irp-82"
   }],
   reviewReceipt: null,
@@ -86,7 +86,32 @@ test("renders and redacts the documented worker envelope shape", () => {
   const technical = renderWorkerResult(CONTRACT_RESULT, { technical: true });
   assert.match(technical, /C:\\Development\\CSharp\\IRP-workloads/);
   assert.match(technical, /34f94e11a081060d4e2c5697c5e5f9c522afd515/);
+  assert.match(technical, /tested head `0000000000000000000000000000000000000bad`/);
   assert.match(technical, /Provider: `codex`/);
+});
+
+test("redacts absolute paths and technical identifiers from every default text surface", () => {
+  const paths = [
+    "C:\\Program Files\\IRP\\run.exe",
+    "\\\\server\\share name\\IRP\\run.exe",
+    "/var/folders/hz/abc/T/wk-1",
+    "/opt/build/irp",
+    "/srv/data/x",
+    "/mnt/c/Users/derek/secret",
+    "~/Development/IRP-workloads/batch"
+  ];
+  for (const absolutePath of paths) {
+    const output = renderWorkerResult({
+      issue: `${absolutePath} @ 34f94e11a081060d4e2c5697c5e5f9c522afd515`,
+      stage: "implementation",
+      state: "complete",
+      summary: [`Changed ${absolutePath}.`],
+      tests: [{ status: "passed", command: `verify ${absolutePath}` }]
+    });
+    assert.doesNotMatch(output, /34f94e11a081060d4e2c5697c5e5f9c522afd515/);
+    assert.doesNotMatch(output, /Program Files|server\\share|var\/folders|opt\/build|srv\/data|mnt\/c|Development\/IRP-workloads/);
+    assert.match(output, /<absolute path>/);
+  }
 });
 
 test("falls back to changed files and always reports a blocker", () => {
@@ -153,6 +178,25 @@ test("does not present a completion claim as ready with failing verification", (
   assert.doesNotMatch(output, /ready for coordinator review/);
 });
 
+test("failure wins over pass wording in legacy string evidence", () => {
+  for (const evidence of [
+    "npm test -- --run: 2 failed, 18 passed",
+    "dotnet test: 1 error, rest passing"
+  ]) {
+    const output = renderWorkerResult({
+      issue: "IRP-80",
+      stage: "implementation",
+      state: "complete",
+      summary: ["Changed the endpoint."],
+      tests: [evidence]
+    });
+    assert.match(output, /incomplete worker checkpoint/);
+    assert.match(output, /unsuccessful verification/);
+    assert.match(output, /resolve the failing verification/);
+    assert.doesNotMatch(output, /ready for coordinator review/);
+  }
+});
+
 test("does not present skipped or unknown verification as ready", () => {
   for (const status of ["skipped", "unknown"]) {
     const output = renderWorkerResult({
@@ -167,6 +211,33 @@ test("does not present skipped or unknown verification as ready", () => {
     assert.doesNotMatch(output, /— 0 tests/);
     assert.doesNotMatch(output, /ready for coordinator review/);
   }
+});
+
+test("rejects implausible test counts and complete envelopes with blockers", () => {
+  for (const tests of [-5, 3.7]) {
+    const output = renderWorkerResult({
+      ...CONTRACT_RESULT,
+      tests: [{ status: "passed", tests, command: "npm test" }]
+    });
+    assert.doesNotMatch(output, new RegExp(`— ${String(tests).replace(".", "\\.")} tests`));
+  }
+
+  const blocked = renderWorkerResult({
+    ...CONTRACT_RESULT,
+    state: "complete",
+    blocker: "Waiting for a required migration."
+  });
+  assert.match(blocked, /IRP-82 is blocked/);
+  assert.match(blocked, /inspect the blocker/);
+  assert.doesNotMatch(blocked, /ready for coordinator review/);
+});
+
+test("detects an uncommitted contract-shaped implementation from equal SHAs", () => {
+  const output = renderWorkerResult({
+    ...CONTRACT_RESULT,
+    baseSha: CONTRACT_RESULT.headSha
+  });
+  assert.match(output, /audit the worktree, commit the accepted changes/);
 });
 
 test("falls back to tests, normalizes results, and keeps worker text inside bullets", () => {

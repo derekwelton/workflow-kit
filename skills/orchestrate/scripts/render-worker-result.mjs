@@ -22,16 +22,15 @@ function safeText(value, technical = false) {
   const text = plainText(value);
   if (technical) return text;
   return text
+    .replace(/\b[0-9a-f]{40,64}\b/gi, (sha) => `${sha.slice(0, 12)}…`)
     .replace(
-      /(["'])(?:(?:[A-Za-z]:[\\/])|(?:\\\\)|(?:\/(?:Users|home|tmp|private\/tmp|var\/tmp)\/)).*?\1/g,
+      /(["'])(?:(?:[A-Za-z]:[\\/])|(?:\\\\)|(?:~[\\/])|(?:\/(?!\/))).*?\1/g,
       "$1<absolute path>$1"
     )
-    .replace(/(?:[A-Za-z]:[\\/]|\\\\)[^\s,;|)]+/g, "<absolute path>")
     .replace(
-      /(^|[\s(])\/(?:Users|home|tmp|private\/tmp|var\/tmp)\/[^\s,;|)]+/g,
+      /(^|[\s(])(?:[A-Za-z]:[\\/]|\\\\|~[\\/]|\/(?!\/)).*$/g,
       "$1<absolute path>"
-    )
-    .replace(/\b[0-9a-f]{40,64}\b/gi, (sha) => `${sha.slice(0, 12)}…`);
+    );
 }
 
 function inlineCode(value) {
@@ -60,9 +59,15 @@ function stageFor(result, override) {
   return "unknown";
 }
 
-function titleFor(result, stage, ready) {
-  const issue = plainText(result.issue ?? "Worker");
-  switch (normalizedStatus(result.status ?? result.state)) {
+function effectiveStatus(result) {
+  const status = normalizedStatus(result.status ?? result.state);
+  if (values(result.blocker).length > 0 && status !== "failed") return "blocked";
+  return status;
+}
+
+function titleFor(result, stage, ready, technical) {
+  const issue = safeText(result.issue ?? "Worker", technical);
+  switch (effectiveStatus(result)) {
     case "completed":
     case "complete":
       if (!ready) return `${issue} returned an incomplete worker checkpoint`;
@@ -80,7 +85,7 @@ function titleFor(result, stage, ready) {
 }
 
 function leadFor(result, stage, verification, hasChangeSummary) {
-  switch (normalizedStatus(result.status ?? result.state)) {
+  switch (effectiveStatus(result)) {
     case "completed":
     case "complete":
       if (verification === "missing") {
@@ -122,8 +127,8 @@ function validationStatus(entry) {
     return "incomplete";
   }
   const text = String(entry);
-  if (/\b(pass(?:ed|ing)?|success(?:ful|fully)?|succeeded)\b/i.test(text)) return "passed";
   if (/\b(fail(?:ed|ure)?|error|blocked)\b/i.test(text)) return "failed";
+  if (/\b(pass(?:ed|ing)?|success(?:ful|fully)?|succeeded)\b/i.test(text)) return "passed";
   return "incomplete";
 }
 
@@ -154,18 +159,20 @@ function formatValidation(entry, technical) {
   const label = labels[rawStatus] ?? safeText(entry.result ?? entry.status ?? "Unknown", technical);
   const rawCount = entry.tests;
   const hasCount =
-    (typeof rawCount === "number" && Number.isFinite(rawCount)) ||
+    (typeof rawCount === "number" && Number.isInteger(rawCount) && rawCount >= 0) ||
     (typeof rawCount === "string" && /^\d+$/.test(rawCount.trim()));
   const count = hasCount ? ` — ${Number(rawCount)} tests` : "";
   const commandText = safeText(entry.command ?? "", technical);
   const command = commandText ? ` — ${inlineCode(commandText)}` : "";
   const detailsText = safeText(entry.details ?? "", technical);
   const details = detailsText ? ` — ${detailsText}` : "";
-  return `${label}${count}${command}${details}`;
+  const testedHead = entry.headSha ?? entry.head_sha ?? entry.testedHeadSha;
+  const head = technical && testedHead ? ` — tested head ${inlineCode(testedHead)}` : "";
+  return `${label}${count}${command}${details}${head}`;
 }
 
 function nextActionFor(result, stage, verification, hasChangeSummary) {
-  const status = normalizedStatus(result.status ?? result.state);
+  const status = effectiveStatus(result);
   if (status === "blocked" || status === "failed") {
     return "The orchestrator will inspect the blocker, record a durable checkpoint, and continue only when the issue is safe to resume.";
   }
@@ -178,7 +185,13 @@ function nextActionFor(result, stage, verification, hasChangeSummary) {
   if (!hasChangeSummary) {
     return "The orchestrator must inspect the changed files and record a meaningful change summary before advancing this issue.";
   }
-  if (stage === "implementation" && (result.commit_created === false || result.commitCreated === false)) {
+  const base = result.base_sha ?? result.baseSha;
+  const head = result.head_sha ?? result.headSha;
+  const noCommitCreated =
+    result.commit_created === false ||
+    result.commitCreated === false ||
+    (base && head && String(base) === String(head));
+  if (stage === "implementation" && noCommitCreated) {
     return "The orchestrator will audit the worktree, commit the accepted changes, and then move the issue into independent code review.";
   }
   if (stage === "implementation") {
@@ -221,7 +234,7 @@ export function renderWorkerResult(result, { technical = false, stage: stageOver
   const branch = result.branch ? String(result.branch) : null;
   const head = result.head_sha ?? result.headSha;
   const lines = [
-    `## ${titleFor(result, stage, ready)}`,
+    `## ${titleFor(result, stage, ready, technical)}`,
     "",
     leadFor(result, stage, verification, hasChangeSummary),
     "",

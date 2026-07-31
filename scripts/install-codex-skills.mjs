@@ -66,6 +66,14 @@ function sameTarget(linkPath, sourcePath) {
   }
 }
 
+function sameFile(left, right) {
+  try {
+    return fs.realpathSync.native(left) === fs.realpathSync.native(right);
+  } catch {
+    return path.resolve(left) === path.resolve(right);
+  }
+}
+
 export function reconcileCodexSkillLinks(options = {}) {
   const targetDir = path.resolve(options.targetDir ?? path.join(os.homedir(), ".agents", "skills"));
   const check = options.check ?? false;
@@ -127,7 +135,7 @@ export function main(argv = process.argv.slice(2)) {
   }
 }
 
-if (path.resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && sameFile(fileURLToPath(import.meta.url), process.argv[1])) {
   try {
     main();
   } catch (error) {
