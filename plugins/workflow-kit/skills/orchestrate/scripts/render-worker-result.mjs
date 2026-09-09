@@ -237,6 +237,14 @@ export function renderWorkerResult(result, { technical = false, stage: stageOver
   const blocker = values(result.blocker).map((item) => `Blocker: ${safeText(item, technical)}`);
   const untrackedFiles = values(result.untrackedFiles ?? result.untracked_files);
   const notes = [...blocker, ...suppliedNotes, ...discoveries];
+  const prerequisites = values(result.prerequisites ?? result.resumeContext?.prerequisites);
+  const unmet = prerequisites.filter(item => !item || !["verified", "passed", "not-applicable"].includes(item.status));
+  for (const prerequisite of unmet) {
+    notes.push(`Prerequisite: ${prerequisite?.name ?? "unspecified"} — ${prerequisite?.status ?? "unknown"}; ${prerequisite?.remedy ?? "verify before handoff"}`);
+  }
+  if (Number.isSafeInteger(result.reviewRounds) && result.reviewRounds >= 0) {
+    notes.push(`Review rounds: ${result.reviewRounds}${Number.isSafeInteger(result.maxReviewRounds) ? ` / ${result.maxReviewRounds}` : ""}. Thresholds do not confer approval.`);
+  }
   if (untrackedFiles.length > 0) {
     notes.push(`${untrackedFiles.length} untracked file${untrackedFiles.length === 1 ? "" : "s"} require coordinator audit.`);
   }
@@ -245,13 +253,13 @@ export function renderWorkerResult(result, { technical = false, stage: stageOver
   const verification = verificationState(validation);
   const hasChangeSummary = suppliedSummary.some((item) => !containsAbsolutePath(plainText(item)));
   const hasChangeItems = changeItems.length > 0;
-  const ready = verification === "passed" && hasChangeSummary;
+  const ready = verification === "passed" && hasChangeSummary && unmet.length === 0;
   const branch = result.branch ? String(result.branch) : null;
   const head = result.head_sha ?? result.headSha;
   const lines = [
     `## ${titleFor(result, stage, ready, technical)}`,
     "",
-    leadFor(result, stage, verification, hasChangeSummary),
+    unmet.length ? "This checkpoint has unresolved runtime or user-task prerequisites; it cannot advance yet." : leadFor(result, stage, verification, hasChangeSummary),
     "",
     "### What changed",
     "",
@@ -268,7 +276,9 @@ export function renderWorkerResult(result, { technical = false, stage: stageOver
     lines.push("", "### Notes", "", ...notes.map((item) => `- ${safeText(item, technical)}`));
   }
 
-  lines.push("", "### Next", "", nextActionFor(result, stage, verification, hasChangeSummary));
+  lines.push("", "### Next", "", unmet.length
+    ? "The coordinator must reconcile the listed prerequisites in the intended environment before claiming ready."
+    : nextActionFor(result, stage, verification, hasChangeSummary));
 
   const details = [];
   if (technical && result.provider) details.push(`Provider: ${inlineCode(result.provider)}`);

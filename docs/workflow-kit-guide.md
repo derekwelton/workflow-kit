@@ -8,12 +8,14 @@ turns worker envelopes into readable checkpoints; `scripts/managed-version.mjs`
 checks repository lifecycle version drift without editing it. There are now ten
 executable helper entry points plus two libraries; the skill count remains 30.
 
-Orchestration now defaults to two review rounds per issue. The first round may
-block on high/medium findings; later rounds block only on high, with unresolved
-medium/low findings linked to follow-up issues. An extra round requires explicit
-authorization and a recorded reason. Final-code review and human acceptance
-remain required. Manifest updates write dated handoffs automatically; workers
-cannot spawn subagents, and coordinators wait on completion notifications.
+Version 0.9.1 uses a two-round non-convergence threshold and strict review for
+new runs. Eligible medium/low deferrals require a saved run-scoped decision and
+linked follow-ups; acceptance/correctness/security/data-loss blockers always
+block. Extra rounds require authorization and a reason. Final-code review and
+human acceptance remain required. Canonical tracker handoffs and manifest
+evidence survive resume; local snapshots are optional. Workers cannot spawn
+subagents, and coordinators wait on completion notifications. Dependency checks
+cover installed aliases and sibling references, including Windows checkouts.
 Intake, board, orchestration, and doctor share the read-only drift helper.
 Planning skills now offer the next proportional step without invoking it silently.
 The optional transcript-usage report proposed in issue #6 is not implemented.

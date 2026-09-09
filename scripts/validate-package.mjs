@@ -35,7 +35,7 @@ export function validatePackage(root) {
       if (entry.isDirectory()) visit(file);
       else if (/\.(md|mjs)$/.test(entry.name)) {
         const content = fs.readFileSync(file, "utf8").replace(/```[\s\S]*?```/g, "");
-        const references = [...content.matchAll(/(?:from\s+["']|\]\()((?:\.\.\/|\.\/)[^\s"')#]+\.(?:md|mjs|json|html))/g)];
+        const references = [...content.matchAll(/(?:from\s+["']|\]\(|`)((?:\.\.\/|\.\/)[^\s"'`)#]+\.(?:md|mjs|json|html))/g)];
         for (const match of references) if (!fs.existsSync(path.resolve(path.dirname(file), match[1]))) errors.push(`Missing dependency ${match[1]} in ${path.relative(root, file)}`);
       }
     }

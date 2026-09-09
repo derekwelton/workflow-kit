@@ -54,6 +54,11 @@ Read `../model-routing/SKILL.md` for model/effort selection. Repository policy
 may narrow model choices or task ownership; it cannot raise the high effort
 ceiling or silently restore old generation-specific defaults.
 
+Before claiming ready, record proportionate evidence of the issue's core user
+task in the intended environment. Explicitly list unresolved runtime, schema,
+config, deployment, or human-verification prerequisites. Passing isolated tests
+does not prove an unavailable user-facing scenario works.
+
 At the final checkpoint, name the next action in one line: independent
 `code-review` while code awaits review, or `wrap-feature` only after the user
 has accepted shipped work. Apply `update-issue` directly at meaningful gates;

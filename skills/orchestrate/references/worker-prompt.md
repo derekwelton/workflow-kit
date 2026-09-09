@@ -21,5 +21,11 @@ single tracker/manifest/integration writer.
   return blockers and stable job IDs rather than repeatedly polling.
 - Evidence: focused verification, exact tested head, changed/untracked files,
   requested/resolved model (null when unverified), effort and worker identity.
+- Return review rounds/limit and any required prerequisites as
+  `{name, status, remedy}` entries. Unknown runtime or user-task prerequisites
+  must stay visible; passing isolated tests is not a ready claim for them.
+  Findings include stable id, severity, category, blocking flag, and evidence;
+  acceptance/correctness/security/data-loss blockers cannot be deferred just
+  because their severity is medium. The coordinator owns approval references.
 - Return the workload envelope. Do not mutate tracker status, create/merge PRs,
   assemble integration, or approve your own implementation.

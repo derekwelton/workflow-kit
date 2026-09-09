@@ -15,6 +15,13 @@ its field/status/label rules override the GitHub/Linear defaults below.
 
 # Integrate reviewed workload
 
+Before integration, reconcile saved acceptance evidence, branch/worktree/head,
+in-flight jobs, policy decisions, and remaining runtime/config/deployment gates.
+Use proportionate evidence that the core user task works in the intended
+environment; do not turn unknown prerequisites into a ready claim. Preserve
+dirty/active worktrees and confirm process command/start-time/ownership before
+stopping any owned runtime. Keep domain-specific commands in the consuming repo.
+
 Accept `--run <workload-id>` and `--mode merged|local-main`. Default to no
 action when either is missing; show the manifest and ask for the explicit mode.
 Invocation with `--mode merged` is authorization to merge only the named

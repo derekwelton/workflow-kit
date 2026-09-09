@@ -103,7 +103,14 @@ edits, not retry an increasingly escaped command. Use [worker-prompt.md](worker-
 
 ## Review convergence and checkpoints
 
-Default `maxReviewRounds` is 2 per issue. `set-issue --state code-review` reserves
+Default `maxReviewRounds` is a 2-round non-convergence threshold per new issue,
+not an approval shortcut. Existing runs retain recorded policy; migration marks
+absent policy unverified and requires reconciliation before new review.
+Use `set-policy --policy-decision <reference>` for authorized policy changes.
+Record implementation/review routes with `--routing`; keep requested versus
+adapter-reported model/effort separate, with null for unverified values.
+Policy history records run scope, decision reference, settings, and time.
+`set-issue --state code-review` reserves
 each launch, including another review of an unchanged head. The first transition
 from implementation reserves round 1. A new review worker identity also consumes
 a round; metadata updates for the same worker do not. Extra rounds require the
@@ -111,22 +118,34 @@ user's authorization and `--allow-extra-round --reason <text>`. Record all revie
 axes from one dispatch as one round. A failed launch consumes its reserved round;
 report it rather than silently retrying. Never reset the count by reopening work.
 
-Round 1 blocks on high/medium; later rounds block only on high. Remaining
-medium/low findings become linked follow-ups, deduplicated by the coordinator,
+Strict review is default. Only `--review-policy convergent` with a run-scoped
+`--policy-decision` permits eligible deferrals: round 1 blocks on high/medium;
+later rounds can defer nonblocking medium/low findings. Unmet acceptance criteria
+and correctness/security/data-loss blockers always block regardless of severity.
+Begin with broad review; repeat reviews focus on fixes and affected behavior,
+returning to broad review when scope materially changes. Eligible findings
+become linked follow-ups, deduplicated by the coordinator,
 with `chore` where supported by the local tracker contract. Store the adjudicated
-findings via `--review-findings` as `{severity, status, summary, followUp}` entries.
+findings via `--review-findings` as `{id, severity, category, blocking, status,
+summary, followUp, decision}` entries. Stable IDs identify repeated findings.
 High findings cannot be deferred; medium findings cannot be deferred in round 1.
-Use `resolved` for fixed findings and `deferred` with a real issue link/key for
+Use `resolved` for fixed findings and `deferred` with a real issue link/key and
+approval reference for
 the remainder. The final-SHA review and human acceptance gates remain mandatory.
 Review defaults to medium; high needs a reason from canonical model-routing.
 Sonnet/Haiku are not allowed worker routes; preserve the actual requested and
 resolved model evidence, including explicit unknown identity when not exposed.
 
-Successful mutations also write `<git-common>/workflow-kit/runs/<id>/handoff-<date>.md`
-with issue gates, rounds, evidence, follow-ups, blockers, and integration state.
-It is a derived checkpoint: reconcile its timestamp against the authoritative
-manifest before resume. Migration initializes counters without inventing past
-rounds and marks unknown historical review counts explicitly.
+Successful mutations retain gates, rounds, evidence, follow-ups, blockers, and
+integration state in the manifest. Canonical narrative follows the existing
+handoff contract (a synced issue comment in Linear). A dated local summary at
+`<git-common>/workflow-kit/runs/<id>/handoff-<date>.md` is opt-in through
+`--handoff-snapshot`; it is derived, never a second canonical state store.
+Migration initializes counters without inventing past rounds or past consent.
+Use `--resume-context` for acceptance evidence, runtime ownership, prerequisites,
+and next action. Verify the core user task in the intended environment before
+claiming ready; tool/skill loads are not completed outcomes. Keep process commands
+and executable acceptance scenarios in the consuming repository.
 
 ## Worker envelope
 

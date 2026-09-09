@@ -7,11 +7,12 @@ For a visual overview of what the kit provides and where it could be simpler,
 open [the HTML field guide](docs/workflow-kit-guide.html)
 ([Markdown companion](docs/workflow-kit-guide.md)).
 
-Orchestrated work defaults to two review rounds per issue. Round 1 blocks on
-high/medium findings; later rounds block on high, with remaining findings linked
-to follow-up issues. Extra rounds require an explicit reason and authorization;
-the final-code review and human acceptance gates remain intact. Each manifest
-update writes a dated resume checkpoint. Coordinators alone spawn workers and
+New workloads use a two-round non-convergence threshold and strict review.
+Eligible medium/low deferrals require a saved run-scoped decision, adjudication,
+and linked follow-ups; acceptance/correctness/security/data-loss blockers always
+block. Extra rounds require a reason and authorization. Final-code review and
+human acceptance remain intact. Manifest evidence and canonical tracker handoffs
+survive resume; local handoff snapshots are optional. Coordinators alone spawn workers and
 wait on completion notifications. `managed-version.mjs` provides the shared
 read-only lifecycle drift check used by intake, orchestration, board, and doctor.
 

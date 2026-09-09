@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { resolveModel, validateEffort } from "./lib/model-policy.mjs";
+import { resolveModel, resolveRouting, validateEffort } from "./lib/model-policy.mjs";
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
@@ -9,7 +9,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 const SCHEMA_VERSION = 3;
-const WORKFLOW_KIT_VERSION = "0.9.0";
+const WORKFLOW_KIT_VERSION = "0.9.1";
 const PAIR_MODES = new Set(["cross", "codex-only", "claude-only"]);
 const ISSUE_STATES = new Set([
   "selected",
@@ -289,13 +289,16 @@ function nowIso() {
 
 const REVIEW_CONVERGENCE = {
   firstRoundBlocks: ["high", "medium"],
-  laterRoundsBlock: ["high"],
-  remainingFindings: "Link every unresolved medium/low finding to a follow-up issue before handoff."
+  laterRoundsBlock: ["high", "medium"],
+  alwaysBlocks: ["acceptance", "correctness", "security", "data-loss"],
+  remainingFindings: "Deferral requires run-scoped approval, a linked follow-up, and no acceptance/correctness/security/data-loss blocker."
 };
 
 function addReviewTracking(manifest) {
-  manifest.policy.maxReviewRounds ??= 2;
+  if (manifest.policy.maxReviewRounds === undefined) manifest.policy.maxReviewRounds = null;
   manifest.policy.reviewConvergence ??= REVIEW_CONVERGENCE;
+  manifest.policy.reviewPolicy ??= "legacy-unverified";
+  manifest.policy.decisions ??= [];
   for (const issue of manifest.issues) {
     if (issue.reviewRounds === undefined) {
       issue.reviewRounds = 0;
@@ -310,6 +313,9 @@ function addReviewTracking(manifest) {
 // the derived handoff write; compare updatedAt when reconciling a resume.
 function writeCheckpoint(filePath, manifest) {
   atomicWriteJson(filePath, manifest);
+  // Narrative stays in the repository's canonical handoff surface (the synced
+  // issue thread in Linear). A local derived snapshot is optional, not a gate.
+  if (!manifest.policy.handoffSnapshot) return;
   const folder = path.join(path.dirname(filePath), manifest.id);
   fs.mkdirSync(folder, { recursive: true });
   const clean = (value) => String(value ?? "—").replace(/[\r\n|]/g, " ");
@@ -318,7 +324,7 @@ function writeCheckpoint(filePath, manifest) {
     `Manifest updatedAt: ${manifest.updatedAt}`, `Source of truth: ${filePath}`, "",
     "Resume: reconcile the manifest with Git, tracker, worker jobs, and review receipts before spawning.",
     "Human acceptance is separate; never infer merge permission from this checkpoint.", "",
-    `Review limit: ${manifest.policy.maxReviewRounds ?? "legacy unknown"}. Round 1 blocks on high/medium; later rounds on high.`,
+    `Review limit: ${manifest.policy.maxReviewRounds ?? "legacy unknown"}; policy: ${manifest.policy.reviewPolicy}. Thresholds never confer approval.`,
     `Integration: ${clean(manifest.integration.state)} · ${clean(manifest.integration.branch)}`,
     `Base: ${clean(manifest.integration.baseSha)} · Head: ${clean(manifest.integration.headSha)}`,
     `PR: ${clean(manifest.integration.pullRequest)} · Tests: ${clean(manifest.integration.tests)}`,
@@ -342,6 +348,9 @@ function writeCheckpoint(filePath, manifest) {
 }
 
 function beginReviewRound(manifest, issue, options) {
+  if (!["strict", "convergent"].includes(manifest.policy.reviewPolicy) || manifest.policy.maxReviewRounds === null) {
+    fail("Legacy run policy is unverified. Reconcile its prior decisions, then use set-policy with --policy-decision before launching a review.");
+  }
   const round = issue.reviewRounds + 1;
   const extra = booleanOption(options, "allow-extra-round");
   const reason = extra ? requireTextOption(options.reason, "reason") : null;
@@ -353,10 +362,44 @@ function beginReviewRound(manifest, issue, options) {
     if (issue.reviewReceipt) previous.receipt = issue.reviewReceipt;
   }
   issue.reviewRounds = round;
-  issue.reviewHistory.push({ round, headSha: issue.headSha, startedAt: nowIso(), extraRoundReason: reason });
+  issue.reviewHistory.push({ id: `${manifest.id}/${issue.key}/${round}`, round, headSha: issue.headSha, startedAt: nowIso(), extraRoundReason: reason });
   issue.reviewExecution = null;
   issue.reviewReceipt = null;
   issue.reviewFindings = [];
+}
+
+function configurePolicy(manifest, options, { initial = false } = {}) {
+  const policy = manifest.policy;
+  const reviewPolicy = options["review-policy"] ?? (initial ? "strict" : policy.reviewPolicy);
+  if (!["strict", "convergent"].includes(reviewPolicy)) fail("--review-policy must be strict or convergent.");
+  const decision = options["policy-decision"] === undefined ? null : requireTextOption(options["policy-decision"], "policy-decision");
+  if ((!initial || reviewPolicy === "convergent") && !decision) fail("This policy requires --policy-decision with the run-scoped user decision reference.");
+  policy.maxReviewRounds = parsePositiveInteger(options["max-review-rounds"], policy.maxReviewRounds ?? 2, "max-review-rounds");
+  policy.reviewPolicy = reviewPolicy;
+  policy.reviewConvergence = { ...REVIEW_CONVERGENCE, laterRoundsBlock: reviewPolicy === "convergent" ? ["high"] : ["high", "medium"] };
+  if (options["handoff-snapshot"] !== undefined) policy.handoffSnapshot = booleanOption(options, "handoff-snapshot");
+  if (options.routing !== undefined) {
+    const request = JSON.parse(requireTextOption(options.routing, "routing"));
+    if (!request || Array.isArray(request) || !request.implementation || !request.review) fail("--routing requires implementation and review route objects.");
+    policy.routing = Object.fromEntries(["implementation", "review"].map(role => [role, resolveRouting({ ...request[role], task: role === "review" ? "review" : request[role].task ?? "coding" })]));
+  }
+  policy.decisions ??= [];
+  policy.decisions.push({ at: nowIso(), scope: manifest.id, source: decision ? "user-decision" : "package-default-or-cli-request", reference: decision,
+    reviewPolicy, maxReviewRounds: policy.maxReviewRounds, routing: policy.routing ?? null, handoffSnapshot: policy.handoffSnapshot ?? false });
+}
+
+function commandSetPolicy(cwd, options) {
+  const repository = resolveRepository(cwd), run = requireTextOption(options.run, "run");
+  const filePath = manifestPath(repository, run);
+  return withFileLock(filePath, () => {
+    const { manifest } = readManifest(repository, run);
+    addReviewTracking(manifest);
+    configurePolicy(manifest, options);
+    manifest.updatedAt = nowIso();
+    assertManifestValid(manifest);
+    writeCheckpoint(filePath, manifest);
+    return { filePath, policy: manifest.policy };
+  });
 }
 
 function validateBranchName(repository, branch) {
@@ -519,6 +562,7 @@ function commandInit(cwd, options) {
   };
 
   const filePath = manifestPath(repository, id);
+  configurePolicy(manifest, options, { initial: true });
   if (booleanOption(options, "dry-run")) {
     return { filePath, written: false, manifest };
   }
@@ -593,6 +637,16 @@ function commandSetIssue(cwd, options) {
     assignIfPresent(issue, "reviewReceipt", options["review-receipt"], String, "review-receipt");
     if (options["review-findings"] !== undefined) {
       issue.reviewFindings = JSON.parse(requireTextOption(options["review-findings"], "review-findings"));
+      if (Array.isArray(issue.reviewFindings)) {
+        const previous = issue.reviewHistory.slice(0, -1).flatMap(round => round.findings ?? []);
+        issue.reviewFindings = issue.reviewFindings.map(finding => ({ ...finding,
+          occurrence: previous.some(old => old.id === finding?.id) ? "repeated" : "new" }));
+      }
+    }
+    if (options["resume-context"] !== undefined) {
+      const context = JSON.parse(requireTextOption(options["resume-context"], "resume-context"));
+      if (!context || typeof context !== "object" || Array.isArray(context)) fail("--resume-context must be an object.");
+      issue.resumeContext = context;
     }
     assignIfPresent(issue, "tests", options.tests, String);
     assignIfPresent(issue, "blocker", options.blocker, String);
@@ -702,6 +756,7 @@ export function validateExecution(value, provider) {
   const requested = resolveModel(value.requestedModel);
   if (provider && requested.provider !== provider) throw new Error("model/provider mismatch");
   validateEffort(value.effort, value.highReason);
+  if (value.resolvedEffort != null) validateEffort(value.resolvedEffort, value.highReason);
   if (value.resolvedModel !== null) {
     const resolved = resolveModel(value.resolvedModel);
     if (resolved.provider !== requested.provider) throw new Error("resolved model/provider mismatch");
@@ -754,7 +809,7 @@ function validateManifest(manifest) {
     errors.push("policy.pairMode is invalid");
   }
   const limit = manifest.policy?.maxReviewRounds;
-  if (limit !== undefined && (!Number.isSafeInteger(limit) || limit < 1)) errors.push("policy.maxReviewRounds must be a positive safe integer");
+  if (limit !== undefined && limit !== null && (!Number.isSafeInteger(limit) || limit < 1)) errors.push("policy.maxReviewRounds must be a positive safe integer");
 
   for (const issue of manifest.issues ?? []) {
     if (limit !== undefined) {
@@ -764,7 +819,7 @@ function validateManifest(manifest) {
       } else {
         for (const [index, round] of issue.reviewHistory.entries()) {
           if (round.round !== index + 1 || !isFullCommitSha(round.headSha)) errors.push(`${issue.key}: invalid review history`);
-          if (round.round > limit && (typeof round.extraRoundReason !== "string" || !round.extraRoundReason.trim())) {
+          if (limit !== null && round.round > limit && (typeof round.extraRoundReason !== "string" || !round.extraRoundReason.trim())) {
             errors.push(`${issue.key}: extra review round requires a reason`);
           }
         }
@@ -773,16 +828,21 @@ function validateManifest(manifest) {
     if (issue.reviewFindings !== undefined) {
       if (!Array.isArray(issue.reviewFindings)) errors.push(`${issue.key}: reviewFindings must be an array`);
       else for (const finding of issue.reviewFindings) {
-        if (!finding || !["high", "medium", "low"].includes(finding.severity) ||
+        if (!finding || typeof finding.id !== "string" || !finding.id.trim() ||
+            typeof finding.blocking !== "boolean" || typeof finding.category !== "string" || !finding.category.trim() ||
+            !["high", "medium", "low"].includes(finding.severity) ||
             !["open", "resolved", "deferred"].includes(finding.status) ||
             typeof finding.summary !== "string" || !finding.summary.trim()) {
           errors.push(`${issue.key}: invalid review finding`); continue;
         }
         if (["reviewed-pending-integration", "in-review", "done"].includes(issue.state) && finding.status !== "resolved") {
-          if (finding.severity === "high" || (finding.severity === "medium" && issue.reviewRounds < 2)) {
+          const approved = manifest.policy.reviewPolicy === "convergent" && manifest.policy.decisions?.some(d => d.reviewPolicy === "convergent" && typeof d.reference === "string" && d.reference.trim());
+          if (finding.blocking === true || ["acceptance", "correctness", "security", "data-loss"].includes(finding.category)) {
+            errors.push(`${issue.key}: acceptance/correctness/security/data-loss finding blocks regardless of severity`);
+          } else if (finding.severity === "high" || (finding.severity === "medium" && (issue.reviewRounds < 2 || !approved))) {
             errors.push(`${issue.key}: unresolved ${finding.severity} finding blocks this review round`);
-          } else if (finding.status !== "deferred" || typeof finding.followUp !== "string" || !finding.followUp.trim()) {
-            errors.push(`${issue.key}: unresolved finding requires a linked follow-up issue`);
+          } else if (!approved || finding.status !== "deferred" || typeof finding.followUp !== "string" || !finding.followUp.trim() || typeof finding.decision !== "string" || !finding.decision.trim()) {
+            errors.push(`${issue.key}: unresolved finding requires approved deferral, a decision reference, and a linked follow-up issue`);
           }
         }
       }
@@ -963,10 +1023,13 @@ function printUsage() {
       "  workload-manifest.mjs set-issue --run <id> --issue <key> [fields]",
       "  workload-manifest.mjs set-integration --run <id> [fields]",
       "  workload-manifest.mjs migrate --run <id> [--dry-run]",
+      "  workload-manifest.mjs set-policy --run <id> --policy-decision <reference> [--review-policy strict|convergent] [--max-review-rounds <n>] [--routing <JSON>] [--handoff-snapshot true|false]",
       "  workload-manifest.mjs show --run <id>",
       "init accepts --max-review-rounds <n> (default 2). Each --state code-review records a new round before dispatch.",
-      "Extra rounds require --allow-extra-round --reason <authorized reason>. Findings: --review-findings JSON array of {severity, status, summary, followUp}.",
+      "Strict review is default. Convergent deferral requires --review-policy convergent --policy-decision <reference>. Thresholds never confer approval.",
+      "Extra rounds require --allow-extra-round --reason <authorized reason>. Findings: --review-findings JSON array of {id, severity, category, blocking, status, summary, followUp, decision}.",
       "set-issue accepts --implementation-execution and --review-execution JSON with requestedModel, resolvedModel (null if unverified), effort, highReason, workerId, policyVersion, fallbackReason.",
+      "set-issue --resume-context accepts JSON for the intended environment, user-task acceptance evidence, owned runtime/jobs, prerequisites, and nextAction.",
       "  workload-manifest.mjs validate --run <id>",
       "  workload-manifest.mjs list",
       "",
@@ -999,6 +1062,9 @@ function main() {
     }
     case "migrate":
       result = commandMigrate(cwd, options);
+      break;
+    case "set-policy":
+      result = commandSetPolicy(cwd, options);
       break;
     case "set-issue":
       result = commandSetIssue(cwd, options);

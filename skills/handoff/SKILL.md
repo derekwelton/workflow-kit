@@ -28,6 +28,11 @@ Rules:
   The handoff carries only what exists nowhere else: conversation state,
   in-flight reasoning, next-step intent.
 - **Redact sensitive information** — API keys, passwords, PII.
+- For workloads, reference saved policy/decisions, actual branch/worktree,
+  reviewed/tested head, worker/job IDs, and the exact next action. Include owned
+  runtime/process identity and prerequisites when relevant. On resume reconcile
+  actual state; preserve dirty/active worktrees and do not stop a process on PID
+  alone. Keep narrative on the canonical surface; local snapshots are derived.
 - If the user passed arguments, treat them as a description of what the next
   session will focus on and tailor the doc accordingly.
 - Delete superseded handoff files when writing a new one — one live handoff

@@ -10,6 +10,9 @@ its field/status/label rules override the GitHub/Linear defaults below.
 
 # Workflow doctor
 
+Use [references/preflight.md](references/preflight.md) for the selected workflow's
+lightweight preflight; reserve the full audit below for a doctor request.
+
 Use `node <workflow-kit-root>/scripts/managed-version.mjs --cwd <repo> --lifecycle <canonical-doc>`
 for the version comparison after locating the repository contract. The package
 root is two directories above this skill's real path. Distinguish missing,

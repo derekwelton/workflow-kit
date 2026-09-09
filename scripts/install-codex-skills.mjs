@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { validatePackage } from "./validate-package.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PACKAGE_ROOT = fs.existsSync(path.join(ROOT, ".codex-plugin/plugin.json")) ? ROOT : path.join(ROOT, "plugins", "workflow-kit");
@@ -71,6 +72,10 @@ export function reconcileCodexSkillLinks(options = {}) {
   const targetDir = path.resolve(options.targetDir ?? path.join(os.homedir(), ".agents", "skills"));
   const check = options.check ?? false;
   const results = [];
+  let packageCheck;
+  try { packageCheck = validatePackage(PACKAGE_ROOT); }
+  catch (error) { packageCheck = { valid: false, errors: [error.message] }; }
+  if (!packageCheck.valid) return { targetDir, healthy: false, packageCheck, results };
 
   if (!check) {
     fs.mkdirSync(targetDir, { recursive: true });
@@ -104,6 +109,8 @@ export function reconcileCodexSkillLinks(options = {}) {
 
   return {
     targetDir,
+    packageCheck,
+    resolution: "Resolve exposed skill paths with realpath before following relative references. Runtime/account readiness is checked separately.",
     healthy: results.every((entry) => entry.status === "current" || entry.status === "installed"),
     results
   };
@@ -119,6 +126,7 @@ export function main(argv = process.argv.slice(2)) {
   if (options.json) {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   } else {
+    for (const error of report.packageCheck?.errors ?? []) process.stdout.write(`Package dependency check failed: ${error}\n`);
     for (const result of report.results) {
       process.stdout.write(`${result.name}: ${result.status} -> ${result.linkPath}\n`);
     }

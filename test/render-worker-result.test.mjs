@@ -50,6 +50,15 @@ const CONTRACT_RESULT = {
   discoveries: []
 };
 
+test("unknown prerequisites prevent a ready claim and review rounds stay readable", () => {
+  const output = renderWorkerResult({ ...RESULT, reviewRounds: 2, maxReviewRounds: 2,
+    prerequisites: [{ name: "User-task persistence", status: "unknown", remedy: "Verify save and reload in the intended environment" }] });
+  assert.doesNotMatch(output, /implementation is ready/);
+  assert.match(output, /unresolved runtime or user-task prerequisites/);
+  assert.match(output, /Review rounds: 2 \/ 2/);
+  assert.match(output, /Verify save and reload/);
+});
+
 test("renders a worker envelope as a human checkpoint by default", () => {
   const output = renderWorkerResult(RESULT);
   assert.match(output, /IRP-79 implementation is ready for coordinator review/);

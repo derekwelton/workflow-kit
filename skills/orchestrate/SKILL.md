@@ -40,6 +40,10 @@ Accept:
 --max-implementers <n>                         default: 4
 --max-reviewers <n>                            default: 2
 --max-review-rounds <n>                        default: 2 per issue
+--review-policy <strict|convergent>             default: strict
+--policy-decision <reference>                   required for convergent policy or live policy changes
+--routing <JSON>                               effective implementation/review routes
+--handoff-snapshot                             optional local derived handoff; off by default
 --allow-extra-round --reason <text>            explicit authorization for one extra round
 --allow-partial                                default: false
 --plan                                         read-only plan; create nothing
@@ -60,6 +64,8 @@ Scope every result to the current GitHub repository.
 
 Run `node <workflow-kit-root>/scripts/managed-version.mjs --cwd <repo> --lifecycle <canonical-doc>`.
 Surface drift in one line; do not refresh or downgrade the repository implicitly.
+Use the capability-scoped preflight in `../workflow-doctor/references/preflight.md`;
+check only the selected runtime, tracker, and verification capabilities.
 If `--parent` has no sub-issues, say "Run to-tickets first if this needs a batch;
 otherwise use implement on the parent." Do not manufacture issues for a clear small task.
 
@@ -81,13 +87,19 @@ node <skill-dir>/scripts/workload-manifest.mjs init \
   --name "<name>" --issues "<frozen keys>" \
   --status "<status>" --labels "<labels>" \
   --pair "<pair>" --implementer "<provider>" --reviewer "<provider>" \
-  --max-implementers <n> --max-reviewers <n> --max-review-rounds <n>
+  --max-implementers <n> --max-reviewers <n> --max-review-rounds <n> \
+  --review-policy <strict|convergent> --routing '<implementation/review JSON>'
 ```
 
 Use `--dry-run` for `--plan`. Report the frozen queue, dependency/file-overlap
 lanes, provider pairs, branch name, and terminal behavior; make no tracker,
 Git, file, or manifest writes. Include `maxReviewRounds: 2` (or the explicit
-limit) and the first-round high/medium versus later-round high convergence rule.
+threshold), the effective review policy, routing, and the decision source/scope.
+Strict review is default. Convergent deferral requires a run-scoped user decision
+passed through `--policy-decision`; a threshold means stop and reconcile, never
+automatic approval. Preserve saved policy on resume. Change live policy only
+with `set-policy --run <id> --policy-decision <reference>` and explicit settings.
+Do not infer consent or a new route from a historical anecdote or session restart.
 
 ## 3. Plan bounded lanes
 
@@ -166,13 +178,18 @@ fixes, reruns focused tests, and obtains a receipt for the final head SHA.
 
 **Convergence:** reserve each review round with `set-issue --state code-review`
 before dispatch. The first implementation checkpoint reserves round 1; do not
-reserve it twice. Round 1 may block on high and medium findings; from round 2
-only high findings block. File every remaining medium/low as a deduplicated
+reserve it twice. Strict policy keeps unresolved findings blocking. Under an
+explicitly approved convergent policy, round 1 blocks on high/medium; from round 2
+eligible medium/low findings may be deferred. Acceptance-criteria, correctness,
+security, and data-loss blockers remain blocking regardless of severity.
+Review the whole scope initially, then fixes and affected behavior; broaden
+again when scope changes materially. File eligible remaining findings as a deduplicated
 follow-up linked to the parent, using `chore` where the repository contract
 allows that label. Pass the adjudicated list through `--review-findings` JSON
-(`severity`, `status`, `summary`, `followUp`) and list those links on the dashboard.
+(`id`, `severity`, `category`, `blocking`, `status`, `summary`, `followUp`, `decision`)
+and list those links on the dashboard. Stable IDs identify new/repeated findings.
 Resolved findings have status `resolved`; remaining findings must be `deferred`
-with a real follow-up key/URL before completion. Never downgrade a high finding
+with a real follow-up key/URL and decision reference before completion. Never downgrade a high finding
 to fit the budget. At the cap, leave the issue blocked unless the user explicitly
 authorizes `--allow-extra-round --reason <text>`. The cap never waives independent
 review of the final code. Reopening implementation does not reset the round count.
@@ -194,11 +211,17 @@ the manifest. Format the receipt as
 receipt not bound to the recorded provider and final head. A blocked review
 remains `Code Review` with a durable checkpoint.
 
-Every successful manifest mutation writes a dated handoff under the run's
-Git-common state directory. On resume, read it together with the manifest and
-compare `updatedAt`; JSON remains authoritative if a crash interrupted the
-derived handoff. This automatic checkpoint does not require invoking the
-user-only `handoff` skill or rely on compaction summaries.
+Every gate retains durable manifest evidence and a proportionate canonical
+tracker checkpoint. In Linear mode narrative stays on the synced issue thread;
+do not require a second handoff file. `--handoff-snapshot` optionally writes a
+derived local summary under the run's state directory. If enabled, compare its
+`updatedAt` with the authoritative manifest on resume. Neither path relies on
+compaction or implicitly invokes the user-only `handoff` skill.
+Record `--resume-context` JSON when needed for the intended environment, user-task
+acceptance evidence, owned runtime/processes, in-flight jobs, remaining
+schema/config/deployment prerequisites, and exact next action. Reconcile actual
+Git/provider/tracker state; preserve dirty/active worktrees and never stop a
+process based on PID alone. Unknown prerequisites cannot be reported as passed.
 
 ## 6. Assemble the workload branch
 

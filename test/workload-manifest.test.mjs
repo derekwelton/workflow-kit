@@ -536,19 +536,23 @@ test("review rounds are bounded, severity converges, and checkpoints survive res
     const preview = run(directory, "init", "--name", "Bounded", "--issues", "A-1,A-2,A-3,A-4", "--dry-run");
     const plan = JSON.parse(preview.stdout);
     assert.equal(plan.manifest.policy.maxReviewRounds, 2);
-    assert.deepEqual(plan.manifest.policy.reviewConvergence.laterRoundsBlock, ["high"]);
+    assert.deepEqual(plan.manifest.policy.reviewConvergence.laterRoundsBlock, ["high", "medium"]);
+    assert.equal(plan.manifest.policy.reviewPolicy, "strict");
     assert.equal(fs.existsSync(path.dirname(plan.filePath)), false);
-    const init = JSON.parse(run(directory, "init", "--name", "Bounded", "--issues", "A-1", "--implementer", "codex").stdout);
+    const init = JSON.parse(run(directory, "init", "--name", "Bounded", "--issues", "A-1", "--implementer", "codex", "--review-policy", "convergent", "--policy-decision", "Owner approved eligible deferrals for this run", "--handoff-snapshot").stdout);
     const sha = git(directory, "rev-parse", "HEAD");
     const fields = ["--run", "bounded", "--issue", "A-1"];
     const round = (...extra) => run(directory, "set-issue", ...fields, "--state", "code-review", "--base-sha", sha, "--head-sha", sha, "--implementer", "codex", "--tests", `${sha}: passed`, ...extra);
     assert.equal(round().status, 0);
-    const findings = (severity, status, followUp) => JSON.stringify([{ severity, status, summary: "A review concern", followUp }]);
+    const findings = (severity, status, followUp) => JSON.stringify([{ id: "F-1", severity, status, summary: "A review concern", category: "documentation", blocking: false, followUp, decision: "Owner approved nonblocking documentation follow-up" }]);
     const complete = (value) => run(directory, "set-issue", ...fields, "--state", "reviewed-pending-integration", "--reviewer", "claude", "--review-receipt", `claude:${sha}:receipt`, "--review-findings", value);
     assert.match(complete(findings("medium", "deferred", "A-2")).stderr, /unresolved medium/);
     assert.equal(round().status, 0);
     assert.match(complete(findings("high", "deferred", "A-2")).stderr, /unresolved high/);
     assert.match(complete(findings("medium", "open")).stderr, /linked follow-up/);
+    const acceptance = JSON.parse(findings("medium", "deferred", "A-2"));
+    acceptance[0].category = "acceptance";
+    assert.match(complete(JSON.stringify(acceptance)).stderr, /blocks regardless of severity/);
     assert.equal(complete(findings("medium", "deferred", "A-2")).status, 0);
     const saved = fs.readFileSync(init.filePath, "utf8");
     assert.match(round().stderr, /exceeds maxReviewRounds 2/);
@@ -561,6 +565,7 @@ test("review rounds are bounded, severity converges, and checkpoints survive res
     const checkpoint = path.join(path.dirname(init.filePath), "bounded", `handoff-${manifest.updatedAt.slice(0, 10)}.md`);
     assert.match(fs.readFileSync(checkpoint, "utf8"), /A-1.*code-review.*3/);
     assert.match(fs.readFileSync(checkpoint, "utf8"), new RegExp(sha));
+    assert.match(fs.readFileSync(checkpoint, "utf8"), /A-2/);
     const forged = structuredClone(manifest);
     forged.issues[0].reviewHistory[2].extraRoundReason = null;
     assert.match(validateManifest(forged).join("\n"), /extra review round requires a reason/);
@@ -583,5 +588,45 @@ test("worker replacement and reopening implementation cannot bypass the review b
     for (const value of ["0", "-1", "1.5", "9007199254740992"]) {
       assert.equal(run(directory, "init", "--name", "Invalid", "--issues", "A-1", "--max-review-rounds", value, "--dry-run").status, 1);
     }
+  });
+});
+
+test("resume preserves explicit routes and decisions while legacy migration invents no consent", () => {
+  withRepository((directory) => {
+    const route = { implementation: { provider: "codex", model: "astra", effort: "low" }, review: { provider: "claude", model: "fable", effort: "medium" } };
+    const created = JSON.parse(run(directory, "init", "--name", "Policy", "--issues", "A-1", "--routing", JSON.stringify(route), "--policy-decision", "session:owner-request").stdout);
+    assert.equal(fs.existsSync(path.join(path.dirname(created.filePath), "policy")), false, "handoff files are opt-in");
+    const savedPolicy = created.manifest.policy;
+    assert.equal(savedPolicy.routing.implementation.model, "gpt-6-astra");
+    assert.equal(savedPolicy.decisions[0].scope, "policy");
+    assert.equal(savedPolicy.decisions[0].reference, "session:owner-request");
+    const context = { nextAction: "Verify save and reload", prerequisites: [{ name: "Test environment", status: "unknown" }] };
+    assert.equal(run(directory, "set-issue", "--run", "policy", "--issue", "A-1", "--resume-context", JSON.stringify(context)).status, 0);
+    const shown = JSON.parse(run(directory, "show", "--run", "policy").stdout).manifest;
+    assert.deepEqual(shown.policy, savedPolicy);
+    assert.deepEqual(shown.issues[0].resumeContext, context);
+    assert.equal(run(directory, "set-policy", "--run", "policy", "--review-policy", "convergent").status, 1);
+    const changed = run(directory, "set-policy", "--run", "policy", "--review-policy", "convergent", "--policy-decision", "session:approved-deferrals");
+    assert.equal(changed.status, 0, changed.stderr);
+    assert.equal(JSON.parse(changed.stdout).policy.decisions.length, 2);
+
+    const legacy = structuredClone(created.manifest);
+    legacy.schemaVersion = 2;
+    for (const field of ["maxReviewRounds", "reviewPolicy", "reviewConvergence", "decisions", "routing"]) delete legacy.policy[field];
+    for (const field of ["reviewRounds", "reviewHistory", "reviewFindings"]) delete legacy.issues[0][field];
+    fs.writeFileSync(created.filePath, JSON.stringify(legacy));
+    const preview = JSON.parse(run(directory, "migrate", "--run", "policy", "--dry-run").stdout).manifest;
+    assert.equal(preview.policy.maxReviewRounds, null);
+    assert.equal(preview.policy.reviewPolicy, "legacy-unverified");
+    assert.deepEqual(preview.policy.decisions, []);
+    assert.equal(preview.issues[0].reviewHistoryUnknownBeforeMigration, true);
+    assert.equal(JSON.parse(fs.readFileSync(created.filePath)).schemaVersion, 2);
+    assert.equal(run(directory, "migrate", "--run", "policy").status, 0);
+    const sha = git(directory, "rev-parse", "HEAD");
+    const review = run(directory, "set-issue", "--run", "policy", "--issue", "A-1", "--state", "code-review", "--base-sha", sha, "--head-sha", sha, "--implementer", "codex", "--tests", `${sha}: passed`);
+    assert.match(review.stderr, /Legacy run policy is unverified/);
+    const adopt = run(directory, "set-policy", "--run", "policy", "--review-policy", "strict", "--max-review-rounds", "3", "--policy-decision", "session:reconciled-legacy-policy");
+    assert.equal(adopt.status, 0, adopt.stderr);
+    assert.equal(JSON.parse(adopt.stdout).policy.maxReviewRounds, 3);
   });
 });

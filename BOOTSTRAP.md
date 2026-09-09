@@ -1,5 +1,17 @@
 # workflow-kit bootstrap
 
+Portable installs must retain the complete package. Resolve the exposed skill's
+real path before following relative references; `orchestrate-queue` is an alias
+for the package's `skills/orchestrate` directory. The fallback installer's
+`--check --json` now validates dependency closure as well as links, without
+mutating them. That result does not prove provider/account readiness.
+
+After updating a machine plugin or linked checkout, start a fresh session. Then
+run `workflow-update --check` in adopted repositories, review the lifecycle diff,
+and apply/commit the repository refresh separately. Version 0.9.1 preserves
+local frontmatter and model settings; it does not roll out changes to other
+machines or consumer repositories merely because the library was pushed.
+
 > **For the human:** to adopt the workflow in any repo, give your agent this
 > file. Either paste its contents, copy the file into the repo temporarily, or
 > just say:
