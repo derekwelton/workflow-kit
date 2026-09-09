@@ -8,7 +8,7 @@ adrDir: docs/adr
 # linearTeam: ABC    # uncomment + set to bind this repo to a Linear team (see "Linear mode")
 ---
 
-<!-- workflow-kit:managed-start version=0.9.1 -->
+<!-- workflow-kit:managed-start version=0.9.2 -->
 
 # Feature Lifecycle
 
@@ -141,20 +141,32 @@ touched.
 
 Get this wrong and every agent comment is silently Linear-only.
 
-When Linear syncs an issue it plants a root comment with `parentId: null` and
-`author: null`:
+The designated sync root has `parentId: null` and this sync message:
 
 > This comment thread is synced to a corresponding [GitHub issue](…). All
 > replies are displayed in both locations.
 
 **Required procedure for every comment:**
 
-1. `list_comments({ issueId })`
-2. Find the comment with `parentId === null` whose body matches
-   `/synced to a corresponding/i` (author is `null`)
-3. `save_comment({ parentId: <that id>, body })`
-4. If no such root exists, the issue is not synced — post top-level and warn
-   the user
+1. `list_comments({ issueId })`. Read every page/cursor exposed by the active
+   tool. Truncated results or unknown completion leave sync **unverified**.
+2. Match `parentId === null`, the designated sync message, and its GitHub issue
+   link against the expected repository **and issue number** from verified
+   attachment/sync metadata. **Ignore `author` for selection:** null, omitted,
+   and populated authors are valid. Replies quoting the message are not roots.
+3. Deduplicate by comment ID and require one unique matching root. Missing
+   target metadata or no match means **sync unverified**, not proof of an
+   unsynced issue. Multiple matching roots are ambiguous; reconcile instead
+   of choosing the first or posting while the destination is ambiguous.
+4. `save_comment({ parentId: <selected root id>, body })`, including the issue
+   identifier if the active tool requires it. Use the comment ID as `parentId`.
+5. If a root cannot be verified and an authorized update must be preserved in
+   Linear meanwhile, label a top-level fallback **Linear-only; GitHub delivery
+   unverified**. Do not claim delivery to GitHub or automatically double-post.
+
+The installed `linear-mode` skill, section 3, owns the full procedure and its
+reference selector. Repository overrides may narrow the behavior; do not
+restore an author-based predicate.
 
 **Never** post the same comment to GitHub with `gh` as well. Sync handles it;
 duplicating produces two copies on the GitHub side.

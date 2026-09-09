@@ -117,11 +117,18 @@ rules, and redaction rules above all still apply — what changes is *where* the
 update goes and that status now carries meaning.
 
 **Comments — the part that is easy to get wrong.** Every comment goes on the
-sync thread, per linear-mode §3: `list_comments({ issueId })`, find the root
-comment with `parentId === null` whose body matches
-`/synced to a corresponding/i`, then `save_comment({ parentId: <that id>, body })`.
-A top-level comment does **not** reach GitHub. If no such root exists, post
-top-level and warn the user the comment is Linear-only.
+sync thread, using the complete discovery procedure in `../linear-mode/SKILL.md`
+§3. Read all available comment pages, match a top-level root (`parentId === null`)
+by the designated sync message and verified GitHub repository/issue link, and
+ignore the author field (null, omitted, and populated are valid). Deduplicate
+by comment ID and require one unique match, then
+`save_comment({ parentId: <selected root id>, body })` with any other fields the
+active tool requires. Missing/incomplete discovery means **sync unverified**;
+multiple matching roots require reconciliation, never an arbitrary first match.
+A top-level comment does **not** establish GitHub delivery. If an authorized
+update must be preserved before a missing root is resolved, label that fallback
+**Linear-only; GitHub delivery unverified**. Do not infer that the issue is
+unsynced or post a second copy through GitHub automatically.
 
 **Never post the same comment to GitHub with `gh` as well** — sync crosses it
 over, and duplicating produces two copies on the GitHub side.

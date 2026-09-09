@@ -66,20 +66,65 @@ then tell the user the Linear side (status, sub-issue edges) was not touched.
 top-level Linear comment stays Linear-only, silently. This is the single
 easiest thing to get wrong in Linear mode.
 
-When Linear syncs an issue it plants a root comment with `parentId: null` and
-`author: null`:
+The designated sync root has `parentId: null` and this sync message:
 
 > This comment thread is synced to a corresponding [GitHub issue](…). All
 > replies are displayed in both locations.
 
 **Required procedure for every comment:**
 
-1. `list_comments({ issueId })`
-2. Find the comment with `parentId === null` whose body matches
-   `/synced to a corresponding/i` (its `author` is `null`)
-3. `save_comment({ parentId: <that id>, body })`
-4. If no such root exists, the issue is not synced — post top-level and **warn
-   the user** that the comment is Linear-only
+1. `list_comments({ issueId })`. Follow every page/cursor exposed by the active
+   tool before concluding discovery is complete. If results are truncated or
+   completion cannot be established, sync remains **unverified**.
+2. Find top-level comments (`parentId === null`) whose body contains the
+   designated sync message and whose linked GitHub issue matches the expected
+   repository **and issue number** from the issue's verified attachment/sync
+   metadata. Resolve that target first; do not guess it from an unrelated URL.
+   **Ignore `author` for selection:** null, omitted, and populated integration
+   authors are all valid representations. A reply quoting the message is not a root.
+3. Deduplicate repeated results by comment ID. Select only one unique matching
+   root. If multiple roots match, report ambiguity and reconcile; never choose
+   the first arbitrarily or post an update while the destination is ambiguous.
+4. `save_comment({ parentId: <selected root id>, body })`, passing the issue
+   identifier too if required by the active tool. The parent ID is the comment's
+   ID, not the issue's ID.
+5. No match after complete discovery means **sync unverified**, not proof that
+   the issue is unsynced. Report the missing root/target and reconcile. If an
+   authorized update must be preserved in Linear meanwhile, clearly label a
+   top-level fallback as **Linear-only; GitHub delivery unverified**. Do not claim
+   cross-posting succeeded or automatically post a second copy through GitHub.
+
+The following reference selector expresses the discovery rule. Apply it to the
+collected comment objects (or use equivalent conditions in the active tool).
+`commentsComplete` means all available pages were read without truncation; this
+function does not fetch pages or write comments.
+
+```javascript
+function selectSyncRoot(comments, expectedGitHubIssue, commentsComplete) {
+  const issueKey = (value) => {
+    try {
+      const url = new URL(value);
+      if (url.origin !== "https://github.com" || url.username || url.password) return null;
+      const match = url.pathname.match(/^\/([^/]+)\/([^/]+)\/issues\/([1-9]\d*)\/?$/);
+      return match ? `${match[1]}/${match[2]}/${match[3]}`.toLowerCase() : null;
+    } catch { return null; }
+  };
+  const expected = issueKey(expectedGitHubIssue);
+  if (commentsComplete !== true || !Array.isArray(comments) || !expected) {
+    return { status: "unverified", parentId: null };
+  }
+  const roots = new Set();
+  for (const comment of comments) {
+    if (comment?.parentId !== null || typeof comment.id !== "string" || !comment.id.trim()) continue;
+    const match = typeof comment.body === "string" && comment.body.match(
+      /^\s*This comment thread is synced to a corresponding\s+\[GitHub issue\]\((https:\/\/github\.com\/[^\s)]+)\)\.\s+All replies are displayed in both locations\./i
+    );
+    if (match && issueKey(match[1]) === expected) roots.add(comment.id);
+  }
+  if (roots.size !== 1) return { status: roots.size ? "ambiguous" : "unverified", parentId: null };
+  return { status: "found", parentId: [...roots][0] };
+}
+```
 
 **Never** post the same comment to GitHub with `gh` as well. Sync handles the
 crossover; duplicating produces two copies on the GitHub side.
