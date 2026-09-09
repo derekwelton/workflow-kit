@@ -246,6 +246,69 @@ Key boundaries (the ones that prevent fights between skills):
 - **ADRs outrank all audits**: a decision an ADR made deliberately is not a
   finding.
 
+## Workload command reference (v0.8.4)
+
+The portable workload commands have different entrypoint names but the same
+arguments and behavior:
+
+| Action | Claude Code | Codex |
+|---|---|---|
+| Plan/run a workload | `/workflow-kit:orchestrate ...` | `$orchestrate-queue ...` |
+| Integrate accepted work | `/workflow-kit:integrate-reviewed ...` | `$integrate-reviewed ...` |
+| Diagnose workflow state | `/workflow-kit:workflow-doctor` | `$workflow-doctor` |
+
+Start a new workload with a name and **exactly one** queue source:
+
+| Argument | Meaning |
+|---|---|
+| `--name <name>` | Required stable workload name; creates `integration/<slug>` |
+| `--issues <A-1,B-2>` | Freeze an explicit comma-separated issue set |
+| `--parent <A-1>` | Freeze the selected parent issue's eligible children |
+| `--status <status>` | Tracker-query source; defaults to `Todo` |
+| `--labels <a,b>` | Narrow the tracker query by comma-separated labels |
+| `--pair <cross\|codex-only\|claude-only>` | Provider policy; defaults to `cross` |
+| `--implementer <auto\|codex\|claude>` | Override the implementation provider |
+| `--reviewer <auto\|codex\|claude>` | Override the independent review provider |
+| `--max-implementers <n>` | Concurrent implementation ceiling; defaults to `4` |
+| `--max-reviewers <n>` | Concurrent review ceiling; defaults to `2` |
+| `--allow-partial` | Explicitly permit durably deferring blocked issues |
+| `--plan` | Read-only normalization and lane plan; creates nothing |
+| `--resume <run-id>` | Reconcile and continue an existing frozen manifest |
+
+`cross` means Codex implementation → fresh Claude review, or Claude
+implementation → fresh Codex review. Same-provider modes still require a
+fresh independent review session. `--resume` reuses the frozen queue and
+recorded settings; do not reselect issues or silently replace ended workers.
+
+Examples (replace the Claude prefix with the Codex prefix from the table):
+
+```text
+/workflow-kit:orchestrate --name july-fixes --status Todo --labels bug --plan
+/workflow-kit:orchestrate --name release-084 --issues IW-41,IW-44,IW-52
+/workflow-kit:orchestrate --name checkout-epic --parent IW-30
+/workflow-kit:orchestrate --name review-backlog --status "Code Review"
+/workflow-kit:orchestrate --name claude-builds --issues IW-41,IW-44 --pair cross --implementer claude --reviewer codex
+/workflow-kit:orchestrate --name codex-only --labels maintenance --pair codex-only --max-implementers 2 --max-reviewers 1
+/workflow-kit:orchestrate --name partial-batch --issues IW-41,IW-44,IW-52 --allow-partial
+/workflow-kit:orchestrate --resume july-fixes-20260730
+```
+
+Orchestration ends with an exact, tested integration head and every included
+issue in `In Review`; it **does not merge main**. After the user accepts that
+head, use exactly one explicit terminal mode:
+
+```text
+/workflow-kit:integrate-reviewed --run july-fixes-20260730 --mode local-main
+/workflow-kit:integrate-reviewed --run july-fixes-20260730 --mode merged
+```
+
+`local-main` integrates and smoke-tests only the local default branch; it does
+not push, merge the PR, close issues, or set `Done`. `merged` validates and
+merges the named umbrella PR through GitHub. If main drift materially changes
+the tested integration head, both modes stop for a fresh human acceptance.
+Run `workflow-doctor` at any point for a read-only diagnosis; it never repairs,
+kills, reinstalls, or deletes anything.
+
 ## Ordered walkthroughs
 
 **Tiny bug** (one-file fix):
@@ -300,3 +363,17 @@ picks up from the committed doc.
 **Existing repo upgrade**: machine marketplace/plugin update → Codex skill-link
 installer → new sessions → `workflow-update` in the repo → review/commit the
 project integration diff.
+
+
+## 0.9 routing and portability
+
+Astra low is the normal coding worker; use medium when needed. Terra low/medium
+handles simple work. Fable 5.1 may delegate coding and UI implementation to Astra.
+Reviews normally use medium. High is reserved for orchestration or intense
+reasoning with a recorded reason. Never select xhigh, max, or ultra.
+
+All skills now ship natively for Codex, with a complete skill-link fallback.
+See README.md for install/refresh commands and GitHub Projects configuration.
+Worker limits are ceilings within the host's shared capacity, including nested
+reviews. Schema 3 records execution provenance; preview migration before resuming
+schema 2 work. Local edits are readable before commit; commit/push distribute them.

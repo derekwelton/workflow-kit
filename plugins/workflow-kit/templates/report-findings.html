@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}} — findings {{DATE}}</title>
+<!--
+  workflow-kit · FINDINGS report template.
+  Used by: `code-review` (two axes), `research` (cited findings), `plan`
+           (the proposed issue set, before approval).
+
+  Differs from report-audit: findings here are CONCLUSIONS, not proposed
+  mutations, so there is no approval gate. What matters instead is that every
+  claim carries its evidence and its confidence.
+
+  Two-axis mode (code-review): use two <section class="axis"> blocks and do NOT
+  merge or rerank across them — the separation is the point.
+  Single-axis mode (research/plan): delete the second axis.
+
+  Self-contained: inline CSS/JS only. Light mode only.
+
+  Severity → class:  .v-high  .v-med  .v-low  .v-info
+  Confidence → class: .c-firm (verified) · .c-soft (inferred, say why)
+-->
+<style>
+  :root{
+    --ink:#191d23; --soft:#586170; --faint:#8d95a3;
+    --paper:#f7f6f4; --card:#fff; --line:#e4e0d9;
+    --gold:#8a6d3b; --gold-soft:#f4eddf;
+    --red:#a03f2c; --red-soft:#fbeae5;
+    --green:#2f6f4f; --green-soft:#e6f2ec;
+    --blue:#2f5f8a; --blue-soft:#e6eef6;
+    --mono:ui-monospace,'Cascadia Code',Consolas,monospace;
+    --shadow:0 1px 2px rgba(16,20,28,.05),0 1px 8px rgba(16,20,28,.03);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font:16px/1.6 -apple-system,'Segoe UI',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased}
+
+  .top{background:#1b1f26;color:#edeae4;padding:1.6rem 1.1rem 1.4rem}
+  .wrap{max-width:880px;margin:0 auto}
+  .kicker{font:600 .68rem/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;
+    color:#c9b98a;margin:0 0 .5rem}
+  h1{font-size:1.5rem;line-height:1.2;margin:0 0 .35rem;letter-spacing:-.01em}
+  .top p{margin:.4rem 0 0;color:#aab1bc;font-size:.95rem;max-width:62ch}
+  .meta{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:1rem;padding:0;list-style:none}
+  .meta li{font:600 .74rem/1 var(--mono);padding:.5em .7em;border-radius:999px;
+    border:1px solid #414855;color:#c8ccd4;white-space:nowrap}
+  .meta li a{color:inherit}
+
+  main{max-width:880px;margin:0 auto;padding:1.1rem 1.1rem 4rem}
+  .verdict{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--gold);
+    border-radius:0 10px 10px 0;padding:.9rem 1.1rem;margin:0 0 1.6rem;
+    font-size:1.02rem;box-shadow:var(--shadow)}
+  .verdict b{display:block;font:600 .7rem/1 var(--mono);letter-spacing:.12em;
+    text-transform:uppercase;color:var(--gold);margin-bottom:.35rem}
+
+  .axis{margin:0 0 2rem}
+  .head{display:flex;align-items:baseline;gap:.55rem;margin:1.8rem 0 .5rem;
+    padding-bottom:.45rem;border-bottom:2px solid var(--ink)}
+  .head h2{font-size:1.02rem;margin:0}
+  .head .n{font:700 .8rem var(--mono);color:var(--gold)}
+  .head .sub{margin-left:auto;font:.76rem var(--mono);color:var(--faint)}
+  .axis > p.scope{margin:.4rem 0 .9rem;font-size:.9rem;color:var(--soft)}
+
+  .find{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:.85rem .95rem;margin:.55rem 0;box-shadow:var(--shadow)}
+  .find.v-high{border-left:3px solid var(--red)}
+  .find.v-med{border-left:3px solid var(--gold)}
+  .row{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem}
+  .claim{font-weight:600;flex:1 1 13rem;min-width:0;word-break:break-word}
+  .sev{font:600 .66rem/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;
+    padding:.4em .6em;border-radius:5px;white-space:nowrap}
+  .v-high .sev,.sev.v-high{background:var(--red-soft);color:var(--red)}
+  .v-med  .sev,.sev.v-med {background:var(--gold-soft);color:var(--gold)}
+  .v-low  .sev,.sev.v-low {background:var(--blue-soft);color:var(--blue)}
+  .sev.v-info{background:var(--card);color:var(--faint);border:1px solid var(--line)}
+  .conf{font:.7rem var(--mono);padding:.35em .55em;border-radius:5px;white-space:nowrap}
+  .c-firm{background:var(--green-soft);color:var(--green)}
+  .c-soft{background:var(--card);color:var(--soft);border:1px dashed var(--line)}
+  .body{margin:.45rem 0 0;font-size:.92rem;color:var(--soft)}
+  .body b{color:var(--ink)}
+  .ev{margin:.5rem 0 0;padding:.55rem .75rem;background:#20242b;color:#dfe3ea;
+    border-radius:8px;font:.8rem/1.55 var(--mono);overflow-x:auto;
+    white-space:pre-wrap;word-break:break-word}
+  .ev .c{color:#7f8896}
+  .cite{margin:.5rem 0 0;font-size:.84rem;color:var(--faint)}
+  .cite a{color:var(--blue)}
+  .quote{margin:.5rem 0 0;padding:.5rem .7rem;border-left:2px solid var(--gold);
+    background:var(--gold-soft);border-radius:0 6px 6px 0;font-size:.88rem}
+  .quote .who{display:block;font:.7rem var(--mono);color:var(--soft);margin-bottom:.2rem}
+
+  table{width:100%;border-collapse:collapse;margin:.8rem 0;background:var(--card);
+    border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:.9rem}
+  th{background:var(--gold-soft);text-align:left;font:600 .68rem/1.3 var(--mono);
+    letter-spacing:.08em;text-transform:uppercase;color:var(--soft);
+    padding:.6rem .8rem;border-bottom:1px solid var(--line)}
+  td{padding:.6rem .8rem;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td code{font:.86em var(--mono);background:var(--gold-soft);border-radius:4px;padding:.1em .35em}
+  .tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+  .gaps{background:#1b1f26;color:#edeae4;border-radius:12px;padding:1.1rem 1.15rem;
+    margin-top:2rem}
+  .gaps h2{margin:0 0 .5rem;font-size:1rem;color:#fff}
+  .gaps li{margin:.45rem 0}
+  .gaps code{background:#2e3540;color:#e9e5dd;border-radius:4px;padding:.12em .4em;
+    font:.85em var(--mono)}
+  .gaps .hint{color:#a4abb6;font-size:.88rem;margin-top:.9rem}
+
+  @media(min-width:720px){
+    .top{padding:2.4rem 1.5rem 2rem}
+    h1{font-size:1.95rem}
+    main{padding:1.8rem 1.5rem 5rem}
+    .find{padding:.95rem 1.1rem}
+    .axes{display:grid;grid-template-columns:1fr 1fr;gap:0 1.4rem;align-items:start}
+  }
+  @media print{
+    body{background:#fff}
+    .top,.gaps{background:#fff;color:#000;border:1px solid #000}
+    .top .kicker,.top p,.gaps .hint{color:#333}
+    .meta li{border-color:#999;color:#000}
+    .ev{background:#f4f2ee;color:#000;border:1px solid #ccc}
+    .find{break-inside:avoid;box-shadow:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="kicker">{{Code review | Research | Proposed issues}} · {{DATE}}</p>
+    <h1>{{TITLE}}</h1>
+    <p>{{One sentence: the bottom line. Lead with the conclusion, not the method.}}</p>
+    <ul class="meta">
+      <li>{{n}} findings</li>
+      <li>{{scope: e.g. main...HEAD · 14 files}}</li>
+      <li><a href="{{ISSUE_URL}}">{{IRP-13 / #40}}</a></li>
+    </ul>
+  </div>
+</header>
+
+<main>
+
+  <div class="verdict">
+    <b>Bottom line</b>
+    {{The answer, stated plainly, before any evidence. If the honest answer is
+    "inconclusive, and here's what would settle it" — say that instead.}}
+  </div>
+
+  <!-- ======== AXIS 1 (code-review: Standards | research: single axis) ======== -->
+  <section class="axis">
+    <div class="head">
+      <span class="n">01</span><h2>{{Standards | Findings}}</h2>
+      <span class="sub">{{n}} findings</span>
+    </div>
+    <p class="scope">{{What this axis checked against — name the sources.}}</p>
+
+    <article class="find v-high">
+      <div class="row">
+        <span class="claim">{{The finding, stated as a claim.}}</span>
+        <span class="sev v-high">{{high}}</span>
+        <span class="conf c-firm">verified</span>
+      </div>
+      <p class="body">{{What's wrong and why it matters. <b>Distinguish a hard
+        violation from a judgement call</b> — say which this is.}}</p>
+      <pre class="ev">{{file.ext:120}}
+<span class="c">// the actual hunk, trimmed to the decision-rich lines</span></pre>
+      <p class="cite">{{Cited standard, spec line, or source URL.}}</p>
+    </article>
+
+    <article class="find v-med">
+      <div class="row">
+        <span class="claim">{{Second finding}}</span>
+        <span class="sev v-med">{{medium}}</span>
+        <span class="conf c-soft">inferred</span>
+      </div>
+      <p class="body">{{Reason. If confidence is soft, say exactly what would
+        make it firm.}}</p>
+    </article>
+  </section>
+
+  <!-- ======== AXIS 2 — delete entirely for single-axis reports ======== -->
+  <section class="axis">
+    <div class="head">
+      <span class="n">02</span><h2>Spec fidelity</h2>
+      <span class="sub">{{n}} findings</span>
+    </div>
+    <p class="scope">{{Which spec, and where it was read from — issue body +
+      spec comment under Linear mode, or the folder's spec.md.}}</p>
+
+    <article class="find v-high">
+      <div class="row">
+        <span class="claim">{{Requirement missing / partial / built wrong.}}</span>
+        <span class="sev v-high">{{high}}</span>
+        <span class="conf c-firm">verified</span>
+      </div>
+      <blockquote class="quote">
+        <span class="who">spec says</span>
+        {{Quote the spec line verbatim — every spec finding must cite one.}}
+      </blockquote>
+      <p class="body">{{What the code does instead.}}</p>
+    </article>
+  </section>
+
+  <!-- ======== optional: tabular summary (plan's proposed issue set) ======== -->
+  <div class="head">
+    <span class="n">03</span><h2>{{Summary table}}</h2>
+    <span class="sub">{{n}} rows</span>
+  </div>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>{{Key}}</th><th>{{Title}}</th><th>{{Type}}</th><th>{{Status}}</th></tr></thead>
+      <tbody>
+        <tr><td><code>{{IRP-31}}</code></td><td>{{title}}</td><td>{{Bug}}</td><td>{{Todo}}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="gaps">
+    <h2>Limits &amp; what's next</h2>
+    <ul>
+      <li><b>{{What this did NOT cover}}</b> — {{and why it matters.}}</li>
+      <li><b>{{The one thing that would raise confidence}}</b> — {{how.}}</li>
+    </ul>
+    <p class="hint">{{Exact next action and who owns it.}}
+      <code>{{/workflow-kit:implement IRP-21}}</code></p>
+  </div>
+
+</main>
+</body>
+</html>

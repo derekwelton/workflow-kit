@@ -3,6 +3,11 @@ name: new-feature
 description: Start a unit of work — files the GitHub issue first (issue-first rule), then creates the work/features/<issue#>-<slug>/ folder with stub spec.md and notes.md. Use when beginning any feature, bug with artifacts, chore, or exploration.
 ---
 
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 # new-feature
 
 Start tracked work. Argument: a short kebab-case slug (and optionally a
@@ -22,9 +27,9 @@ confirm it in your reply.
   version. If the repo's is older, or the markers are missing entirely
   (a pre-0.4.0 stamp), add one line to your report: the repo is on version X,
   the plugin is on Y, `/workflow-kit:workflow-update` refreshes it. This
-  matters beyond Claude — Codex and other agents read *only* that committed
-  doc, so a stale one means they are following outdated instructions with no
-  way to know. Do **not** run the update, and do not derail the task the user
+  matters on every host: local agents read checkout files, loaded sessions may
+  retain earlier instructions, and commit/push distribute updates to other
+  machines. Do **not** run the update, and do not derail the task the user
   actually asked for.
 - **Check the same frontmatter for `linearTeam`.** If present, follow
   "Linear mode" below instead of steps 1–2. If absent, this skill behaves

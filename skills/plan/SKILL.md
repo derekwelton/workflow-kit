@@ -4,6 +4,11 @@ description: Bulk intake and triage — turn an unstructured brain-dump of bugs,
 disable-model-invocation: true
 ---
 
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 # plan
 
 The entry point for "here's a list of things that need doing." Takes an
@@ -22,7 +27,9 @@ Read the lifecycle doc's frontmatter for `linearTeam`
 
 - **Linear mode on** → issues are created in Linear; the GitHub twins appear
   via sync. Statuses, labels, and templates follow the linear-mode skill.
-- **Linear mode off** → issues are created with `gh issue create` using the
+- **GitHub Projects selected** → follow `../github-projects/SKILL.md`, including
+  project statuses and Issue Types; do not apply ordinary GitHub defaults.
+- **Ordinary GitHub mode** → issues are created with `gh issue create` using the
   lifecycle doc's `labels:`. There are no statuses; skip every status step and
   report GitHub numbers only.
 

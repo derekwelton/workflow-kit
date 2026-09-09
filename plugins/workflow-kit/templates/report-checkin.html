@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{REPO}} — check-in {{DATE}}</title>
+<!--
+  workflow-kit · CHECK-IN report template (used by the `board` skill).
+
+  Fill {{PLACEHOLDERS}}, repeat/delete <article class="item"> rows, delete any
+  section with nothing in it (do NOT leave an empty section as proof you
+  looked — say so in the coverage note instead).
+
+  Section order is deliberate and must not change: what needs the human comes
+  first, history last. Self-contained: inline CSS/JS only, no external requests.
+  Light mode only. Mobile-first; the desk layout kicks in at 720px.
+
+  Status vocabulary → class:
+    In Review  → .s-review    Code Review → .s-code-review
+    In Progress → .s-active   Todo        → .s-todo
+    Triage     → .s-triage    Done        → .s-done
+    Blocked    → .s-blocked
+-->
+<style>
+  :root{
+    --ink:#191d23; --soft:#586170; --faint:#8d95a3;
+    --paper:#f7f6f4; --card:#fff; --line:#e4e0d9; --line-soft:#efece7;
+    --gold:#8a6d3b; --gold-soft:#f4eddf;
+    --red:#a03f2c; --red-soft:#fbeae5;
+    --green:#2f6f4f; --green-soft:#e6f2ec;
+    --blue:#2f5f8a; --blue-soft:#e6eef6;
+    --purple:#65508f; --purple-soft:#efebf7;
+    --mono:ui-monospace,'Cascadia Code',Consolas,monospace;
+    --shadow:0 1px 2px rgba(16,20,28,.05),0 1px 8px rgba(16,20,28,.03);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font:16px/1.6 -apple-system,'Segoe UI',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased}
+
+  /* ---------- masthead ---------- */
+  .top{background:#1b1f26;color:#edeae4;padding:1.6rem 1.1rem 1.4rem}
+  .wrap{max-width:860px;margin:0 auto}
+  .kicker{font:600 .68rem/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;
+    color:#c9b98a;margin:0 0 .5rem}
+  h1{font-size:1.5rem;line-height:1.2;margin:0 0 .3rem;letter-spacing:-.01em}
+  .top p{margin:.4rem 0 0;color:#aab1bc;font-size:.95rem;max-width:60ch}
+  .tally{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:1rem;padding:0;list-style:none}
+  .tally li{font:600 .74rem/1 var(--mono);padding:.5em .7em;border-radius:999px;
+    border:1px solid #414855;color:#c8ccd4;white-space:nowrap}
+  .tally li b{font-weight:700}
+  .tally li.hot{border-color:#a03f2c;background:#2a1b18;color:#f0b3a3}
+
+  main{max-width:860px;margin:0 auto;padding:1.1rem 1.1rem 4rem}
+
+  /* ---------- section ---------- */
+  section{margin:0 0 1.6rem}
+  .head{display:flex;align-items:baseline;gap:.55rem;margin:0 0 .1rem;
+    padding-bottom:.45rem;border-bottom:2px solid var(--ink)}
+  .head h2{font-size:1.02rem;margin:0;letter-spacing:-.01em}
+  .head .n{font:700 .8rem var(--mono);color:var(--gold)}
+  .head .sub{margin-left:auto;font:.76rem var(--mono);color:var(--faint);
+    white-space:nowrap}
+  .why{margin:.5rem 0 .8rem;color:var(--soft);font-size:.9rem}
+
+  /* ---------- item card ---------- */
+  .item{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:.85rem .95rem;margin:.55rem 0;box-shadow:var(--shadow)}
+  .item.flag{border-left:3px solid var(--red)}
+  .row{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem}
+  .key{font:700 .8rem var(--mono);color:var(--ink);text-decoration:none;
+    border-bottom:1px solid var(--line)}
+  .key:hover{border-color:var(--gold);color:var(--gold)}
+  .ttl{font-weight:600;flex:1 1 14rem;min-width:0}
+  .tag{font:600 .66rem/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;
+    padding:.4em .6em;border-radius:5px;white-space:nowrap}
+  .s-review{background:var(--red-soft);color:var(--red)}
+  .s-code-review{background:var(--purple-soft);color:var(--purple)}
+  .s-active{background:var(--blue-soft);color:var(--blue)}
+  .s-todo{background:var(--gold-soft);color:var(--gold)}
+  .s-triage{background:#f0eef5;color:#5b4c7d}
+  .s-done{background:var(--green-soft);color:var(--green)}
+  .s-blocked{background:#efeae4;color:#6d5b47}
+  .note{margin:.45rem 0 0;font-size:.9rem;color:var(--soft)}
+  .note b{color:var(--ink)}
+  .quote{margin:.5rem 0 0;padding:.5rem .7rem;border-left:2px solid var(--gold);
+    background:var(--gold-soft);border-radius:0 6px 6px 0;font-size:.88rem}
+  .quote .who{display:block;font:.7rem var(--mono);color:var(--soft);margin-bottom:.2rem}
+  .facts{display:flex;flex-wrap:wrap;gap:.35rem .9rem;margin:.5rem 0 0;padding:0;
+    list-style:none;font:.74rem var(--mono);color:var(--faint)}
+  .facts li{white-space:nowrap}
+
+  /* ---------- next action ---------- */
+  .next{background:#1b1f26;color:#edeae4;border-radius:12px;padding:1.1rem 1.15rem;
+    margin-top:2rem}
+  .next h2{margin:0 0 .5rem;font-size:1rem;color:#fff}
+  .next .lede{font-size:1.02rem;margin:0 0 .6rem}
+  .next code{background:#2e3540;color:#e9e5dd;border-radius:4px;padding:.12em .4em;
+    font:.85em var(--mono)}
+  .next .alt{margin:.7rem 0 0;font-size:.88rem;color:#a4abb6}
+
+  .coverage{margin:1.4rem 0 0;padding:.7rem .9rem;border:1px dashed var(--line);
+    border-radius:8px;font-size:.84rem;color:var(--soft);background:var(--card)}
+  .coverage b{color:var(--ink)}
+
+  .empty{margin:.4rem 0 0;font-size:.9rem;color:var(--faint);font-style:italic}
+
+  /* ---------- desk ---------- */
+  @media(min-width:720px){
+    .top{padding:2.4rem 1.5rem 2rem}
+    h1{font-size:1.95rem}
+    main{padding:1.8rem 1.5rem 5rem}
+    .item{padding:.95rem 1.1rem}
+  }
+  @media print{
+    body{background:#fff}
+    .top,.next{background:#fff;color:#000;border:1px solid #000}
+    .top .kicker,.top p,.next .alt{color:#333}
+    .tally li{border-color:#999;color:#000}
+    .item{break-inside:avoid;box-shadow:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="kicker">Check-in · {{DATE}}</p>
+    <h1>{{REPO}}{{ · Linear team KEY}}</h1>
+    <p>{{One sentence: the state of play. e.g. "Two things need you; three are ready to start; nothing is stuck."}}</p>
+    <ul class="tally">
+      <li class="hot"><b>{{n}}</b> awaiting you</li>
+      <li><b>{{n}}</b> awaiting AI review</li>
+      <li><b>{{n}}</b> available</li>
+      <li><b>{{n}}</b> in progress</li>
+      <li><b>{{n}}</b> shipped this fortnight</li>
+    </ul>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ 1 · AWAITING YOU — always first ============ -->
+  <section>
+    <div class="head">
+      <span class="n">01</span><h2>Awaiting you</h2>
+      <span class="sub">only you can unblock these</span>
+    </div>
+    <p class="why">In Review, plus questions asked in comments that nothing since has answered.</p>
+
+    <article class="item flag">
+      <div class="row">
+        <a class="key" href="{{ISSUE_URL}}">{{IRP-13}}</a>
+        <span class="ttl">{{Issue title}}</span>
+        <span class="tag s-review">In Review</span>
+      </div>
+      <p class="note">{{What was finished, and what specifically needs a human — be concrete.}}</p>
+      <blockquote class="quote">
+        <span class="who">{{unanswered question · asked {{date}}}}</span>
+        {{Paste the actual question, not a summary of it.}}
+      </blockquote>
+      <ul class="facts">
+        <li>PR {{#40}}</li><li>{{branch-name}}</li><li>waiting {{6}}d</li>
+      </ul>
+    </article>
+
+    <p class="empty">{{Delete this line unless the section is genuinely empty — "Nothing is waiting on you."}}</p>
+  </section>
+
+  <!-- ============ 2 · AWAITING AI CODE REVIEW ============ -->
+  <section>
+    <div class="head">
+      <span class="n">02</span><h2>Awaiting AI code review</h2>
+      <span class="sub">oldest first</span>
+    </div>
+    <p class="why">Implementation is complete; an independent review agent owns the next transition.</p>
+
+    <article class="item">
+      <div class="row">
+        <a class="key" href="{{URL}}">{{IRP-19}}</a>
+        <span class="ttl">{{Issue title}}</span>
+        <span class="tag s-code-review">Code Review</span>
+      </div>
+      <p class="note">{{Implementation-complete checkpoint and review target.}}</p>
+      <ul class="facts"><li>PR {{#44}}</li><li>{{branch-name}}</li><li>waiting {{2}}d</li></ul>
+    </article>
+  </section>
+
+  <!-- ============ 3 · AVAILABLE ============ -->
+  <section>
+    <div class="head">
+      <span class="n">03</span><h2>Available to pick up</h2>
+      <span class="sub">highest priority first</span>
+    </div>
+
+    <article class="item">
+      <div class="row">
+        <a class="key" href="{{URL}}">{{IRP-21}}</a>
+        <span class="ttl">{{Issue title}}</span>
+        <span class="tag s-todo">Todo</span>
+      </div>
+      <p class="note">{{One line on what it involves.}} <b>{{Ready to start cold}}</b>{{, or: needs a decision on X first.}}</p>
+      <ul class="facts"><li>priority {{high}}</li><li>{{label}}</li></ul>
+    </article>
+  </section>
+
+  <!-- ============ 4 · IN PROGRESS ============ -->
+  <section>
+    <div class="head">
+      <span class="n">04</span><h2>In progress</h2>
+      <span class="sub">already started</span>
+    </div>
+
+    <article class="item">
+      <div class="row">
+        <a class="key" href="{{URL}}">{{IRP-18}}</a>
+        <span class="ttl">{{Issue title}}</span>
+        <span class="tag s-active">In Progress</span>
+      </div>
+      <p class="note">{{Last checkpoint and what's next.}}</p>
+      <ul class="facts"><li>{{branch}}</li><li>last activity {{date}}</li></ul>
+    </article>
+  </section>
+
+  <!-- ============ 5 · RECENTLY SHIPPED — context, keep short ============ -->
+  <section>
+    <div class="head">
+      <span class="n">05</span><h2>Recently shipped</h2>
+      <span class="sub">last ~2 weeks</span>
+    </div>
+    <article class="item">
+      <div class="row">
+        <a class="key" href="{{URL}}">{{IRP-12}}</a>
+        <span class="ttl">{{Issue title}}</span>
+        <span class="tag s-done">Done</span>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ 6 · NEEDS SHAPING ============ -->
+  <section>
+    <div class="head">
+      <span class="n">06</span><h2>Needs shaping</h2>
+      <span class="sub">too vague to start</span>
+    </div>
+    <article class="item">
+      <div class="row">
+        <a class="key" href="{{URL}}">{{IRP-27}}</a>
+        <span class="ttl">{{Issue title}}</span>
+        <span class="tag s-triage">Triage</span>
+      </div>
+      <p class="note">{{Exactly what's unclear — the question that would unstick it.}}</p>
+    </article>
+  </section>
+
+  <!-- ============ THE ONE RECOMMENDATION ============ -->
+  <div class="next">
+    <h2>Recommended next</h2>
+    <p class="lede">{{The single thing worth picking up now — or "nothing is ready; three things need your input."}}</p>
+    <p>{{Why this one, in a sentence.}} <code>{{COMMAND}}</code></p>
+    <p class="alt">{{Runner-up, if worth naming.}}</p>
+  </div>
+
+  <p class="coverage">
+    <b>Coverage.</b> {{Say what was actually read: "Comments read in full on In Review,
+    Code Review, and In Progress; Todo sampled." If anything was skipped, say so here — a report
+    that looks complete but isn't is worse than one that states its limits.}}
+  </p>
+
+</main>
+</body>
+</html>

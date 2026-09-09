@@ -3,6 +3,11 @@ name: board
 description: Read the tracker for this repo and report what's available, in progress, awaiting AI code review, awaiting human review, and recently shipped — including questions and follow-ups buried in issue comments. Use when the user asks what they should work on, what's pending, what's outstanding, what fell through, what's left, or what was recently finished. `board audit` runs the deeper stale-work sweep that proposes cleanup.
 ---
 
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 # board
 
 Answers "where does this project stand?" against the tracker, scoped to **this

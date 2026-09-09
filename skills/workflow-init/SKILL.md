@@ -3,10 +3,27 @@ name: workflow-init
 description: One-time repo bootstrap for the workflow-kit feature lifecycle — creates the work/features scaffold, gitignore rules, GitHub labels, and the per-repo feature-lifecycle.md convention doc. Use when adopting the workflow in a new or existing repo.
 ---
 
+Resolve `<workflow-kit-root>` from this SKILL.md's real filesystem path: two
+directories up. Resolve symlinks first. Use that root for templates and scripts
+on either host; never assume a Claude environment variable exists in Codex.
+
+
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 # workflow-init
 
 Bootstrap the current repo for the issue-driven feature workflow. Idempotent:
 skip any step whose result already exists, and say so.
+
+## Tracker-aware adoption
+
+Keep an existing GitHub Projects contract. If the user selects Projects, follow
+`../github-projects/SKILL.md`, record verified project/field/status mappings in
+frontmatter, and skip default classification-label creation below. Never add a
+Linear team or project status without an explicit repository configuration choice.
 
 ## Prerequisites
 
@@ -48,7 +65,7 @@ skip any step whose result already exists, and say so.
    "already exists" errors). Colors: feature `1d76db`, bug `d73a4a`,
    chore `c5def5`, idea `fbca04`.
 
-5. **Lifecycle doc**: copy `${CLAUDE_PLUGIN_ROOT}/templates/feature-lifecycle.md`
+5. **Lifecycle doc**: copy `<workflow-kit-root>/templates/feature-lifecycle.md`
    to the docs home chosen in step 1, filling in the config frontmatter
    (`workDir`, `docsHome`, `labels`, `glossary`, `adrDir`, and optionally
    `linearTeam` — see step 5a) for this repo —

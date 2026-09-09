@@ -4,6 +4,11 @@ description: "Compact the current conversation into a handoff document in the fe
 disable-model-invocation: true
 ---
 
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 Write a handoff document summarising the current conversation so a fresh agent
 can continue the work.
 

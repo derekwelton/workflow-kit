@@ -3,6 +3,11 @@ name: update-issue
 description: Keep the originating GitHub issue useful while work is in progress. Use automatically whenever issue-backed work starts, reaches a meaningful checkpoint, needs the user's review or decision, becomes blocked, pauses for a handoff, or finishes.
 ---
 
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 # update-issue
 
 Treat the GitHub issue as the human-facing control plane for the work, not

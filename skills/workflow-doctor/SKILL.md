@@ -3,10 +3,31 @@ name: workflow-doctor
 description: Run a read-only workflow-kit health audit for the current repository and machine. Use to diagnose stale workflow versions, broken Linear/GitHub sync, missing review statuses, plugin cache corruption, dead Codex jobs, inconsistent workload manifests, worktree/process leaks, permission conflicts, or why orchestration cannot resume safely.
 ---
 
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 # Workflow doctor
 
 Remain read-only. Do not create issues, change statuses, edit configuration,
 kill processes, remove worktrees, reinstall plugins, or repair manifests.
+
+Run `node <workflow-kit-root>/scripts/workflow-doctor.mjs` from the real package
+root first. It checks package integrity, CLI capabilities, and fallback links
+without mutation. Optionally pass a sanitized JSON capability file containing
+`lifecycle`, `routes`, and `availableModels`; never include secrets. Then:
+
+- Inspect native `codex plugin list --help` and list installed plugins; distinguish
+  native package discovery from fallback links and flag duplicate skill names.
+- Check codex-kit adapter version 2.3.0+, the `codex-reviewer` adapter and its
+  explicit model/effort controls. Compare generated policy with workflow-kit
+  using `sync-codex-policy.mjs <codex-kit-root> --check` when both sources exist.
+- Compare the host's actual available model/effort catalog to requested routes;
+  verify every high setting has a reason and no xhigh/max/ultra is selected.
+- Distinguish source, installed/cache, and loaded-session versions. Missing
+  evidence is unverified, not healthy. Never expose credentials or launch model
+  tasks just to check access. Check parent/nested worker capacity before launch.
 
 Inspect and report these layers independently:
 

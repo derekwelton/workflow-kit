@@ -3,6 +3,11 @@ name: research
 description: Investigate a question against high-trust primary sources and capture the findings as a committed Markdown file in the feature folder. Use when the user wants a topic researched, docs or API facts gathered, or reading legwork delegated to a background agent.
 ---
 
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 Spin up a **background agent** to do the research, so you keep working while it
 reads.
 

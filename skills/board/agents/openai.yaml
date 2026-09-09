@@ -1,0 +1,4 @@
+interface:
+  display_name: "Board"
+  short_description: "Workflow guidance for board"
+  default_prompt: "Use $board for this repository workflow task."

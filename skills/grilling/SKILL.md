@@ -24,8 +24,12 @@ invoked, be relentless; until invoked, don't be here.
 - **If a fact can be found by exploring the codebase, look it up rather than
   asking.** Questions are for *decisions* — those are the user's; put each one
   to them and wait for the answer. Never answer your own question and move on.
-- **Ask questions as plain chat text**, never through question-popup widgets —
-  the surrounding reasoning must stay visible.
+- **Use the question surface the user and host support.** Preserve an explicit
+  plain-text preference. On Codex hosts that support asynchronous text questions,
+  use them for missing decisions and continue independent work while awaiting
+  replies. Never ask for file uploads through a text-only question tool. Required
+  answers still gate dependent actions; elapsed time never counts as approval.
+
 - **Sequence by dependency.** If question B only makes sense after A is
   answered, A goes in this round and B in the next. Say what the next round
   will cover so the user sees the shape of the tree.

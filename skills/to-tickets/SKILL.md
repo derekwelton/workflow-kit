@@ -4,6 +4,11 @@ description: Break a spec into tracer-bullet vertical-slice tickets published as
 disable-model-invocation: true
 ---
 
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 # To Tickets
 
 Break a plan, spec, or conversation into **tracer-bullet vertical slices**,

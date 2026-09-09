@@ -4,6 +4,11 @@ description: Turn the current conversation into the canonical spec — the featu
 disable-model-invocation: true
 ---
 
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 Take the current conversation context and codebase understanding and produce
 the spec. Do NOT interview the user — just synthesize what you already know
 (run `grilling` first if the plan is still full of holes).

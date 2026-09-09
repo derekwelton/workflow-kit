@@ -1,0 +1,4 @@
+interface:
+  display_name: "Linear Mode"
+  short_description: "Workflow guidance for linear mode"
+  default_prompt: "Use $linear-mode for this repository workflow task."

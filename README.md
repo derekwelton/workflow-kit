@@ -1,7 +1,11 @@
 # workflow-kit
 
 Issue-driven feature workflow for all my repos: **one issue, one folder, one
-lifecycle**. A Claude Code plugin with portable Codex orchestration skills.
+lifecycle**. A native Claude Code and Codex plugin with one shared skill catalog.
+
+For a visual overview of what the kit provides and where it could be simpler,
+open [the HTML field guide](docs/workflow-kit-guide.html)
+([Markdown companion](docs/workflow-kit-guide.md)).
 
 ```
 idea → issue ⇄ updates → folder → build → present → wrap
@@ -48,66 +52,80 @@ reaches GitHub at all) is stamped into the repo's lifecycle doc in logical tool
 names, so Codex and Claude follow the same instructions. Full version:
 [`skills/linear-mode/SKILL.md`](skills/linear-mode/SKILL.md).
 
-## Install (per machine)
+## Install and refresh
 
-```
+Claude Code:
+
+```powershell
 claude plugin marketplace add derekwelton/workflow-kit
 claude plugin install workflow-kit@derekwelton
 ```
 
-## Keep machines and existing projects current
-
-Update the plugin once on each computer:
+Codex CLI 0.153.0 or newer (after this release is published):
 
 ```powershell
-claude plugin marketplace update derekwelton
-claude plugin update workflow-kit@derekwelton
+codex plugin marketplace add derekwelton/workflow-kit
+codex plugin add workflow-kit@derekwelton-workflow
 ```
 
-Start a new Claude session so the refreshed skills load. Then, inside each
-already-adopted project, run:
+For an unpublished local checkout, pass its absolute path to `codex plugin
+marketplace add` instead. The native package exposes the full skill catalog.
+Claude uses `/workflow-kit:<name>`; Codex uses `$<skill-name>` (or its surfaced
+plugin namespace). Orchestration retains `$orchestrate-queue`.
 
-```
-/workflow-kit:workflow-update
-```
+For hosts without native plugin support, keep a complete workflow-kit checkout
+and run `node scripts/install-codex-skills.mjs` from it. This exposes the full
+catalog through user-skill links without requiring Claude. `--check --json`
+reports missing/conflicting links without changing them. Do not combine native
+installation and fallback links in the same skill catalog; diagnose duplicate
+names before removing only the links you own. Keep the linked source checkout
+in place: scripts, templates, and sibling references are package dependencies.
 
-Use `/workflow-kit:workflow-update --check` to report drift without editing.
-If the machine also uses Codex, refresh the three durable Codex entry points:
+Update Claude with `claude plugin marketplace update derekwelton` followed by
+`claude plugin update workflow-kit@derekwelton`. For Codex, inspect
+`codex plugin marketplace upgrade --help`, upgrade the configured marketplace,
+and reinstall the plugin using `codex plugin add workflow-kit@derekwelton-workflow`.
+Refresh fallback links by rerunning their installer after updating the checkout.
+Restart sessions to load refreshed plugin instructions.
+
+Then run `workflow-update` in each adopted repository (`--check` for a read-only
+preview). It preserves configuration and local overrides. Local agents can read
+uncommitted policy edits; already-loaded sessions may need a reread or restart.
+Commit/push distribute repository changes to other machines. Each machine also
+needs its own plugin update. Neither step substitutes for the other.
+
+## Routing and tracker configuration
+
+`skills/model-routing/SKILL.md` and `scripts/lib/model-policy.mjs` own model
+selection. Coding defaults to Astra low (medium when needed), simple tasks to
+Terra low/medium, and review to medium. Fable 5.1 can delegate coding and UI work
+to Astra. High requires a reason tied to orchestration or intense reasoning.
+Xhigh, max, and ultra are prohibited. Model access is checked independently of
+public availability; no silent fallbacks or inherited machine defaults.
+
+Codex-kit 2.3.0 consumes a generated policy copy. After changing policy, run
+`node scripts/sync-codex-policy.mjs <codex-kit-root>` and validate with `--check`.
+Release both packages together. Runtime adapters belong to codex-kit; lifecycle
+and provider independence belong here.
+
+Ordinary GitHub Issues remains the default; `linearTeam` still enables Linear.
+For GitHub Projects opt in with `tracker: github-projects`; see
+`skills/github-projects/SKILL.md` for configuration and verified field/status
+mapping. Local repository overrides always take precedence. Refresh never
+silently changes trackers, adds statuses, or rewrites branch conventions.
+
+## Validation
 
 ```powershell
-node "$HOME/.claude/plugins/marketplaces/derekwelton/scripts/install-codex-skills.mjs"
+node scripts/build-codex-package.mjs --check
+node scripts/validate-package.mjs
+node --test test/*.test.mjs
+node scripts/sync-codex-policy.mjs ../codex-kit --check
 ```
 
-That exposes `$orchestrate-queue`, `$integrate-reviewed`, and
-`$workflow-doctor` without relying on deprecated custom prompts.
-
-### Why there are machine and repository steps
-
-Claude and every other agent learn this workflow through **different
-mechanisms**, and updating one does nothing for the other:
-
-| | Claude Code | Codex | Gemini / Cursor |
-|---|---|---|---|
-| Reads | plugin `SKILL.md` files | three linked user skills + `AGENTS.md` lifecycle | `AGENTS.md` lifecycle |
-| Lives | `~/.claude/plugins/` | `~/.agents/skills/` links plus committed repo policy | committed repo policy |
-| Refreshed by | plugin update + new session | link installer + new session; repo refresh for policy | repo refresh, then commit |
-
-The orchestration engine, provider pairing, resumable manifest, integration
-gate, and diagnostics are portable machine skills. Repository-specific status
-names, branch conventions, and test commands remain committed in the repo's
-lifecycle document so every agent sees the same local policy.
-
-Full sequence after a new release:
-
-1. **Per machine, once** — update the Claude marketplace/plugin, run the Codex
-   skill-link installer, then start new Claude/Codex sessions.
-2. **Per repo, once** — run `/workflow-kit:workflow-update`, review the diff,
-   and **commit it** so all agents receive the repository contract.
-
-Step 2 is the one that's easy to skip, and it's the only one that helps
-non-Claude agents. An uncommitted refresh has updated nothing for them.
-`new-feature` flags the mismatch in one line when it notices a repo running an
-older managed block than the installed plugin.
+Schema 3 records worker model/effort/session provenance. Older schema 2 manifests
+remain readable. Preview `node scripts/workload-manifest.mjs migrate --run <id>
+--dry-run` before applying migration; historical execution data remains unknown.
 
 ## Adopt in a repo (existing or brand-new)
 
@@ -170,7 +188,7 @@ walkthroughs from tiny bug to foggy epic.
 
 ## Layout
 
-- `skills/` — twenty-eight skill packages, including the portable workload
+- `skills/` — the complete portable skill catalog, including the portable workload
   orchestrator, integration finisher, and workflow doctor
 - `scripts/workload-manifest.mjs` — deterministic, worktree-shared workload state
 - `scripts/install-codex-skills.mjs` — idempotent Codex user-skill links
@@ -190,3 +208,9 @@ walkthroughs from tiny bug to foggy epic.
 
 Designed 2026-07-12 in the Ironwood-Website repo; canonical design spec lives
 there at `work/features/6-feature-workflow/spec.md`.
+
+Native Codex files in `plugins/workflow-kit/` are generated. Edit root skills,
+templates, or scripts, then run `node scripts/build-codex-package.mjs`.
+
+Run `python scripts/test-codex-install.py` to verify actual Codex CLI installation
+and packaged script execution in an isolated temporary home, without model calls.

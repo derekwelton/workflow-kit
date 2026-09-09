@@ -3,6 +3,11 @@ name: integrate-reviewed
 description: Integrate or merge a human-tested workflow-kit workload branch after its issues reached In Review. Use when the user explicitly accepts a named workload, wants its umbrella PR merged, wants reviewed work refreshed from main, or wants the workload reconciled and cleaned; never use for unreviewed issue branches.
 ---
 
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 # Integrate reviewed workload
 
 Accept `--run <workload-id>` and `--mode merged|local-main`. Default to no

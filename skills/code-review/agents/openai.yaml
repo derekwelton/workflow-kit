@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Review"
+  short_description: "Workflow guidance for code review"
+  default_prompt: "Use $code-review for this repository workflow task."

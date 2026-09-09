@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{SCOPE}} — audit {{DATE}}</title>
+<!--
+  workflow-kit · AUDIT report template.
+  Used by: `board audit`, `work-audit`, `ponytail-audit`,
+           `improve-codebase-architecture`.
+
+  These skills all share one shape: a ranked list of findings, each with a
+  PROPOSED action, awaiting ONE approval. Nothing here has been applied.
+
+  Fill {{PLACEHOLDERS}}; repeat/delete <article class="find"> blocks; set
+  {{SCOPE}} to what was swept ("the tracker", "the repo", "IRP-* comments").
+  Order findings by value, not by category — the top item should be the one
+  worth acting on first. Self-contained: inline CSS/JS only. Light mode only.
+
+  Action vocabulary → class:
+    delete → .a-del     archive → .a-arc    file an issue → .a-new
+    close  → .a-close   simplify → .a-simp  keep/no-op   → .a-keep
+    ask    → .a-ask
+-->
+<style>
+  :root{
+    --ink:#191d23; --soft:#586170; --faint:#8d95a3;
+    --paper:#f7f6f4; --card:#fff; --line:#e4e0d9;
+    --gold:#8a6d3b; --gold-soft:#f4eddf;
+    --red:#a03f2c; --red-soft:#fbeae5;
+    --green:#2f6f4f; --green-soft:#e6f2ec;
+    --blue:#2f5f8a; --blue-soft:#e6eef6;
+    --violet:#5b4c7d; --violet-soft:#f0eef5;
+    --mono:ui-monospace,'Cascadia Code',Consolas,monospace;
+    --shadow:0 1px 2px rgba(16,20,28,.05),0 1px 8px rgba(16,20,28,.03);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font:16px/1.6 -apple-system,'Segoe UI',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased}
+
+  .top{background:#1b1f26;color:#edeae4;padding:1.6rem 1.1rem 1.4rem}
+  .wrap{max-width:880px;margin:0 auto}
+  .kicker{font:600 .68rem/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;
+    color:#c9b98a;margin:0 0 .5rem}
+  h1{font-size:1.5rem;line-height:1.2;margin:0 0 .35rem;letter-spacing:-.01em}
+  .top p{margin:.4rem 0 0;color:#aab1bc;font-size:.95rem;max-width:62ch}
+  .tally{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:1rem;padding:0;list-style:none}
+  .tally li{font:600 .74rem/1 var(--mono);padding:.5em .7em;border-radius:999px;
+    border:1px solid #414855;color:#c8ccd4;white-space:nowrap}
+  .tally li.hot{border-color:#8a6d3b;background:#282218;color:#e0c894}
+
+  main{max-width:880px;margin:0 auto;padding:1.1rem 1.1rem 4rem}
+
+  .guard{background:var(--gold-soft);border:1px solid var(--gold);border-radius:10px;
+    padding:.8rem 1rem;margin:0 0 1.6rem;font-size:.93rem}
+  .guard b{display:block;font:600 .7rem/1 var(--mono);letter-spacing:.12em;
+    text-transform:uppercase;color:var(--gold);margin-bottom:.35rem}
+
+  .head{display:flex;align-items:baseline;gap:.55rem;margin:1.8rem 0 .8rem;
+    padding-bottom:.45rem;border-bottom:2px solid var(--ink)}
+  .head h2{font-size:1.02rem;margin:0}
+  .head .n{font:700 .8rem var(--mono);color:var(--gold)}
+  .head .sub{margin-left:auto;font:.76rem var(--mono);color:var(--faint)}
+
+  .find{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:.85rem .95rem;margin:.55rem 0;box-shadow:var(--shadow)}
+  .row{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem}
+  .rank{font:700 .78rem var(--mono);color:var(--faint);min-width:1.6rem}
+  .what{font-weight:600;flex:1 1 13rem;min-width:0;word-break:break-word}
+  .what code{font:.86em var(--mono);background:var(--gold-soft);border-radius:4px;
+    padding:.1em .35em}
+  .act{font:600 .66rem/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;
+    padding:.4em .6em;border-radius:5px;white-space:nowrap}
+  .a-del{background:var(--red-soft);color:var(--red)}
+  .a-close{background:var(--red-soft);color:var(--red)}
+  .a-arc{background:var(--blue-soft);color:var(--blue)}
+  .a-new{background:var(--green-soft);color:var(--green)}
+  .a-simp{background:var(--gold-soft);color:var(--gold)}
+  .a-ask{background:var(--violet-soft);color:var(--violet)}
+  .a-keep{background:var(--card);color:var(--faint);border:1px solid var(--line)}
+  .why{margin:.45rem 0 0;font-size:.9rem;color:var(--soft)}
+  .why b{color:var(--ink)}
+  .ev{margin:.5rem 0 0;padding:.5rem .7rem;background:var(--gold-soft);
+    border-left:2px solid var(--gold);border-radius:0 6px 6px 0;
+    font:.8rem/1.5 var(--mono);overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+  .facts{display:flex;flex-wrap:wrap;gap:.35rem .9rem;margin:.5rem 0 0;padding:0;
+    list-style:none;font:.74rem var(--mono);color:var(--faint)}
+
+  .approve{background:#1b1f26;color:#edeae4;border-radius:12px;padding:1.1rem 1.15rem;
+    margin-top:2rem}
+  .approve h2{margin:0 0 .5rem;font-size:1rem;color:#fff}
+  .approve p{margin:.5rem 0}
+  .approve code{background:#2e3540;color:#e9e5dd;border-radius:4px;padding:.12em .4em;
+    font:.85em var(--mono)}
+  .approve .hint{color:#a4abb6;font-size:.88rem;margin-top:.9rem}
+
+  .coverage{margin:1.4rem 0 0;padding:.7rem .9rem;border:1px dashed var(--line);
+    border-radius:8px;font-size:.84rem;color:var(--soft);background:var(--card)}
+  .coverage b{color:var(--ink)}
+
+  @media(min-width:720px){
+    .top{padding:2.4rem 1.5rem 2rem}
+    h1{font-size:1.95rem}
+    main{padding:1.8rem 1.5rem 5rem}
+    .find{padding:.95rem 1.1rem}
+  }
+  @media print{
+    body{background:#fff}
+    .top,.approve{background:#fff;color:#000;border:1px solid #000}
+    .top .kicker,.top p,.approve .hint{color:#333}
+    .tally li{border-color:#999;color:#000}
+    .find{break-inside:avoid;box-shadow:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="kicker">Audit · {{SCOPE}} · {{DATE}}</p>
+    <h1>{{What was swept, in plain words}}</h1>
+    <p>{{One sentence: the headline finding. e.g. "Nine items to clear; two of
+       them are follow-up work that was mentioned in comments and never filed."}}</p>
+    <ul class="tally">
+      <li class="hot"><b>{{n}}</b> findings</li>
+      <li><b>{{n}}</b> to delete</li>
+      <li><b>{{n}}</b> to file</li>
+      <li><b>{{n}}</b> need a decision</li>
+    </ul>
+  </div>
+</header>
+
+<main>
+
+  <div class="guard">
+    <b>Nothing has been changed</b>
+    Every item below is a <em>proposal</em>. Nothing is deleted, closed, moved,
+    or filed until you approve. Approve all, or list the exceptions.
+  </div>
+
+  <!-- ====== group findings by category; order groups by value ====== -->
+  <div class="head">
+    <span class="n">01</span><h2>{{Highest-value group, e.g. Follow-ups never filed}}</h2>
+    <span class="sub">{{n}} items</span>
+  </div>
+
+  <article class="find">
+    <div class="row">
+      <span class="rank">1</span>
+      <span class="what">{{The finding — name the thing: <code>path/or/IRP-13</code>}}</span>
+      <span class="act a-new">file issue</span>
+    </div>
+    <p class="why">{{Why it's a finding, and what the action would do.}}
+      <b>{{The consequence of leaving it.}}</b></p>
+    <blockquote class="ev">{{Evidence: the comment quote, the file:line, the
+git output — whatever proves it. Keep it short.}}</blockquote>
+    <ul class="facts"><li>{{source}}</li><li>{{age}}</li></ul>
+  </article>
+
+  <article class="find">
+    <div class="row">
+      <span class="rank">2</span>
+      <span class="what">{{Second finding}}</span>
+      <span class="act a-del">delete</span>
+    </div>
+    <p class="why">{{Reason.}}</p>
+  </article>
+
+  <div class="head">
+    <span class="n">02</span><h2>{{Next group}}</h2>
+    <span class="sub">{{n}} items</span>
+  </div>
+
+  <article class="find">
+    <div class="row">
+      <span class="rank">3</span>
+      <span class="what">{{Finding}}</span>
+      <span class="act a-ask">needs you</span>
+    </div>
+    <p class="why">{{What can't be settled without a human, and the recommendation.}}</p>
+  </article>
+
+  <div class="approve">
+    <h2>One approval</h2>
+    <p>{{Restate the ask in one line: "Approve all nine, or tell me which to skip."}}</p>
+    <p class="hint">Nothing runs until you reply. Destructive steps use
+      <code>git mv</code>/<code>git rm</code> so history stays clean; issues are
+      closed with a one-line comment, never silently.</p>
+  </div>
+
+  <p class="coverage">
+    <b>Coverage.</b> {{What was actually swept and what was not — thresholds
+    used, anything sampled rather than read in full, anything deliberately out
+    of scope.}}
+  </p>
+
+</main>
+</body>
+</html>

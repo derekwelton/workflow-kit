@@ -1,0 +1,6 @@
+interface:
+  display_name: "Wayfinder"
+  short_description: "Workflow guidance for wayfinder"
+  default_prompt: "Use $wayfinder for this repository workflow task."
+policy:
+  allow_implicit_invocation: false

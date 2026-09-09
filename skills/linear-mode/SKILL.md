@@ -3,6 +3,11 @@ name: linear-mode
 description: The Linear-mode contract every lifecycle skill defers to — gating on linearTeam, sync-thread comments, standalone and workload Code Review to In Review handoffs, branch naming from gitBranchName, and issue body/comment templates. Read when working in a repo whose feature-lifecycle.md sets linearTeam, or when another skill points here.
 ---
 
+If `tracker: github-projects` or a local Projects contract is present, use
+`../github-projects/SKILL.md` instead. An explicit conflicting `linearTeam`
+blocks tracker writes until reconciled.
+
+
 # Linear mode
 
 The tracker contract for repos bound to a Linear team. **Optional.** A repo

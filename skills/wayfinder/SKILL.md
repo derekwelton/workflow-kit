@@ -4,6 +4,11 @@ description: Plan a huge chunk of work — more than one agent session can hold 
 disable-model-invocation: true
 ---
 
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 A loose idea has arrived — too big for one agent session, and wrapped in fog:
 the way from here to the **destination** isn't visible yet. Wayfinding is
 about finding that way, not charging at the destination. This skill charts the

@@ -1,0 +1,4 @@
+interface:
+  display_name: "New Feature"
+  short_description: "Workflow guidance for new feature"
+  default_prompt: "Use $new-feature for this repository workflow task."

@@ -19,44 +19,27 @@
    already exists, record its path and continue. Step 1 refreshes the machine
    plugin; Step 2 refreshes the repo's stamped integration.
 
-## Step 1 — Validate the plugin is installed on this machine
+## Step 1 — Install or refresh on the current host
 
-Run `claude plugin list` and look for `workflow-kit@derekwelton`.
+Choose the host actually running this task. Do not require Claude on Codex-only
+machines. Preserve existing install scope and never remove another plugin.
 
-- **Missing** → ask the user which scope to install at, recommending user
-  level:
-  - **User level (recommended)** — available in every repo on this machine;
-    install once, done for all current and future projects:
-    ```
-    claude plugin marketplace add derekwelton/workflow-kit
-    claude plugin install workflow-kit@derekwelton
-    ```
-  - **Project level** — only this repo (e.g. a shared/client machine where
-    other projects shouldn't see it): add `--scope project` to both commands.
+- **Claude Code:** install or update `workflow-kit@derekwelton` from
+  `derekwelton/workflow-kit` with the Claude plugin commands in README.md.
+- **Codex native:** with CLI 0.153.0+, run `codex plugin marketplace add
+  derekwelton/workflow-kit` then `codex plugin add
+  workflow-kit@derekwelton-workflow`. For local development use the checkout's
+  absolute path as the marketplace source. For an existing marketplace inspect
+  the CLI's `marketplace upgrade --help` and upgrade before reinstalling.
+- **Other Codex surfaces:** use a complete checkout and run
+  `node <checkout>/scripts/install-codex-skills.mjs`; no Claude dependency.
+  Preserve conflicts and report them. Native and fallback catalogs should not
+  both expose duplicate names.
 
-  If the user isn't reachable, install at user level and say so.
-- **Installed** → check it's current:
-  ```
-  claude plugin marketplace update derekwelton
-  claude plugin update workflow-kit@derekwelton
-  ```
-  (The bare name `workflow-kit` fails — always use `workflow-kit@derekwelton`.)
-
-Tell the user if an install/update happened: skills load at session start, so
-`/workflow-kit:*` commands appear next session. **Do not stop** — Step 2 works
-without the loaded skills.
-
-If Codex is installed, expose the portable workload entry points too. Run the
-installer from this marketplace checkout:
-
-```powershell
-node "$HOME/.claude/plugins/marketplaces/derekwelton/scripts/install-codex-skills.mjs"
-```
-
-It creates or verifies user-skill links for `$orchestrate-queue`,
-`$integrate-reviewed`, and `$workflow-doctor`. It never overwrites a conflicting
-directory; report a conflict and leave it untouched. Restart Codex after an
-install so its skill catalog refreshes.
+Resolve the package root from the real loaded skill path, or the verified
+checkout. Keep all scripts/templates/references together. Report source,
+installed, and loaded versions separately. New skills may require a new session;
+continue initialization using the files directly when necessary.
 
 ## Step 2 — Initialize or refresh this repo
 
@@ -72,8 +55,8 @@ not Claude), fetch its instructions and follow them directly. Use
 `skills/workflow-init/SKILL.md` for a new one:
 
 ```
-gh api repos/derekwelton/workflow-kit/contents/skills/<skill>/SKILL.md \
-  --jq .content | base64 -d
+$file = gh api repos/derekwelton/workflow-kit/contents/skills/<skill>/SKILL.md | ConvertFrom-Json
+[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($file.content))
 ```
 
 Fetch `templates/feature-lifecycle.md` the same way. `workflow-init` also
@@ -105,11 +88,12 @@ Every agent must be able to *discover* the lifecycle from the repo itself:
 
 ## Step 4 — Codex delegation layer (if the machine uses Codex)
 
-If the `codex` CLI is installed on this machine (`codex --version` succeeds):
+Only for Claude-to-Codex delegation, when both CLIs are installed:
 
-1. Ensure the modernized plugin is installed: `claude plugin list` should show
+1. Ensure the adapter version 2.3.0 or newer is installed: `claude plugin list` should show
    `codex@derekwelton-codex`.
-   - Stale `codex@openai-codex` present -> `claude plugin uninstall codex@openai-codex` first.
+   - Stale `codex@openai-codex` present -> report the duplicate and preserve it;
+     remove it only when the user has authorized that removal.
    - `codex@derekwelton-codex` missing (fresh machine or after uninstall) ->
      ```
      claude plugin marketplace add derekwelton/codex-kit
@@ -122,7 +106,9 @@ If the `codex` CLI is installed on this machine (`codex --version` succeeds):
    `gh api` and stamp it (replacing any older full model-selection section;
    keep repo-specific exceptions below the marker comment).
 
-If `codex` isn't installed, skip this step and say so.
+For a Codex-only workflow, the Claude-to-Codex adapter is unnecessary. Skip it.
+Do not change the global model or effort configuration; workers pass explicit
+controls from the shared model-routing policy.
 
 ## Step 4a — Linear mode (only if the repo binds a Linear team)
 
@@ -159,7 +145,7 @@ If it is bound:
 - If this file was **copied into the repo**, delete the copy — the stamped
   `feature-lifecycle.md` supersedes it; this file lives only in
   `derekwelton/workflow-kit` (one source, no drift).
-- Report: plugin status (installed/updated/current), Codex skill-link status,
+- Report: plugin status (installed/updated/current), Codex native-plugin or fallback skill-link status,
   whether the repo was
   initialized or refreshed, files changed vs. preserved, which entrypoint has
   the pointer, and any legacy mess found. Remind the user: new work starts

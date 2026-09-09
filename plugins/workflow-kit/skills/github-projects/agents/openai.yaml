@@ -1,0 +1,4 @@
+interface:
+  display_name: "Github Projects"
+  short_description: "Workflow guidance for github projects"
+  default_prompt: "Use $github-projects for this repository workflow task."

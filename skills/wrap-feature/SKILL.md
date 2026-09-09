@@ -3,6 +3,11 @@ name: wrap-feature
 description: Close out a finished unit of work — verifies merge + checklist, records outcomes and closes the issue with a summary (under Linear mode, preserves the human-review boundary and never sets Done), deletes ephemera, archives any folder, and prunes git. Use when the user declares a feature/bug/chore done.
 ---
 
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 # wrap-feature
 
 Argument: the issue number (or infer the feature being wrapped from context and

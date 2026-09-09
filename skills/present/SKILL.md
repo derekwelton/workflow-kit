@@ -3,6 +3,16 @@ name: present
 description: Generate a self-contained HTML review document for the user from the current feature's state — spec reviews, design comparisons, QA galleries, research findings, wrap-up reports. Use whenever something needs the user's review or decision (markdown stays the format for agent-to-agent handoffs).
 ---
 
+Resolve `<workflow-kit-root>` from this SKILL.md's real filesystem path: two
+directories up. Resolve symlinks first. Use that root for templates and scripts
+on either host; never assume a Claude environment variable exists in Codex.
+
+
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 # present
 
 Render the thing that needs the user's eyes as a polished, self-contained HTML
@@ -32,7 +42,7 @@ otherwise infer from what the current session produced.
    if genuinely ambiguous). Review docs need somewhere to live, so if the work
    has an issue but no folder yet — normal under Linear mode — create it now.
 2. **Pick the template that matches the report's shape**, from
-   `${CLAUDE_PLUGIN_ROOT}/templates/`. Each is self-contained, responsive,
+   `<workflow-kit-root>/templates/`. Each is self-contained, responsive,
    light-mode, and print-aware; they share one design system, so reports look like a
    family rather than five unrelated documents.
 

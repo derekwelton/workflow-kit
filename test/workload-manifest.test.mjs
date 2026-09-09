@@ -18,7 +18,24 @@ function git(cwd, ...args) {
   return result.stdout.trim();
 }
 
+const execution = (provider, role) => JSON.stringify({
+  requestedModel: provider === "codex" ? "gpt-6-astra" : "claude-fable-5-1",
+  resolvedModel: null, resolutionStatus: "unverified", effort: "medium",
+  workerId: `${role}-fixture-session`, policyVersion: "2026-09-04", fallbackReason: null
+});
+
+function withExecutionFixtures(args) {
+  if (args[0] !== "set-issue") return args;
+  const result = [...args];
+  for (const [flag, role] of [["--implementer", "implementation"], ["--reviewer", "review"]]) {
+    const index = args.indexOf(flag);
+    if (index !== -1 && !args.includes(`--${role}-execution`)) result.push(`--${role}-execution`, execution(args[index + 1], role));
+  }
+  return result;
+}
+
 function run(cwd, ...args) {
+  args = withExecutionFixtures(args);
   return spawnSync(process.execPath, [SCRIPT, ...args, "--cwd", cwd], {
     cwd,
     encoding: "utf8",
@@ -27,6 +44,7 @@ function run(cwd, ...args) {
 }
 
 function runAsync(cwd, ...args) {
+  args = withExecutionFixtures(args);
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [SCRIPT, ...args, "--cwd", cwd], {
       cwd,
@@ -451,15 +469,60 @@ test("Codex skill installer creates stable links and is idempotent", () => {
     assert.equal(installed.healthy, true);
     assert.deepEqual(
       installed.results.map((entry) => entry.status),
-      ["installed", "installed", "installed"]
+      Array(30).fill("installed")
     );
     const checked = reconcileCodexSkillLinks({ targetDir, check: true });
     assert.equal(checked.healthy, true);
     assert.deepEqual(
       checked.results.map((entry) => entry.status),
-      ["current", "current", "current"]
+      Array(30).fill("current")
     );
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+
+test("schema migration preserves historical receipts and never guesses model identity", () => {
+  withRepository((directory) => {
+    const init = JSON.parse(run(directory, "init", "--name", "Old Run", "--issues", "A-1").stdout);
+    const old = init.manifest;
+    old.schemaVersion = 2;
+    const historicalSha = old.repository.baseSha;
+    Object.assign(old.issues[0], { state: "reviewed-pending-integration", baseSha: historicalSha,
+      headSha: historicalSha, implementationProvider: "codex", reviewProvider: "claude",
+      tests: `${historicalSha}: historical tests passed`, reviewReceipt: `claude:${historicalSha}:historical-review` });
+    delete old.issues[0].implementationExecution;
+    delete old.issues[0].reviewExecution;
+    fs.writeFileSync(init.filePath, JSON.stringify(old));
+    const before = fs.readFileSync(init.filePath, "utf8");
+    const dry = run(directory, "migrate", "--run", "old-run", "--dry-run");
+    assert.equal(dry.status, 0, dry.stderr);
+    assert.equal(fs.readFileSync(init.filePath, "utf8"), before);
+    assert.equal(run(directory, "migrate", "--run", "old-run").status, 0);
+    const migrated = JSON.parse(run(directory, "show", "--run", "old-run").stdout).manifest;
+    assert.equal(migrated.schemaVersion, 3);
+    assert.equal(migrated.repository.baseSha, old.repository.baseSha);
+    assert.equal(migrated.issues[0].state, old.issues[0].state);
+    assert.equal(migrated.issues[0].reviewReceipt, old.issues[0].reviewReceipt);
+    assert.equal(migrated.issues[0].tests, old.issues[0].tests);
+    assert.deepEqual(migrated.issues[0].implementationExecution, { legacy: true, resolvedModel: null, effort: null, workerId: null });
+    assert.equal(run(directory, "migrate", "--run", "old-run").status, 0);
+    const forged = run(directory, "set-issue", "--run", "old-run", "--issue", "A-1", "--implementation-execution", JSON.stringify({ legacy: true }));
+    assert.equal(forged.status, 1);
+    assert.equal(run(directory, "set-issue", "--run", "old-run", "--issue", "A-1", "--state", "implementing").status, 0);
+    const newWork = run(directory, "set-issue", "--run", "old-run", "--issue", "A-1", "--state", "code-review");
+    assert.equal(newWork.status, 1);
+    assert.match(newWork.stderr, /implementationExecution is required/);
+  });
+});
+
+test("schema 3 rejects completion without execution provenance", () => {
+  withRepository((directory) => {
+    run(directory, "init", "--name", "Missing Provenance", "--issues", "A-1", "--implementer", "codex");
+    const sha = git(directory, "rev-parse", "HEAD");
+    const result = run(directory, "set-issue", "--run", "missing-provenance", "--issue", "A-1", "--state", "code-review", "--base-sha", sha, "--head-sha", sha, "--tests", `${sha}: passed`);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /implementationExecution is required/);
+  });
 });

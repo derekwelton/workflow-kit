@@ -1,0 +1,16 @@
+{
+  "name": "workflow-kit",
+  "version": "0.9.0",
+  "description": "Issue-driven delivery with portable skills, conservative model routing, independent review, and resumable workloads.",
+  "author": { "name": "Derek Welton" },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Workflow Kit",
+    "shortDescription": "Plan, implement, review, and hand off work.",
+    "longDescription": "Shared Claude and Codex workflows for GitHub Issues, GitHub Projects, and Linear, with explicit model routing and human acceptance gates.",
+    "developerName": "Derek Welton",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": "Use $workflow-doctor to inspect this repository's workflow setup."
+  }
+}

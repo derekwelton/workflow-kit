@@ -1,0 +1,4 @@
+interface:
+  display_name: "Prototype"
+  short_description: "Workflow guidance for prototype"
+  default_prompt: "Use $prototype for this repository workflow task."

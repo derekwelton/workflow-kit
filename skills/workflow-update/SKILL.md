@@ -3,6 +3,16 @@ name: workflow-update
 description: Refresh an existing project's workflow-kit integration from the currently installed plugin while preserving repository-specific configuration and additions. Use when the user asks to update, upgrade, refresh, or synchronize workflow-kit in a repo that has already run workflow-init.
 ---
 
+Resolve `<workflow-kit-root>` from this SKILL.md's real filesystem path: two
+directories up. Resolve symlinks first. Use that root for templates and scripts
+on either host; never assume a Claude environment variable exists in Codex.
+
+
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 # workflow-update
 
 Refresh the current repository from the installed workflow-kit. Optional
@@ -12,7 +22,7 @@ argument: `--check` reports drift without editing.
 
 - Work inside a git repository that already contains a workflow-kit-stamped
   `feature-lifecycle.md`. If none exists, use `workflow-init` instead.
-- Treat `${CLAUDE_PLUGIN_ROOT}` as the source. If the user has not refreshed
+- Treat `<workflow-kit-root>` as the source. If the user has not refreshed
   the machine installation yet, remind them to run the marketplace/plugin
   update commands and start a new session before this skill.
 - In the default apply mode, follow the repo's issue-first policy: reuse a
@@ -28,7 +38,7 @@ argument: `--check` reports drift without editing.
    to a repository search for a workflow-kit-stamped `feature-lifecycle.md`.
    Stop if more than one candidate is genuinely ambiguous.
 2. Read the project document and
-   `${CLAUDE_PLUGIN_ROOT}/templates/feature-lifecycle.md` completely. Require
+   `<workflow-kit-root>/templates/feature-lifecycle.md` completely. Require
    the source template to contain matching `workflow-kit:managed-start` and
    `workflow-kit:managed-end` comments.
 3. Preserve the project's YAML frontmatter exactly. It owns `workDir`,
@@ -62,8 +72,9 @@ After the lifecycle document is current, idempotently verify the same seams as
 - `work/features/` and `_archive/` exist at the configured `workDir`;
 - the workflow-kit gitignore block contains the current required patterns,
   preserving repo exceptions;
-- `feature`, `bug`, `chore`, and `idea` labels exist; never delete or rename
-  additional labels;
+- for ordinary GitHub mode, configured classification labels exist; for GitHub
+  Projects, verify configured Issue Types, fields and mappings read-only instead
+  of creating classification labels; never rename local labels or statuses;
 - exactly one canonical agent entrypoint points to the configured lifecycle
   document, and vendor wrappers still point to that canonical entrypoint.
 
@@ -71,12 +82,12 @@ Show the resulting diff. Run the plugin/repo documentation checks available in
 the project, plus `git diff --check`. Do not commit or push unless the user or
 repo workflow requests it.
 
-**Say plainly that the refresh only reaches other agents once it is committed.**
-Claude reads the installed plugin, but Codex, Gemini, Cursor, and every other
-machine read *only* the committed lifecycle document. Until this diff is
-committed and pushed, they keep following the old contract — so an uncommitted
-`workflow-update` has updated nothing for them. Recommend committing it, and
-say so even when the user hasn't asked about other agents.
+**Report three separate refresh states:** local checkout files, instructions
+already loaded in the current session, and changes distributed to other machines.
+Agents in this checkout can read uncommitted changes immediately; a long-lived
+session may retain earlier instructions until it rereads them or restarts.
+Commit and push deliver the repository policy to collaborators and other
+machines. Machine plugin updates remain separate from repository refresh.
 
 In apply mode, use `update-issue` with the old/new workflow-kit versions, files
 changed, preserved local additions, validation results, and any remaining

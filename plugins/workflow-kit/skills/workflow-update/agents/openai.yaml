@@ -1,0 +1,4 @@
+interface:
+  display_name: "Workflow Update"
+  short_description: "Workflow guidance for workflow update"
+  default_prompt: "Use $workflow-update for this repository workflow task."

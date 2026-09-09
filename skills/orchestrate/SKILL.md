@@ -3,6 +3,11 @@ name: orchestrate-queue
 description: Orchestrate a filtered or explicit multi-issue workload through isolated implementation, independent model-paired review, one current-main integration branch, combined verification, an umbrella PR, and a batch Linear In Review handoff. Use when the user asks to run a bug, feature, improvement, label, parent, Todo, Code Review, or named issue queue as one testable workload; supports planning, provider-pair overrides, and resuming interrupted runs.
 ---
 
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 # Orchestrate queue
 
 Run a bounded multi-issue workload. Keep one coordinator as the tracker,
@@ -16,6 +21,8 @@ name as `$orchestrate-queue`.
 Read `references/workload-contract.md` before execution. Read the repository's
 workflow lifecycle completely. If `linearTeam` is set, also read
 `../linear-mode/SKILL.md`.
+
+Read `../model-routing/SKILL.md` before selecting any worker.
 
 ## Arguments
 
@@ -78,12 +85,16 @@ Git, file, or manifest writes.
 
 Build a dependency graph from tracker relations, PR bases, commit ancestry,
 and predicted file overlap. Serialize dependent or heavily overlapping issues.
-Use no more than the configured worker limits; queue the remainder and launch
-the next worker when a slot completes.
+Use no more than the configured worker limits and available host slots. Count
+the coordinator, active workers, and nested axis reviewers in the same budget.
+Use `workerCapacity` in `scripts/lib/model-policy.mjs` from the package root.
+If capacity is unknown, run one worker without nested delegation. Queue the
+remainder; serialize axis reviews when parallel execution will not fit.
 
 Assign one leased worktree per issue from its Linear `gitBranchName` or the
-repository branch convention. Record branch, worktree, base SHA, and actual
-implementation provider before work begins.
+repository branch convention. Record branch, worktree, base SHA, provider, explicit model/effort, and worker
+identity before work begins. Pass the routing policy to workers and require the
+execution envelope. Never infer a resolved model from the requested model.
 
 ## 4. Implement
 
@@ -98,7 +109,8 @@ discoveries to the coordinator for deduplication.
 After validating its envelope and auditing untracked files, commit/push as the
 repository policy allows, post the implementation checkpoint on the sync
 thread, and set the issue to `Code Review`. Record `code-review` in the
-manifest with `--base-sha`, `--head-sha`, `--implementer`, and `--tests`. The
+manifest with `--base-sha`, `--head-sha`, `--implementer`, `--implementation-execution`
+(JSON), and `--tests`. The
 helper resolves both SHAs through Git. Test evidence must include the exact
 tested head SHA so a later head change invalidates the old evidence.
 
@@ -118,11 +130,11 @@ issue worktree as `--cwd`. Before launching it, write the complete issue/spec,
 standards, base/head, and both review axes to a coordinator-owned focus file
 below the workload's Git-common state directory; pass only that safe absolute
 path to the adapter and remove it after recording the receipt. Do not hand-roll
-Codex CLI commands or poll state files. For Claude review, use fresh Opus
-reviewers. Same-provider modes still require a fresh session.
+Codex CLI commands or poll state files. For Claude review, use fresh Claude
+reviewers selected by model-routing. Same-provider modes still require a fresh session.
 
 Keep the Linear issue in `Code Review`. Record
-`reviewed-pending-integration`, provider, head SHA, tests, and review receipt in
+`reviewed-pending-integration`, provider, head SHA, tests, `--review-execution` JSON, and review receipt in
 the manifest. Format the receipt as
 `<review-provider>:<full-head-sha>:<durable-receipt-id>`; the helper rejects a
 receipt not bound to the recorded provider and final head. A blocked review
@@ -150,6 +162,12 @@ boolean is not accepted and recorded conflict history cannot be cleared.
 Push the integration branch and open one draft umbrella PR to the default
 branch. Reference every issue with `Refs`; never use `Closes` under Linear
 mode. Do not merge it.
+
+For GitHub Projects, replace Linear status names below with the verified local
+phase mapping. Without a codeReview column, the pre-handoff tracker status is
+the mapped inProgress value. Post to the GitHub issue directly, not a Linear
+sync thread. Ordinary GitHub Issues uses durable checkpoints without project
+status mutations. Never create new statuses to fit this workflow.
 
 ## 7. Hand off for human review
 

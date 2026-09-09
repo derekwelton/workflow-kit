@@ -3,6 +3,11 @@ name: code-review
 description: Independently review and optionally fix a branch, PR, or repository-scoped Linear Code Review queue along Standards and Spec axes. Supports Codex, Claude, and cross-provider workload review receipts; standalone reviews hand completed work to In Review, while multi-issue workloads remain in Code Review until their integration branch passes.
 ---
 
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 Two-axis review of a diff between a completed implementation and its fixed
 point:
 
@@ -151,15 +156,17 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 
 ### 4. Run an independent reviewer
 
+Read `../model-routing/SKILL.md`; pass explicit model and effort controls.
+
 Choose the provider before launching review:
 
-- Codex-authored implementation → fresh Claude Opus reviewer by default.
-- Claude-authored implementation → fresh Codex Sol reviewer by default.
+- Codex-authored implementation → fresh Claude reviewer selected by model-routing by default.
+- Claude-authored implementation → fresh Codex reviewer selected by model-routing by default.
 - `codex-only` / `claude-only` workloads → a fresh, context-independent
   session of that provider.
 
 The reviewer must cover both axes below. With Claude, run the two axis prompts
-as parallel fresh Opus sub-agents. With Codex, use the dedicated Codex reviewer
+as fresh Claude sub-agents, parallel only within host capacity. With Codex, use the dedicated Codex reviewer
 adapter once with the exact worktree `--cwd`, fixed base/head SHAs, Standards
 sources, issue body/spec comment, and an instruction to report both axes. Do
 not call the low-level companion runtime from an ordinary sub-agent, inspect
@@ -167,7 +174,7 @@ its state directory, or poll it manually.
 
 #### Claude two-axis prompts
 
-Send a single message with two Agent tool calls (general-purpose subagents).
+Launch the two axes in fresh contexts using the available host tools; serialize if capacity is insufficient.
 
 **Standards sub-agent prompt** — include:
 

@@ -44,3 +44,28 @@ Vendored from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponyta
 Not vendored (add later if wanted): ponytail-review (diff-scoped — our
 code-review's Standards axis + ponytail-at-write-time cover most of it),
 ponytail-debt, ponytail-gain, ponytail-help.
+
+
+## Selective refresh: 2026-09-04
+
+Compared mattpocock/skills through `3cca18b368ae95cdbdebbff572ccafa662551015`
+(169 commits beyond the original pin). Adopted the shareable HTML logic prototype
+from `skills/engineering/prototype/LOGIC.md`, adapted its parent skill, added
+Codex metadata across our catalog, and adopted TDD's codebase-design reference.
+Other files remain local adaptations of the original pin; this is not a blanket
+vendor revision. Preserved issue-first, review, artifact, and invocation policies.
+
+Compared DietrichGebert/ponytail through `974d940a1c5344210874150b98ff0d2c861fab6a`
+(eight commits beyond the pin). Used its agent-portability documentation and
+native Codex packaging as reference. No runtime hooks were imported: this kit
+vendors the skill behavior and has its own workflow entrypoints. The original
+ponytail skill provenance remains unchanged.
+
+Model sources checked September 4:
+- https://developers.openai.com/api/docs/models/gpt-6-astra
+- https://platform.claude.com/docs/en/release-notes/overview
+- https://learn.chatgpt.com/docs/agent-configuration/subagents
+- https://learn.chatgpt.com/docs/changelog
+
+Effort ceilings and default routing reflect the owner's September 4 instruction,
+not vendor benchmark rankings. Historical work/features research is archival.

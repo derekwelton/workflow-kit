@@ -4,6 +4,11 @@ description: Implement a piece of work from the feature spec or a sub-issue tick
 disable-model-invocation: true
 ---
 
+Read the repository lifecycle and local overrides first. When `tracker: github-projects`
+or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
+its field/status/label rules override the GitHub/Linear defaults below.
+
+
 Implement the work described in the feature folder's `spec.md` — or, under
 Linear mode, in the issue body plus its spec comment
 (`../linear-mode/SKILL.md`) — or in the specific sub-issue ticket the
@@ -45,5 +50,6 @@ context; hand off between them.
   Under Linear mode there is no `notes.md` — that line is a checkpoint comment
   on the sync thread instead (linear-mode §3, §6).
 
-Model/agent routing (e.g. delegating bulk implementation to another model) is
-per-repo policy — follow the repo's CLAUDE.md/AGENTS.md, not this skill.
+Read `../model-routing/SKILL.md` for model/effort selection. Repository policy
+may narrow model choices or task ownership; it cannot raise the high effort
+ceiling or silently restore old generation-specific defaults.

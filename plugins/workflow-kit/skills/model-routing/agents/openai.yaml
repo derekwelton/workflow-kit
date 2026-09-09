@@ -1,0 +1,4 @@
+interface:
+  display_name: "Model Routing"
+  short_description: "Workflow guidance for model routing"
+  default_prompt: "Use $model-routing for this repository workflow task."
