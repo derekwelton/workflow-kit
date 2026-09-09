@@ -186,12 +186,19 @@ Anti-over-engineering skills adapted from [DietrichGebert/ponytail](https://gith
 interact, when they auto-load vs. need a slash command, and ordered
 walkthroughs from tiny bug to foggy epic.
 
+## Validate workflow-kit changes
+
+Run `node --test test/*.test.mjs` and `claude plugin validate .` before
+publishing a change.
+
 ## Layout
 
 - `skills/` — the complete portable skill catalog, including the portable workload
   orchestrator, integration finisher, and workflow doctor
 - `scripts/workload-manifest.mjs` — deterministic, worktree-shared workload state
 - `scripts/install-codex-skills.mjs` — idempotent Codex user-skill links
+- `skills/orchestrate/scripts/render-worker-result.mjs` — converts private worker
+  JSON into stage-aware human checkpoints; exact machine details are opt-in
 - `skills/linear-mode/SKILL.md` — the Linear-mode contract every skill defers to
   (gating, sync-thread rule, status contract, templates). Not a skill; a shared reference.
 - `templates/feature-lifecycle.md` — per-repo convention doc stamped by `workflow-init`

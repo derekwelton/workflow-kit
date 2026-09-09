@@ -9,7 +9,10 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PACKAGE_ROOT = fs.existsSync(path.join(ROOT, ".codex-plugin/plugin.json")) ? ROOT : path.join(ROOT, "plugins", "workflow-kit");
 const PORTABLE_SKILLS = new Map(fs.readdirSync(path.join(PACKAGE_ROOT, "skills"))
   .filter((name) => fs.existsSync(path.join(PACKAGE_ROOT, "skills", name, "SKILL.md")))
-  .map((name) => [name === "orchestrate" ? "orchestrate-queue" : name, path.join(PACKAGE_ROOT, "skills", name)]));
+  .map((name) => [name === "orchestrate" ? "orchestrate-queue" : name, {
+    sourcePath: path.join(PACKAGE_ROOT, "skills", name),
+    requiredFiles: name === "orchestrate" ? ["SKILL.md", path.join("scripts", "render-worker-result.mjs")] : ["SKILL.md"]
+  }]));
 
 function parseArgs(argv) {
   const options = {
@@ -56,6 +59,14 @@ function sameTarget(linkPath, sourcePath) {
   }
 }
 
+function sameFile(left, right) {
+  try {
+    return fs.realpathSync.native(left) === fs.realpathSync.native(right);
+  } catch {
+    return path.resolve(left) === path.resolve(right);
+  }
+}
+
 export function reconcileCodexSkillLinks(options = {}) {
   const targetDir = path.resolve(options.targetDir ?? path.join(os.homedir(), ".agents", "skills"));
   const check = options.check ?? false;
@@ -65,9 +76,12 @@ export function reconcileCodexSkillLinks(options = {}) {
     fs.mkdirSync(targetDir, { recursive: true });
   }
 
-  for (const [name, sourcePath] of PORTABLE_SKILLS) {
-    if (!fs.existsSync(path.join(sourcePath, "SKILL.md"))) {
-      throw new Error(`Portable skill source is missing: ${sourcePath}`);
+  for (const [name, { sourcePath, requiredFiles }] of PORTABLE_SKILLS) {
+    const missingFiles = requiredFiles.filter(
+      (relativePath) => !fs.existsSync(path.join(sourcePath, relativePath))
+    );
+    if (missingFiles.length > 0) {
+      throw new Error(`Portable skill source is incomplete: ${name} is missing ${missingFiles.join(", ")}`);
     }
 
     const linkPath = path.join(targetDir, name);
@@ -114,7 +128,7 @@ export function main(argv = process.argv.slice(2)) {
   }
 }
 
-if (path.resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && sameFile(fileURLToPath(import.meta.url), process.argv[1])) {
   try {
     main();
   } catch (error) {

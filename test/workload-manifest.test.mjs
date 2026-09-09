@@ -471,6 +471,10 @@ test("Codex skill installer creates stable links and is idempotent", () => {
       installed.results.map((entry) => entry.status),
       Array(30).fill("installed")
     );
+    assert.equal(
+      fs.existsSync(path.join(targetDir, "orchestrate-queue", "scripts", "render-worker-result.mjs")),
+      true
+    );
     const checked = reconcileCodexSkillLinks({ targetDir, check: true });
     assert.equal(checked.healthy, true);
     assert.deepEqual(
