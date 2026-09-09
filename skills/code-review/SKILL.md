@@ -40,6 +40,10 @@ agent.
   Review only the frozen issue heads. A completed issue review records
   `reviewed-pending-integration` and remains in Linear `Code Review`; the
   workload coordinator owns the later batch transition to `In Review`.
+  Follow `../orchestrate/references/workload-contract.md` for the review-round
+  cap and severity convergence. In workload mode only the coordinator spawns;
+  a dispatched reviewer performs its assigned axes without nested subagents.
+  This overrides any parallel sub-agent instructions below for that worker.
 
 Accept `--reviewer auto|codex|claude` and `--fix`. In workload mode, `auto`
 means the provider opposite the actual implementation author recorded in the

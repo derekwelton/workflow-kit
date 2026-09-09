@@ -15,6 +15,12 @@ its field/status/label rules override the GitHub/Linear defaults below.
 
 # board
 
+After locating the repository's canonical lifecycle doc, run
+`node <workflow-kit-root>/scripts/managed-version.mjs --cwd <repo> --lifecycle <canonical-doc>`.
+Resolve the package root from this skill's real path, two directories up.
+Include a one-line drift warning when needed; do not turn a status request into
+an automatic refresh. A newer repository stamp is not permission to downgrade it.
+
 Answers "where does this project stand?" against the tracker, scoped to **this
 repository**.
 

@@ -53,3 +53,11 @@ end of each issue-backed session, apply `update-issue` with the locked
 decisions, unresolved questions, recommendations, and next action. If the
 session pauses awaiting answers, the issue gets the same question round as a
 **Needs decision** comment; do not rely on chat history as the only queue.
+
+If delegated investigation is needed, route it through `../research/SKILL.md`
+and preserve cited findings in the feature's `research/` record before synthesis.
+Do not spawn research workers merely to expand an interview.
+
+End with one proportional offer: "Use to-spec to capture these decisions"
+(`/workflow-kit:to-spec` in Claude, `$to-spec` in Codex). Do not invoke a user-only
+skill implicitly or restart the interview.

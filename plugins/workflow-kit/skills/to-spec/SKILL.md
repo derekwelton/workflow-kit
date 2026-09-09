@@ -133,3 +133,8 @@ immutable timeline.
 
 Do not create a feature folder just to hold a spec — under Linear mode there is
 nothing to put in one. Folders appear only when research or evidence does.
+
+End with one next-step line. If the spec exceeds one practical agent context or
+needs several independently deliverable slices, offer `to-tickets`
+(`/workflow-kit:to-tickets` / `$to-tickets`). Otherwise suggest `implement` with
+the existing checklist. These user-only skills require the user's request.

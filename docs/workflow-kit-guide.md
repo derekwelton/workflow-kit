@@ -1,5 +1,23 @@
 # Workflow-kit, without the ceremony
 
+## September 9 update
+
+The September 4 catalog below remains a dated overview. Two additional helper
+entry points are now included: `skills/orchestrate/scripts/render-worker-result.mjs`
+turns worker envelopes into readable checkpoints; `scripts/managed-version.mjs`
+checks repository lifecycle version drift without editing it. There are now ten
+executable helper entry points plus two libraries; the skill count remains 30.
+
+Orchestration now defaults to two review rounds per issue. The first round may
+block on high/medium findings; later rounds block only on high, with unresolved
+medium/low findings linked to follow-up issues. An extra round requires explicit
+authorization and a recorded reason. Final-code review and human acceptance
+remain required. Manifest updates write dated handoffs automatically; workers
+cannot spawn subagents, and coordinators wait on completion notifications.
+Intake, board, orchestration, and doctor share the read-only drift helper.
+Planning skills now offer the next proportional step without invoking it silently.
+The optional transcript-usage report proposed in issue #6 is not implemented.
+
 Snapshot: 2026-09-04 · local source version 0.9.0 · unpublished changes included. This describes the checkout, not proof of what a running host has loaded.
 
 Workflow-kit gives an AI agent a repeatable way to carry work from a request to an independently reviewed result, while keeping the tracker and handoffs useful. Its strongest value is continuity and review discipline. Its largest usability problem is that everyday actions, specialist workflows, and background instructions all appear in one skill catalog.

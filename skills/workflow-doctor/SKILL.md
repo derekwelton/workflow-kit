@@ -10,6 +10,11 @@ its field/status/label rules override the GitHub/Linear defaults below.
 
 # Workflow doctor
 
+Use `node <workflow-kit-root>/scripts/managed-version.mjs --cwd <repo> --lifecycle <canonical-doc>`
+for the version comparison after locating the repository contract. The package
+root is two directories above this skill's real path. Distinguish missing,
+unstamped, stale, current, and newer docs; do not silently refresh or downgrade.
+
 Remain read-only. Do not create issues, change statuses, edit configuration,
 kill processes, remove worktrees, reinstall plugins, or repair manifests.
 

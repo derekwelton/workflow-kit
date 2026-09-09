@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { validatePackage } from "./validate-package.mjs";
 import { resolveRouting } from "./lib/model-policy.mjs";
 import { resolveTracker } from "./lib/tracker-policy.mjs";
+import { checkManagedVersion } from "./managed-version.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const checks = [];
@@ -19,6 +20,7 @@ const command = (name, args) => {
   return { available: result.status === 0, output: String(result.stdout ?? "").trim(), error: result.error?.message ?? null };
 };
 checks.push({ name: "source-package", ...validatePackage(root) });
+checks.push({ name: "managed-version", ...checkManagedVersion() });
 const codex = command("codex", ["--version"]);
 checks.push({ name: "codex-cli", ...codex });
 checks.push({ name: "claude-cli", ...command("claude", ["--version"]) });

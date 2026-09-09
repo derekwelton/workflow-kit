@@ -120,6 +120,7 @@ function parsePositiveInteger(value, fallback, name) {
     fail(`${name} must be a positive integer.`);
   }
   const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed)) fail(`${name} must be a safe positive integer.`);
   return parsed;
 }
 
@@ -286,6 +287,78 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+const REVIEW_CONVERGENCE = {
+  firstRoundBlocks: ["high", "medium"],
+  laterRoundsBlock: ["high"],
+  remainingFindings: "Link every unresolved medium/low finding to a follow-up issue before handoff."
+};
+
+function addReviewTracking(manifest) {
+  manifest.policy.maxReviewRounds ??= 2;
+  manifest.policy.reviewConvergence ??= REVIEW_CONVERGENCE;
+  for (const issue of manifest.issues) {
+    if (issue.reviewRounds === undefined) {
+      issue.reviewRounds = 0;
+      issue.reviewHistory = [];
+      issue.reviewHistoryUnknownBeforeMigration = true;
+    }
+    issue.reviewFindings ??= [];
+  }
+}
+
+// Called under the manifest lock. JSON is authoritative if a crash interrupts
+// the derived handoff write; compare updatedAt when reconciling a resume.
+function writeCheckpoint(filePath, manifest) {
+  atomicWriteJson(filePath, manifest);
+  const folder = path.join(path.dirname(filePath), manifest.id);
+  fs.mkdirSync(folder, { recursive: true });
+  const clean = (value) => String(value ?? "—").replace(/[\r\n|]/g, " ");
+  const lines = [
+    `# Handoff: ${clean(manifest.name)}`, "",
+    `Manifest updatedAt: ${manifest.updatedAt}`, `Source of truth: ${filePath}`, "",
+    "Resume: reconcile the manifest with Git, tracker, worker jobs, and review receipts before spawning.",
+    "Human acceptance is separate; never infer merge permission from this checkpoint.", "",
+    `Review limit: ${manifest.policy.maxReviewRounds ?? "legacy unknown"}. Round 1 blocks on high/medium; later rounds on high.`,
+    `Integration: ${clean(manifest.integration.state)} · ${clean(manifest.integration.branch)}`,
+    `Base: ${clean(manifest.integration.baseSha)} · Head: ${clean(manifest.integration.headSha)}`,
+    `PR: ${clean(manifest.integration.pullRequest)} · Tests: ${clean(manifest.integration.tests)}`,
+    `Blocker: ${clean(manifest.integration.blocker)}`, "",
+    "| Issue | Gate | Review rounds | Head | Worker | Receipt / tests | Blocker / follow-ups |",
+    "| --- | --- | --- | --- | --- | --- | --- |"
+  ];
+  for (const issue of manifest.issues) {
+    const execution = issue.reviewExecution ?? issue.implementationExecution;
+    const followUps = [...new Set([...(issue.reviewFindings ?? []),
+      ...(issue.reviewHistory ?? []).flatMap(round => round.findings ?? [])]
+      .filter(f => f.followUp).map(f => f.followUp))];
+    lines.push(`| ${[issue.key, issue.state,
+      `${issue.reviewRounds ?? 0}${issue.reviewHistoryUnknownBeforeMigration ? " + unknown historical rounds" : ""}`,
+      issue.headSha, execution ? `${execution.workerId} (${execution.requestedModel ?? "unknown"}, ${execution.effort ?? "unknown"})` : null,
+      `${issue.reviewReceipt ?? "no receipt"}; ${issue.tests ?? "no tests"}`,
+      `${issue.blocker ?? "none"}; ${followUps.join(", ")}`
+    ].map(clean).join(" | ")} |`);
+  }
+  fs.writeFileSync(path.join(folder, `handoff-${manifest.updatedAt.slice(0, 10)}.md`), `${lines.join("\n")}\n`, "utf8");
+}
+
+function beginReviewRound(manifest, issue, options) {
+  const round = issue.reviewRounds + 1;
+  const extra = booleanOption(options, "allow-extra-round");
+  const reason = extra ? requireTextOption(options.reason, "reason") : null;
+  if (round > manifest.policy.maxReviewRounds && !extra) {
+    fail(`Review round ${round} exceeds maxReviewRounds ${manifest.policy.maxReviewRounds}. Stop and report the blocker, or use --allow-extra-round --reason with explicit authorization.`);
+  }
+  if (issue.reviewHistory.length) {
+    const previous = issue.reviewHistory.at(-1);
+    if (issue.reviewReceipt) previous.receipt = issue.reviewReceipt;
+  }
+  issue.reviewRounds = round;
+  issue.reviewHistory.push({ round, headSha: issue.headSha, startedAt: nowIso(), extraRoundReason: reason });
+  issue.reviewExecution = null;
+  issue.reviewReceipt = null;
+  issue.reviewFindings = [];
+}
+
 function validateBranchName(repository, branch) {
   const result = runGit(repository.root, ["check-ref-format", "--branch", branch], { allowFailure: true });
   if (result.status !== 0) {
@@ -405,6 +478,8 @@ function commandInit(cwd, options) {
       reviewProvider,
       maxImplementers: parsePositiveInteger(options["max-implementers"], 4, "max-implementers"),
       maxReviewers: parsePositiveInteger(options["max-reviewers"], 2, "max-reviewers"),
+      maxReviewRounds: parsePositiveInteger(options["max-review-rounds"], 2, "max-review-rounds"),
+      reviewConvergence: REVIEW_CONVERGENCE,
       allowPartial: booleanOption(options, "allow-partial"),
       terminal: "integrated-in-review"
     },
@@ -421,6 +496,9 @@ function commandInit(cwd, options) {
       implementationExecution: null,
       reviewExecution: null,
       reviewReceipt: null,
+      reviewRounds: 0,
+      reviewHistory: [],
+      reviewFindings: [],
       tests: null,
       blocker: null,
       updatedAt: timestamp
@@ -448,7 +526,7 @@ function commandInit(cwd, options) {
     if (fs.existsSync(filePath) && !booleanOption(options, "force")) {
       fail(`Workload "${id}" already exists. Use --resume ${id}, or pass --force intentionally.`);
     }
-    atomicWriteJson(filePath, manifest);
+    writeCheckpoint(filePath, manifest);
   });
   return { filePath, written: true, manifest };
 }
@@ -469,11 +547,13 @@ function commandSetIssue(cwd, options) {
   const filePath = manifestPath(repository, runReference);
   return withFileLock(filePath, () => {
     const { manifest } = readManifest(repository, runReference);
+    addReviewTracking(manifest);
     const issue = manifest.issues.find((candidate) => candidate.key.toLowerCase() === issueKey.toLowerCase());
     if (!issue) {
       fail(`Issue "${issueKey}" is not in workload "${manifest.id}".`);
     }
 
+    const previousReviewExecution = issue.reviewExecution ?? issue.reviewHistory.at(-1)?.execution;
     if (options.state !== undefined) {
       const state = String(options.state);
       if (!ISSUE_STATES.has(state)) {
@@ -493,6 +573,16 @@ function commandSetIssue(cwd, options) {
     assignIfPresent(issue, "pullRequest", options.pr, String);
     assignIfPresent(issue, "implementationProvider", options.implementer, (value) => normalizeProvider(value, { allowAuto: false }));
     assignIfPresent(issue, "reviewProvider", options.reviewer, (value) => normalizeProvider(value, { allowAuto: false }));
+    const nextReviewExecution = options["review-execution"] === undefined ? null
+      : JSON.parse(requireTextOption(options["review-execution"], "review-execution"));
+    const completedReview = ["reviewed-pending-integration", "in-review", "done"].includes(issue.state);
+    // A new review worker is a new round even if a caller omits the state flag.
+    if (options.state === "code-review" ||
+        (nextReviewExecution && previousReviewExecution && nextReviewExecution.workerId !== previousReviewExecution.workerId) ||
+        (completedReview && issue.reviewHistory.length > 0 && issue.reviewHistory.at(-1).headSha !== issue.headSha) ||
+        (completedReview && issue.reviewRounds === 0 && !issue.reviewHistoryUnknownBeforeMigration)) {
+      beginReviewRound(manifest, issue, options);
+    }
     for (const role of ["implementation", "review"]) {
       const input = options[`${role}-execution`];
       if (input !== undefined) {
@@ -501,6 +591,9 @@ function commandSetIssue(cwd, options) {
       }
     }
     assignIfPresent(issue, "reviewReceipt", options["review-receipt"], String, "review-receipt");
+    if (options["review-findings"] !== undefined) {
+      issue.reviewFindings = JSON.parse(requireTextOption(options["review-findings"], "review-findings"));
+    }
     assignIfPresent(issue, "tests", options.tests, String);
     assignIfPresent(issue, "blocker", options.blocker, String);
     if (booleanOption(options, "clear-blocker")) {
@@ -515,8 +608,11 @@ function commandSetIssue(cwd, options) {
     }
     issue.updatedAt = nowIso();
     manifest.updatedAt = issue.updatedAt;
+    if (issue.reviewHistory.length && (issue.state === "code-review" || completedReview)) {
+      Object.assign(issue.reviewHistory.at(-1), { findings: issue.reviewFindings, receipt: issue.reviewReceipt, execution: issue.reviewExecution });
+    }
     assertManifestValid(manifest);
-    atomicWriteJson(filePath, manifest);
+    writeCheckpoint(filePath, manifest);
     return { filePath, issue, manifestId: manifest.id };
   });
 }
@@ -527,6 +623,7 @@ function commandSetIntegration(cwd, options) {
   const filePath = manifestPath(repository, runReference);
   return withFileLock(filePath, () => {
     const { manifest } = readManifest(repository, runReference);
+    addReviewTracking(manifest);
     const integration = manifest.integration;
     const previousState = integration.state;
     const conflictsOccurred = booleanOption(options, "conflicts-occurred");
@@ -587,7 +684,7 @@ function commandSetIntegration(cwd, options) {
     integration.updatedAt = nowIso();
     manifest.updatedAt = integration.updatedAt;
     assertManifestValid(manifest);
-    atomicWriteJson(filePath, manifest);
+    writeCheckpoint(filePath, manifest);
     return { filePath, integration, manifestId: manifest.id };
   });
 }
@@ -629,8 +726,9 @@ function commandMigrate(cwd, options) {
       manifest.schemaVersion = 3;
       manifest.workflowKitVersion = WORKFLOW_KIT_VERSION;
     }
+    addReviewTracking(manifest);
     assertManifestValid(manifest);
-    if (!dryRun) atomicWriteJson(filePath, manifest);
+    if (!dryRun) writeCheckpoint(filePath, manifest);
     return { filePath, written: !dryRun, manifest };
   };
   return dryRun ? migrate() : withFileLock(filePath, migrate);
@@ -655,8 +753,40 @@ function validateManifest(manifest) {
   if (!PAIR_MODES.has(manifest.policy?.pairMode)) {
     errors.push("policy.pairMode is invalid");
   }
+  const limit = manifest.policy?.maxReviewRounds;
+  if (limit !== undefined && (!Number.isSafeInteger(limit) || limit < 1)) errors.push("policy.maxReviewRounds must be a positive safe integer");
 
   for (const issue of manifest.issues ?? []) {
+    if (limit !== undefined) {
+      if (!Number.isSafeInteger(issue.reviewRounds) || issue.reviewRounds < 0 ||
+          !Array.isArray(issue.reviewHistory) || issue.reviewHistory.length !== issue.reviewRounds) {
+        errors.push(`${issue.key}: reviewRounds must match reviewHistory`);
+      } else {
+        for (const [index, round] of issue.reviewHistory.entries()) {
+          if (round.round !== index + 1 || !isFullCommitSha(round.headSha)) errors.push(`${issue.key}: invalid review history`);
+          if (round.round > limit && (typeof round.extraRoundReason !== "string" || !round.extraRoundReason.trim())) {
+            errors.push(`${issue.key}: extra review round requires a reason`);
+          }
+        }
+      }
+    }
+    if (issue.reviewFindings !== undefined) {
+      if (!Array.isArray(issue.reviewFindings)) errors.push(`${issue.key}: reviewFindings must be an array`);
+      else for (const finding of issue.reviewFindings) {
+        if (!finding || !["high", "medium", "low"].includes(finding.severity) ||
+            !["open", "resolved", "deferred"].includes(finding.status) ||
+            typeof finding.summary !== "string" || !finding.summary.trim()) {
+          errors.push(`${issue.key}: invalid review finding`); continue;
+        }
+        if (["reviewed-pending-integration", "in-review", "done"].includes(issue.state) && finding.status !== "resolved") {
+          if (finding.severity === "high" || (finding.severity === "medium" && issue.reviewRounds < 2)) {
+            errors.push(`${issue.key}: unresolved ${finding.severity} finding blocks this review round`);
+          } else if (finding.status !== "deferred" || typeof finding.followUp !== "string" || !finding.followUp.trim()) {
+            errors.push(`${issue.key}: unresolved finding requires a linked follow-up issue`);
+          }
+        }
+      }
+    }
     if (issue.implementationExecution?.workerId && issue.implementationExecution.workerId === issue.reviewExecution?.workerId) {
       errors.push(`${issue.key}: implementation and review must use different worker sessions`);
     }
@@ -834,6 +964,8 @@ function printUsage() {
       "  workload-manifest.mjs set-integration --run <id> [fields]",
       "  workload-manifest.mjs migrate --run <id> [--dry-run]",
       "  workload-manifest.mjs show --run <id>",
+      "init accepts --max-review-rounds <n> (default 2). Each --state code-review records a new round before dispatch.",
+      "Extra rounds require --allow-extra-round --reason <authorized reason>. Findings: --review-findings JSON array of {severity, status, summary, followUp}.",
       "set-issue accepts --implementation-execution and --review-execution JSON with requestedModel, resolvedModel (null if unverified), effort, highReason, workerId, policyVersion, fallbackReason.",
       "  workload-manifest.mjs validate --run <id>",
       "  workload-manifest.mjs list",

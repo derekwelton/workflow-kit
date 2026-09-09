@@ -89,6 +89,45 @@ Workers edit and test their leased worktrees, then return a structured envelope.
 The coordinator audits tracked and untracked files before committing or
 integrating them.
 
+Only the coordinator spawns workers. Workers must not spawn their own subagents;
+review workers evaluate both axes themselves or return the need for a separate
+axis to the coordinator. Wait on harness completion notifications or supported
+Monitor conditions. Blocking `sleep` is forbidden; long waits belong in background
+tasks with completion delivery, not polling loops.
+
+Source edits use Edit/Write or the host's structured patch tool (`apply_patch`).
+Bash/PowerShell is for build, test, Git, and read-only inspection. Do not patch
+source through heredocs or inline Python. The failure signature
+`unexpected EOF while looking for matching` is a reason to switch to structured
+edits, not retry an increasingly escaped command. Use [worker-prompt.md](worker-prompt.md).
+
+## Review convergence and checkpoints
+
+Default `maxReviewRounds` is 2 per issue. `set-issue --state code-review` reserves
+each launch, including another review of an unchanged head. The first transition
+from implementation reserves round 1. A new review worker identity also consumes
+a round; metadata updates for the same worker do not. Extra rounds require the
+user's authorization and `--allow-extra-round --reason <text>`. Record all review
+axes from one dispatch as one round. A failed launch consumes its reserved round;
+report it rather than silently retrying. Never reset the count by reopening work.
+
+Round 1 blocks on high/medium; later rounds block only on high. Remaining
+medium/low findings become linked follow-ups, deduplicated by the coordinator,
+with `chore` where supported by the local tracker contract. Store the adjudicated
+findings via `--review-findings` as `{severity, status, summary, followUp}` entries.
+High findings cannot be deferred; medium findings cannot be deferred in round 1.
+Use `resolved` for fixed findings and `deferred` with a real issue link/key for
+the remainder. The final-SHA review and human acceptance gates remain mandatory.
+Review defaults to medium; high needs a reason from canonical model-routing.
+Sonnet/Haiku are not allowed worker routes; preserve the actual requested and
+resolved model evidence, including explicit unknown identity when not exposed.
+
+Successful mutations also write `<git-common>/workflow-kit/runs/<id>/handoff-<date>.md`
+with issue gates, rounds, evidence, follow-ups, blockers, and integration state.
+It is a derived checkpoint: reconcile its timestamp against the authoritative
+manifest before resume. Migration initializes counters without inventing past
+rounds and marks unknown historical review counts explicitly.
+
 ## Worker envelope
 
 Require every implementation and review worker to return:
@@ -150,7 +189,7 @@ requires a head-bound conflict review receipt when conflicts occurred.
 ## Final handoff
 
 Show one table with issue, implementer, reviewer, issue branch, review receipt,
-integration membership, tests, and blocker. Then state:
+integration membership, tests, blocker, review rounds/limit, and linked follow-ups. Then state:
 
 - integration branch and exact base/main SHA;
 - umbrella PR;

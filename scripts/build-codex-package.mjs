@@ -25,7 +25,7 @@ function collect(relative) {
 }
 collect("skills");
 collect("templates");
-for (const file of ["workload-manifest.mjs", "workflow-doctor.mjs", "validate-package.mjs", "install-codex-skills.mjs", "sync-codex-policy.mjs"]) expected.set(path.join("scripts", file), fs.readFileSync(path.join(root, "scripts", file), "utf8"));
+for (const file of ["workload-manifest.mjs", "workflow-doctor.mjs", "managed-version.mjs", "validate-package.mjs", "install-codex-skills.mjs", "sync-codex-policy.mjs"]) expected.set(path.join("scripts", file), fs.readFileSync(path.join(root, "scripts", file), "utf8"));
 collect("scripts/lib");
 expected.set(path.join(".codex-plugin", "plugin.json"), fs.readFileSync(path.join(root, "templates/codex-plugin.json"), "utf8"));
 expected.set(path.join(".claude-plugin", "plugin.json"), fs.readFileSync(path.join(root, ".claude-plugin/plugin.json"), "utf8"));

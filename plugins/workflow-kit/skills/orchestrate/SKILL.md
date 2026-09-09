@@ -44,6 +44,8 @@ Accept:
 --reviewer <auto|codex|claude>                 default: auto
 --max-implementers <n>                         default: 4
 --max-reviewers <n>                            default: 2
+--max-review-rounds <n>                        default: 2 per issue
+--allow-extra-round --reason <text>            explicit authorization for one extra round
 --allow-partial                                default: false
 --plan                                         read-only plan; create nothing
 --resume <workload-id>
@@ -60,6 +62,11 @@ Resolve the repository, default branch, lifecycle configuration, tracker team,
 exact statuses, canonical labels, synced GitHub twins, existing PRs, issue
 branches, and active worktrees. Query Linear first when `linearTeam` is set.
 Scope every result to the current GitHub repository.
+
+Run `node <workflow-kit-root>/scripts/managed-version.mjs --cwd <repo> --lifecycle <canonical-doc>`.
+Surface drift in one line; do not refresh or downgrade the repository implicitly.
+If `--parent` has no sub-issues, say "Run to-tickets first if this needs a batch;
+otherwise use implement on the parent." Do not manufacture issues for a clear small task.
 
 For a new run, freeze the issue keys once. Do not admit newly created or newly
 matching issues later. Deduplicate exact and semantic matches before freezing.
@@ -79,22 +86,34 @@ node <skill-dir>/scripts/workload-manifest.mjs init \
   --name "<name>" --issues "<frozen keys>" \
   --status "<status>" --labels "<labels>" \
   --pair "<pair>" --implementer "<provider>" --reviewer "<provider>" \
-  --max-implementers <n> --max-reviewers <n>
+  --max-implementers <n> --max-reviewers <n> --max-review-rounds <n>
 ```
 
 Use `--dry-run` for `--plan`. Report the frozen queue, dependency/file-overlap
 lanes, provider pairs, branch name, and terminal behavior; make no tracker,
-Git, file, or manifest writes.
+Git, file, or manifest writes. Include `maxReviewRounds: 2` (or the explicit
+limit) and the first-round high/medium versus later-round high convergence rule.
 
 ## 3. Plan bounded lanes
 
 Build a dependency graph from tracker relations, PR bases, commit ancestry,
 and predicted file overlap. Serialize dependent or heavily overlapping issues.
 Use no more than the configured worker limits and available host slots. Count
-the coordinator, active workers, and nested axis reviewers in the same budget.
+the coordinator and all active workers in the same budget. Only the coordinator
+spawns workers; workers must not spawn subagents, including axis reviewers.
 Use `workerCapacity` in `scripts/lib/model-policy.mjs` from the package root.
-If capacity is unknown, run one worker without nested delegation. Queue the
-remainder; serialize axis reviews when parallel execution will not fit.
+If capacity is unknown, run one worker. Queue the remainder; a review worker
+performs both axes itself, or the coordinator dispatches separate bounded axes.
+
+When planning needs delegated reading or research, use `../research/SKILL.md`
+and require a cited findings artifact in the feature's `research/` directory.
+The coordinator preserves it in the authorized canonical record before synthesis.
+
+**Waiting:** wait for harness completion notifications, or a supported Monitor
+until-condition. Blocking `sleep` is forbidden. Long operations use a background
+task and completion delivery, not foreground delay loops or state-file polling.
+Keep the coordinator responsive; retain worker output and resume from the saved
+job identity if delivery is interrupted. Do not launch duplicate replacement jobs.
 
 Assign one leased worktree per issue from its Linear `gitBranchName` or the
 repository branch convention. Record branch, worktree, base SHA, provider, explicit model/effort, and worker
@@ -106,6 +125,7 @@ execution envelope. Never infer a resolved model from the requested model.
 Move an issue to `In Progress` only when its worker starts. Give the worker the
 issue body/spec, fixed base SHA, worktree, repository instructions, focused
 verification expectations, and the worker-envelope contract.
+Use `references/worker-prompt.md` for both implementation and review dispatch.
 
 The implementation worker must not change Linear, create issues, create or
 merge PRs, assemble the integration branch, or review its own work. It returns
@@ -149,6 +169,21 @@ repository standards, and tests. Require Standards and Spec findings. The
 coordinator independently adjudicates findings, applies or delegates safe
 fixes, reruns focused tests, and obtains a receipt for the final head SHA.
 
+**Convergence:** reserve each review round with `set-issue --state code-review`
+before dispatch. The first implementation checkpoint reserves round 1; do not
+reserve it twice. Round 1 may block on high and medium findings; from round 2
+only high findings block. File every remaining medium/low as a deduplicated
+follow-up linked to the parent, using `chore` where the repository contract
+allows that label. Pass the adjudicated list through `--review-findings` JSON
+(`severity`, `status`, `summary`, `followUp`) and list those links on the dashboard.
+Resolved findings have status `resolved`; remaining findings must be `deferred`
+with a real follow-up key/URL before completion. Never downgrade a high finding
+to fit the budget. At the cap, leave the issue blocked unless the user explicitly
+authorizes `--allow-extra-round --reason <text>`. The cap never waives independent
+review of the final code. Reopening implementation does not reset the round count.
+Review effort remains medium by default; high requires a recorded intense-reasoning
+reason. The older issue's blanket high recommendation does not override routing.
+
 For Codex review from Claude, use the dedicated Codex reviewer adapter with the
 issue worktree as `--cwd`. Before launching it, write the complete issue/spec,
 standards, base/head, and both review axes to a coordinator-owned focus file
@@ -163,6 +198,12 @@ the manifest. Format the receipt as
 `<review-provider>:<full-head-sha>:<durable-receipt-id>`; the helper rejects a
 receipt not bound to the recorded provider and final head. A blocked review
 remains `Code Review` with a durable checkpoint.
+
+Every successful manifest mutation writes a dated handoff under the run's
+Git-common state directory. On resume, read it together with the manifest and
+compare `updatedAt`; JSON remains authoritative if a crash interrupted the
+derived handoff. This automatic checkpoint does not require invoking the
+user-only `handoff` skill or rely on compaction summaries.
 
 ## 6. Assemble the workload branch
 

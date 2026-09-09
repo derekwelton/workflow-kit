@@ -23,6 +23,9 @@ confirm it in your reply.
 - Read the repo's lifecycle doc (see its config frontmatter for `workDir`;
   default `work`) to respect per-repo paths and labels.
 - **Notice a stale repo, in one line.** While reading that doc, compare its
+  stamp using `node <workflow-kit-root>/scripts/managed-version.mjs --cwd <repo> --lifecycle <canonical-doc>`.
+  Resolve the package root from this skill's real path, two directories up.
+  The helper compares the
   `workflow-kit:managed-start version=` stamp to the installed plugin's
   version. If the repo's is older, or the markers are missing entirely
   (a pre-0.4.0 stamp), add one line to your report: the repo is on version X,
@@ -97,3 +100,9 @@ naming), §6 (artifacts), and §8 (body templates). Steps 1–2 above become:
 - Screenshots/evidence go in the folder's `qa/`, scratch scripts in `scratch/`,
   research findings in `research/`, session handoffs as `handoff-<date>.md`,
   documents for the user in `review/` (via `present`).
+
+End with one next-step line: small/clear → `implement`, branch and PR;
+decision-heavy → an opt-in `grilling` then `to-spec`; large agreed spec →
+`to-tickets`; shipped and accepted → `wrap-feature`. Reuse an existing issue
+when present. Once implementation starts, apply `update-issue` at meaningful
+checkpoints and offer closeout only after the review and acceptance gates.

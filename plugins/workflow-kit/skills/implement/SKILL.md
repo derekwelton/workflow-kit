@@ -57,3 +57,8 @@ context; hand off between them.
 Read `../model-routing/SKILL.md` for model/effort selection. Repository policy
 may narrow model choices or task ownership; it cannot raise the high effort
 ceiling or silently restore old generation-specific defaults.
+
+At the final checkpoint, name the next action in one line: independent
+`code-review` while code awaits review, or `wrap-feature` only after the user
+has accepted shipped work. Apply `update-issue` directly at meaningful gates;
+do not make the user remember a second bookkeeping command.

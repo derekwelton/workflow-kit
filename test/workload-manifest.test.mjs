@@ -530,3 +530,58 @@ test("schema 3 rejects completion without execution provenance", () => {
     assert.match(result.stderr, /implementationExecution is required/);
   });
 });
+
+test("review rounds are bounded, severity converges, and checkpoints survive resume", () => {
+  withRepository((directory) => {
+    const preview = run(directory, "init", "--name", "Bounded", "--issues", "A-1,A-2,A-3,A-4", "--dry-run");
+    const plan = JSON.parse(preview.stdout);
+    assert.equal(plan.manifest.policy.maxReviewRounds, 2);
+    assert.deepEqual(plan.manifest.policy.reviewConvergence.laterRoundsBlock, ["high"]);
+    assert.equal(fs.existsSync(path.dirname(plan.filePath)), false);
+    const init = JSON.parse(run(directory, "init", "--name", "Bounded", "--issues", "A-1", "--implementer", "codex").stdout);
+    const sha = git(directory, "rev-parse", "HEAD");
+    const fields = ["--run", "bounded", "--issue", "A-1"];
+    const round = (...extra) => run(directory, "set-issue", ...fields, "--state", "code-review", "--base-sha", sha, "--head-sha", sha, "--implementer", "codex", "--tests", `${sha}: passed`, ...extra);
+    assert.equal(round().status, 0);
+    const findings = (severity, status, followUp) => JSON.stringify([{ severity, status, summary: "A review concern", followUp }]);
+    const complete = (value) => run(directory, "set-issue", ...fields, "--state", "reviewed-pending-integration", "--reviewer", "claude", "--review-receipt", `claude:${sha}:receipt`, "--review-findings", value);
+    assert.match(complete(findings("medium", "deferred", "A-2")).stderr, /unresolved medium/);
+    assert.equal(round().status, 0);
+    assert.match(complete(findings("high", "deferred", "A-2")).stderr, /unresolved high/);
+    assert.match(complete(findings("medium", "open")).stderr, /linked follow-up/);
+    assert.equal(complete(findings("medium", "deferred", "A-2")).status, 0);
+    const saved = fs.readFileSync(init.filePath, "utf8");
+    assert.match(round().stderr, /exceeds maxReviewRounds 2/);
+    assert.equal(fs.readFileSync(init.filePath, "utf8"), saved);
+    assert.match(round("--allow-extra-round").stderr, /reason/);
+    assert.equal(round("--allow-extra-round", "--reason", "Owner authorized one final high-severity verification").status, 0);
+    const manifest = JSON.parse(fs.readFileSync(init.filePath, "utf8"));
+    assert.equal(manifest.issues[0].reviewRounds, 3);
+    assert.match(manifest.issues[0].reviewHistory[2].extraRoundReason, /Owner authorized/);
+    const checkpoint = path.join(path.dirname(init.filePath), "bounded", `handoff-${manifest.updatedAt.slice(0, 10)}.md`);
+    assert.match(fs.readFileSync(checkpoint, "utf8"), /A-1.*code-review.*3/);
+    assert.match(fs.readFileSync(checkpoint, "utf8"), new RegExp(sha));
+    const forged = structuredClone(manifest);
+    forged.issues[0].reviewHistory[2].extraRoundReason = null;
+    assert.match(validateManifest(forged).join("\n"), /extra review round requires a reason/);
+  });
+});
+
+test("worker replacement and reopening implementation cannot bypass the review budget", () => {
+  withRepository((directory) => {
+    run(directory, "init", "--name", "Limited", "--issues", "A-1", "--max-review-rounds", "1");
+    const sha = git(directory, "rev-parse", "HEAD");
+    const common = ["--run", "limited", "--issue", "A-1"];
+    const completed = run(directory, "set-issue", ...common, "--state", "reviewed-pending-integration", "--base-sha", sha, "--head-sha", sha, "--implementer", "codex", "--reviewer", "claude", "--review-receipt", `claude:${sha}:first`, "--tests", `${sha}: passed`);
+    assert.equal(completed.status, 0, completed.stderr);
+    const replacement = JSON.parse(execution("claude", "review")); replacement.workerId = "replacement";
+    const changed = run(directory, "set-issue", ...common, "--review-execution", JSON.stringify(replacement));
+    assert.match(changed.stderr, /exceeds maxReviewRounds 1/);
+    assert.equal(run(directory, "set-issue", ...common, "--state", "implementing").status, 0);
+    const reopened = run(directory, "set-issue", ...common, "--state", "code-review", "--implementer", "codex");
+    assert.match(reopened.stderr, /exceeds maxReviewRounds 1/);
+    for (const value of ["0", "-1", "1.5", "9007199254740992"]) {
+      assert.equal(run(directory, "init", "--name", "Invalid", "--issues", "A-1", "--max-review-rounds", value, "--dry-run").status, 1);
+    }
+  });
+});
