@@ -1,83 +1,32 @@
 ---
 name: present
-description: Generate a self-contained HTML review document for the user from the current feature's state — spec reviews, design comparisons, QA galleries, research findings, wrap-up reports. Use whenever something needs the user's review or decision (markdown stays the format for agent-to-agent handoffs).
+description: Render supplied canonical content into a self-contained HTML report and verify its appearance. Pure presentation; the caller owns persistence and any tracker checkpoint.
 ---
 
-Resolve this skill's real filesystem path before following relative references.
-The package root is two directories above this SKILL.md; retain its sibling
-skills, scripts, and templates together.
+Resolve this skill's real filesystem path; package root is `../..` from its directory.
 
 
-Resolve `<workflow-kit-root>` from this SKILL.md's real filesystem path: two
-directories up. Resolve symlinks first. Use that root for templates and scripts
-on either host; never assume a Claude environment variable exists in Codex.
+# Present
 
+Pure renderer of supplied canonical content into a self-contained HTML report.
+Read repository visual rules when applicable. Resolve the package root from this
+skill's real path (two directories up). Do not load lifecycle/tracker adapters.
 
-Read the repository lifecycle and local overrides first. When `tracker: github-projects`
-or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
-its field/status/label rules override the GitHub/Linear defaults below.
+The caller owns canonical facts, requested decisions, persistence, and any
+authorized checkpoint exactly once. Rendering never creates an issue, edits a
+spec/notes file, posts comments, or changes tracker state. Inherited read-only
+scope permits only an explicitly requested report artifact.
 
-
-# present
-
-Render the thing that needs the user's eyes as a polished, self-contained HTML
-document. Optional argument: a topic (e.g. `qa`, `spec-review`, `variants`);
-otherwise infer from what the current session produced.
-
-## Rules
-
-- **HTML is presentation, markdown is canonical.** Never put information ONLY
-  in the HTML — decisions and facts it presents must exist in (or be written
-  back to) `spec.md` / `notes.md`. Under Linear mode
-  (`../linear-mode/SKILL.md`) those files don't exist; the issue is the
-  canonical surface, so decisions are written back to the issue body and a
-  sync-thread comment instead.
-- Output path: `<feature-folder>/review/<YYYY-MM-DD>-<topic>.html`. Review docs
-  are ephemeral and gitignored; they die at wrap-up.
-- **Self-contained**: inline all CSS, no external requests, opens via `file://`.
-  Reference screenshots relatively from the sibling `qa/` folder (they're
-  local-only, same as the review doc).
-- **The issue comment is the remote review surface.** Apply `update-issue` for
-  every presentation. A local review doc may add polish and depth, but the
-  user must be able to understand and answer the request from GitHub alone.
-
-## Steps
-
-1. Identify the feature folder (the one being worked on this session; ask only
-   if genuinely ambiguous). Review docs need somewhere to live, so if the work
-   has an issue but no folder yet — normal under Linear mode — create it now.
-2. **Pick the template that matches the report's shape**, from
-   `<workflow-kit-root>/templates/`. Each is self-contained, responsive,
-   light-mode, and print-aware; they share one design system, so reports look like a
-   family rather than five unrelated documents.
-
-   | Template | Shape | Used by |
-   |---|---|---|
-   | `report-checkin.html` | Where things stand — awaiting-you first, history last | `board` |
-   | `report-audit.html` | Ranked findings, each a *proposed* action, one approval gate | `board audit`, `work-audit`, `ponytail-audit`, `improve-codebase-architecture` |
-   | `report-findings.html` | Conclusions with evidence and confidence; optional two axes | `code-review`, `research`, `plan` |
-   | `review-doc.html` | Anything else — the general shell (screenshot grid + lightbox, comparison columns, decision panel) | `prototype`, spec reviews, QA galleries |
-
-   Fill the placeholders, repeat or delete the example blocks, and **delete any
-   section with nothing in it** — an empty section is not proof you looked, and
-   the coverage note is where you say what was skipped. Keep the template's
-   look; freeform layout is allowed only for design-variant explorations where
-   the content IS the design.
-3. Structure the content for a reviewer, not a log: lead with what's being
-   asked of them, then the evidence. Always include:
-   - masthead: title, date, feature name + issue link,
-   - a **"Needs your decision"** panel listing the concrete questions
-     (or "FYI — no decisions needed"),
-   - sections of findings/comparisons/screenshots as appropriate.
-4. If a browser tool is available (Playwright), screenshot the rendered doc
-   once to verify nothing is broken; delete the check screenshot after.
-5. Log a dated line in `notes.md` (`presented: <file> — <topic>`) — under
-   Linear mode, that line is part of the issue comment in step 6 instead.
-6. Apply `update-issue` and post a **Ready for review** or **Needs decision**
-   comment. Include the executive summary, every concrete question with its
-   recommendation, the material evidence, and the next action. Link canonical
-   Markdown, a deployed preview, PR, commit, or screenshots only when they are
-   actually reachable from GitHub. If the HTML is local-only, label its path
-   as such and do not make opening it necessary to respond.
-7. Give the user the issue URL, the absolute local HTML path when useful, and
-   a 2–3 sentence summary of what it asks of them.
+1. Use the caller's output path; otherwise an existing feature review/ directory
+   or a task-local temporary report path. Do not create a feature folder/intake
+   merely to render. Return the chosen path.
+2. Load one template from the package templates/ directory:
+   report-checkin.html for status; report-audit.html for proposed changes;
+   report-findings.html for evidence/review; review-doc.html for comparisons/QA.
+3. Fill the template from supplied content; omit empty sections. Lead with the
+   outcome or decision, cite evidence, and mark uncertainty. An issue link is
+   optional. Preserve the template design; inline CSS, no remote requests.
+   Keep screenshots relative and report any external local asset dependencies.
+4. Open/render and screenshot once when a browser is available; fix visible
+   defects and recheck only the changed result. Otherwise state visual QA missing.
+5. Return the artifact and concise summary to the caller. Do not call update-issue.

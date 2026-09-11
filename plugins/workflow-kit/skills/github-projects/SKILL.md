@@ -1,11 +1,9 @@
 ---
 name: github-projects
-description: Apply repository-configured GitHub Projects intake, fields, statuses, issue types, and human review boundaries. Use when a workflow repository selects the github-projects tracker.
+description: Apply a repository's GitHub Projects tracker contract, issue types and status mappings. Use only when Projects is configured; distinguish reads from authorized writes.
 ---
 
-Resolve this skill's real filesystem path before following relative references.
-The package root is two directories above this SKILL.md; retain its sibling
-skills, scripts, and templates together.
+Resolve this skill's real filesystem path; package root is `../..` from its directory.
 
 
 # GitHub Projects contract

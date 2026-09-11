@@ -1,6 +1,6 @@
 ---
 name: grilling
-description: Grill the user relentlessly about a plan or design in rounds of bulk questions until shared understanding is reached. Use ONLY when the user explicitly asks for it — "grill me", "interview me", "stress-test this plan", "let's plan/brainstorm/design this" — or accepts an offered grilling. NEVER self-initiate a grilling session because a task merely looks non-trivial; if a request seems underspecified, offer a grilling in one line and let the user decide.
+description: Interview the user in dependency-aware question rounds. Use for explicit grilling, interview or plan stress-test requests, or an accepted offer; ordinary planning is insufficient.
 ---
 
 Interview the user relentlessly about every aspect of this plan until you reach
@@ -40,7 +40,9 @@ invoked, be relentless; until invoked, don't be here.
   been reached. Close the final round by restating the locked decisions in
   one compact list.
 
-Decisions produced by a grilling session are written into the feature's
+Read `../../templates/lifecycle-contract.md`; personal/advisory interviews
+remain in chat unless an artifact or publication is requested. Authorized
+issue-backed decisions are written into the feature's
 `spec.md` / `notes.md` — or, under Linear mode
 (`../linear-mode/SKILL.md`), into the issue body and a sync-thread
 comment. Either way the interview transcript is not the record. At the
@@ -50,7 +52,7 @@ session pauses awaiting answers, the issue gets the same question round as a
 **Needs decision** comment; do not rely on chat history as the only queue.
 
 If delegated investigation is needed, route it through `../research/SKILL.md`
-and preserve cited findings in the feature's `research/` record before synthesis.
+and retain its citations; a durable artifact is conditional on the research task.
 Do not spawn research workers merely to expand an interview.
 
 End with one proportional offer: "Use to-spec to capture these decisions"

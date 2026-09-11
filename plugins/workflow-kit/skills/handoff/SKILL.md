@@ -1,72 +1,38 @@
 ---
 name: handoff
-description: "Compact the current conversation into a handoff document in the feature folder so a fresh agent — on this machine or the other one — can pick up the work. Argument: what the next session will be used for."
+description: Record a compact resumption checkpoint for ongoing work when requested. Use the configured canonical issue or artifact and avoid duplicate handoff records.
 ---
 
-Resolve this skill's real filesystem path before following relative references.
-The package root is two directories above this SKILL.md; retain its sibling
-skills, scripts, and templates together.
+Resolve this skill's real filesystem path; package root is `../..` from its directory.
 
 
-Read the repository lifecycle and local overrides first. When `tracker: github-projects`
-or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
-its field/status/label rules override the GitHub/Linear defaults below.
+# Handoff
 
+Read repository configuration/local overrides and `../../templates/lifecycle-contract.md`.
+Record only information needed to resume that is absent from canonical sources.
 
-Write a handoff document summarising the current conversation so a fresh agent
-can continue the work.
+Choose the destination before writing:
+- Personal/read-only work: chat or the requested artifact path, no intake.
+- Authorized Linear handoff: one sync-thread checkpoint via update-issue,
+  not a file followed by a duplicate comment.
+- GitHub issue-backed work: one issue checkpoint, or an existing feature
+  handoff artifact when substantial evidence requires it. Create folders only
+  for actual artifacts; commit/push only as authorized.
+- Workload: manifest is state, issue thread is narrative; local snapshot is
+  optional and derived. Do not automatically invoke this user-only skill.
 
-Save it to the current feature folder as
-`<workDir>/features/<issue#>-<slug>/handoff-<YYYY-MM-DD>.md` — **committed**,
-so it syncs between machines via git (commit it; push only if the repo's
-conventions allow). If the work has no feature folder, file the issue first
-(`new-feature`) rather than saving somewhere loose.
+Include outcome/current state, unresolved decisions, suggested next skill,
+exact next action and relevant issue/spec/commit references. Retain loaded
+instruction real paths, versions/hashes and applicable rules still available
+after compaction; a filename alone does not preserve content.
 
-Rules:
+For workloads include saved policy/decisions, branch/worktree/base/head,
+review/test evidence, in-flight worker/job identities and owned runtime
+command/start-time. Preserve dirty/active worktrees and unresolved prerequisites.
+On resume reconcile actual Git/provider/tracker state before continuing.
+Redact secrets, PII and unrelated data.
 
-- Include a **"Suggested skills"** section naming the skills the next agent
-  should invoke (e.g. "resume with `implement` on ticket #12; run
-  `code-review` before wrap").
-- Do **not** duplicate content already captured in other artifacts — the spec,
-  plan, notes, ADRs, issues, commits, diffs. Reference them by path or URL.
-  The handoff carries only what exists nowhere else: conversation state,
-  in-flight reasoning, next-step intent.
-- **Redact sensitive information** — API keys, passwords, PII.
-- For workloads, reference saved policy/decisions, actual branch/worktree,
-  reviewed/tested head, worker/job IDs, and the exact next action. Include owned
-  runtime/process identity and prerequisites when relevant. On resume reconcile
-  actual state; preserve dirty/active worktrees and do not stop a process on PID
-  alone. Keep narrative on the canonical surface; local snapshots are derived.
-- If the user passed arguments, treat them as a description of what the next
-  session will focus on and tailor the doc accordingly.
-- Delete superseded handoff files when writing a new one — one live handoff
-  per feature. (All of them die at wrap anyway.)
-
-After committing the handoff, apply `update-issue` with a **Paused** or
-**Blocked** comment: current state, completed checkpoint, blocker/unfinished
-work, and exact resumption step. Link the handoff only if it has been pushed
-and is reachable on GitHub; otherwise label its path local-only and keep the
-comment sufficient for the next human to understand the pause.
-
-## Linear mode
-
-When the lifecycle doc's frontmatter carries `linearTeam`
-(`../linear-mode/SKILL.md`), **the handoff is a comment, not a file.**
-
-Write the same document — same rules on suggested skills, no duplication, and
-redaction — as a comment on the sync thread (linear-mode §3), headed
-`## Handoff — <YYYY-MM-DD>`. That way the next session reads it from either
-side, on any machine, without a pull, and it can't go stale in a folder nobody
-opens.
-
-Keep a committed `handoff-<date>.md` **only** when the handoff needs attached
-artifacts that don't belong in an issue body — a large dump, a log, evidence
-files. Then the comment carries the narrative and points at the folder path,
-labelled local-only unless it's pushed.
-
-Leave the status where it is: a pause isn't a transition. Say in the comment
-that work is paused and what unblocks it.
-
-The one-live-handoff rule still holds — but comments are an immutable timeline,
-so don't try to delete superseded ones. The newest comment wins; say so
-explicitly if an earlier handoff comment is now stale.
+The caller publishes once if authorized. Leave status unchanged for a pause.
+Reference prior records rather than duplicating them. Never delete immutable
+comments; label superseded records. Delete local handoffs only with authorized
+owned-artifact cleanup, not merely because a newer handoff exists.

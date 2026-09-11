@@ -91,9 +91,9 @@ Every agent must be able to *discover* the lifecycle from the repo itself:
 2. Vendor wrapper files (`CLAUDE.md` when `AGENTS.md` is canonical, etc.)
    point at the canonical entrypoint. Create a 2-line wrapper only if a tool
    the user actually uses needs it (e.g. a root `AGENTS.md` for Codex).
-3. The stamped `feature-lifecycle.md` retains its full skills-catalog tables —
-   that's how non-Claude agents (Codex, Gemini, Cursor) learn which skill's
-   steps to follow by hand.
+3. `feature-lifecycle.md` is the compact configuration/router, with generated
+   `feature-lifecycle-portable.md` beside it. Plugin hosts read the selected
+   package contract; hosts without the plugin read the fallback, never both.
 4. If the repo has pre-existing scattered work artifacts (old `specs/`,
    `plans/`, `scratch/` piles, TODO trackers), do NOT migrate them now —
    report them and recommend `/workflow-kit:work-audit` as the migration pass.

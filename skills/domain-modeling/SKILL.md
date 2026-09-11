@@ -1,6 +1,6 @@
 ---
 name: domain-modeling
-description: Build and sharpen a project's domain model. Use when the user wants to pin down domain terminology or a ubiquitous language, record an architectural decision, or when another skill needs to maintain the domain model.
+description: Read or refine domain terminology and record durable architectural decisions. Use for glossary or ADR work; reading vocabulary does not authorize changing it.
 ---
 
 # Domain Modeling

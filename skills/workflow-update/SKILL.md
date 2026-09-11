@@ -1,17 +1,12 @@
 ---
 name: workflow-update
-description: Refresh an existing project's workflow-kit integration from the currently installed plugin while preserving repository-specific configuration and additions. Use when the user asks to update, upgrade, refresh, or synchronize workflow-kit in a repo that has already run workflow-init.
+description: Refresh an adopted repository's managed workflow documents while preserving configuration and local overrides. Use --check for read-only drift reporting.
 ---
 
-Resolve `<workflow-kit-root>` from this SKILL.md's real filesystem path: two
-directories up. Resolve symlinks first. Use that root for templates and scripts
-on either host; never assume a Claude environment variable exists in Codex.
+Resolve package paths from this skill's real directory, two levels up.
 
-
-Read the repository lifecycle and local overrides first. When `tracker: github-projects`
-or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
-its field/status/label rules override the GitHub/Linear defaults below.
-
+Read repository configuration/local overrides and `../../templates/lifecycle-contract.md`.
+Load only the tracker operation and mode needed for this request.
 
 # workflow-update
 
@@ -37,10 +32,11 @@ argument: `--check` reports drift without editing.
 1. Locate the project document through its agent-entrypoint pointer; fall back
    to a repository search for a workflow-kit-stamped `feature-lifecycle.md`.
    Stop if more than one candidate is genuinely ambiguous.
-2. Read the project document and
-   `<workflow-kit-root>/templates/feature-lifecycle.md` completely. Require
-   the source template to contain matching `workflow-kit:managed-start` and
-   `workflow-kit:managed-end` comments.
+2. Use `node <workflow-kit-root>/scripts/refresh-lifecycle.mjs <canonical-doc> --check`
+   to preview managed router and portable fallback drift without writing.
+   For authorized apply, rerun without --check. The helper preserves content
+   outside exactly one managed block and refuses downgrades/ambiguous markers.
+   Legacy unmarked documents require the reconciliation in step 5 below.
 3. Preserve the project's YAML frontmatter exactly. It owns `workDir`,
    `docsHome`, labels, glossary paths, ADR paths, `linearTeam`, and any future
    repo-specific configuration. **Never add, remove, or change `linearTeam`
@@ -48,9 +44,9 @@ argument: `--check` reports drift without editing.
    skill behaves. If the repo has it, keep it verbatim; if it doesn't, leave
    it absent and mention in the report that Linear mode is available and
    opt-in.
-4. If the project document already has managed markers, replace only the
-   marked block with the source template's marked block. Preserve everything
-   below `workflow-kit:managed-end`; that is the repo-specific additions area.
+4. The helper replaces only the managed block and generated portable sibling.
+   Inspect the diff, including the preserved frontmatter and local additions.
+   Do not manually copy a second full lifecycle into the plugin route.
 5. For a legacy stamped document without markers:
    - inspect its git history and current diff to identify changes made after
      the original stamp;
@@ -59,6 +55,9 @@ argument: `--check` reports drift without editing.
    - move clearly repo-specific additions below the managed-end marker;
    - if a body edit cannot be classified safely, show the conflicting section
      and ask before replacing it. Never silently erase it.
+
+   After legacy reconciliation establishes one valid managed block, rerun the
+   helper so the generated portable sibling is created/refreshed too.
 
 In `--check` mode, report the installed template version, project version (or
 `legacy/unversioned`), and drift; make no edits. Check the reconciliation

@@ -1,17 +1,13 @@
 ---
 name: to-spec
-description: Turn the current conversation into the canonical spec — the feature folder's spec.md, or the issue body plus a spec comment under Linear mode. No interview, just synthesis of what was already discussed and decided. Use after a grilling session, or whenever accumulated context should crystallize into the canonical spec.
+description: Synthesize agreed scope, acceptance criteria and decisions into the configured canonical spec. Use when requested; clarify only unresolved material choices.
 ---
 
-Resolve this skill's real filesystem path before following relative references.
-The package root is two directories above this SKILL.md; retain its sibling
-skills, scripts, and templates together.
+Resolve this skill's real filesystem path; package root is `../..` from its directory.
 
 
-Read the repository lifecycle and local overrides first. When `tracker: github-projects`
-or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
-its field/status/label rules override the GitHub/Linear defaults below.
-
+Read repository configuration/local overrides and `../../templates/lifecycle-contract.md`.
+Load only the tracker operation and mode needed for this request.
 
 Take the current conversation context and codebase understanding and produce
 the spec. Do NOT interview the user — just synthesize what you already know
@@ -38,11 +34,8 @@ written**. See "Linear mode" at the bottom of this file.
 
 2. Sketch the **seams** at which the feature will be tested. Prefer existing
    seams to new ones; use the highest seam possible; if new seams are needed,
-   propose them at the highest point you can. The fewer seams across the
-   codebase, the better — the ideal number is one. **Check with the user that
-   these seams match their expectations** before writing. Apply `update-issue`
-   with the proposed seams, recommendation, and exact decision needed so the
-   request is durable outside the current chat.
+   propose them at the highest point you can. Existing public interfaces, tests and issue acceptance criteria are routine
+   agreement. Clarify only a material unresolved scope/coverage choice.
 
 3. Write `spec.md` using the template below (keep the standard header: title,
    issue link, status line). Update the issue's checklist if the breakdown
@@ -58,13 +51,10 @@ The problem the user is facing, from the user's perspective.
 
 The solution to the problem, from the user's perspective.
 
-## User Stories
+## Acceptance Criteria
 
-A LONG, numbered list of user stories, each in the format:
-
-1. As an <actor>, I want a <feature>, so that <benefit>
-
-This list should be extremely extensive and cover all aspects of the feature.
+A concise checklist of observable outcomes. Add user stories only when they
+convey information the acceptance criteria do not already capture.
 
 ## Implementation Decisions
 
@@ -103,7 +93,7 @@ spec only when its branch/commit is reachable from GitHub.
 
 When the lifecycle doc's frontmatter carries `linearTeam`, follow
 `../linear-mode/SKILL.md`. The process above is unchanged — explore,
-sketch the seams, check them with the user — but step 3 becomes:
+sketch the agreed seams, clarify material unknowns — but step 3 becomes:
 
 **Stop writing `spec.md`.** The spec is split between the issue body and one
 comment, by the rule in linear-mode §6: body = current truth, comments =

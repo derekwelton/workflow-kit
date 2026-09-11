@@ -1,17 +1,13 @@
 ---
 name: work-audit
-description: Sweep the repo for stale work — inactive feature folders, open issues with merged PRs, stale branches/worktrees, old QA sweeps, stray scratch files — and present a proposed cleanup list for one-shot approval. Never deletes anything without approval. Use ONLY when the user asks for an audit/cleanup/migration sweep — never spontaneously mid-task (at most, mention clutter in one line and let the user decide).
+description: Audit stale repository artifacts, branches and worktrees and propose cleanup. Advisory phase is read-only; execute only the approved concrete actions.
 ---
 
-Resolve this skill's real filesystem path before following relative references.
-The package root is two directories above this SKILL.md; retain its sibling
-skills, scripts, and templates together.
+Resolve this skill's real filesystem path; package root is `../..` from its directory.
 
 
-Read the repository lifecycle and local overrides first. When `tracker: github-projects`
-or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
-its field/status/label rules override the GitHub/Linear defaults below.
-
+Read repository configuration/local overrides and `../../templates/lifecycle-contract.md`.
+Load only the tracker operation and mode needed for this request.
 
 # work-audit
 
@@ -26,10 +22,10 @@ approved list.
 
 ## Phase 1 — Propose
 
-Resolve the audit's `chore` issue and feature folder first (`new-feature` if
-this audit does not have one), then apply `update-issue` with a Started comment.
-The audit issue is the single review/control point; do not scatter proposal
-comments across every issue being audited.
+Advisory audit is read-only by default: no issue, folder or comment is required.
+Reuse an existing issue only for explicitly authorized issue-backed publication.
+After the proposal is approved, implementation cleanup follows the lifecycle
+single-issue path; do not scatter comments across audited items.
 
 Scan (thresholds: feature folders stale after ~3 weeks of no file mtime/commit
 activity; dated QA-sweep folders stale after ~2 weeks; adjust if the repo's
@@ -62,10 +58,8 @@ unfiled follow-ups buried in comments — and pairs with this sweep.
 Present the findings as a table — item, category, proposed action (delete /
 archive / wrap / close / keep), and a one-line reason. If the list is long or
 includes visual evidence, use `/workflow-kit:present` with
-`templates/report-audit.html` to render it. Apply `update-issue` with a **Needs decision** comment containing the
-proposal summary, exact approval request, recommendations, and any
-GitHub-reachable artifact links. The comment must remain actionable when the
-HTML is local-only. End by asking for one-shot approval ("approve all", or
+`templates/report-audit.html` to render it. If issue publication is authorized, the caller uses update-issue once with
+this same self-contained proposal; present never publishes. End by asking for one-shot approval ("approve all", or
 list exceptions).
 
 ## Phase 2 — Execute (only after approval)
@@ -74,7 +68,7 @@ Apply exactly the approved actions. Use `git mv`/`git rm` for tracked files so
 history stays clean. Close issues with a one-line comment. Report a summary of
 what changed, and commit if the user's conventions call for it. Apply
 `update-issue` to the audit issue with the executed/skipped actions and
-verification, then wrap the audit issue when complete.
+verification, then hand off for human acceptance; wrap only after its gates hold.
 
 In Linear mode, status changes are subject to the same approval as deletions,
 and an agent still never sets `Done` (linear-mode §4) — propose it and leave

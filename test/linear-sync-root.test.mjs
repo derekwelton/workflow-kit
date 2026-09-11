@@ -1,13 +1,9 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
-import vm from "node:vm";
+import { selectSyncRoot as select } from "../scripts/lib/linear-sync-root.mjs";
 
-// Exercise the selector agents are given, not a second test-only algorithm.
-const skill = fs.readFileSync(new URL("../skills/linear-mode/SKILL.md", import.meta.url), "utf8");
-const implementation = skill.match(/```javascript\r?\n(function selectSyncRoot[\s\S]+?)\r?\n```/)?.[1];
-assert.ok(implementation, "The canonical skill must contain its reference selector");
-const select = vm.runInNewContext(`${implementation}; selectSyncRoot`, { URL });
+// Exercise the executable canonical selector distributed with both packages.
 const target = "https://github.com/example/project/issues/353";
 const root = (id = "sync-root", link = target) => ({
   id, parentId: null,
@@ -57,7 +53,7 @@ test("GitHub issue identity tolerates harmless URL variants without accepting an
 });
 
 test("distributed instructions preserve the full discovery and no-double-post rules", () => {
-  for (const relative of ["skills/linear-mode/SKILL.md", "skills/update-issue/SKILL.md", "templates/feature-lifecycle.md"]) {
+  for (const relative of ["skills/linear-mode/references/write.md", "templates/feature-lifecycle-portable.md"]) {
     const source = fs.readFileSync(new URL(`../${relative}`, import.meta.url), "utf8");
     assert.match(source, /[Pp]age/);
     assert.match(source, /[Uu]nique/);
@@ -67,8 +63,6 @@ test("distributed instructions preserve the full discovery and no-double-post ru
     assert.match(source, /Never\*?\*? post the same comment to GitHub|\*\*Never\*\* post the same comment to GitHub/i);
     assert.doesNotMatch(source, /author[^\n]*is `null`|`author: null`|the issue is not synced/);
     const generated = fs.readFileSync(new URL(`../plugins/workflow-kit/${relative}`, import.meta.url), "utf8");
-    if (relative === "skills/linear-mode/SKILL.md") {
-      assert.equal(generated.match(/```javascript\r?\n(function selectSyncRoot[\s\S]+?)\r?\n```/)?.[1], implementation);
-    }
+    assert.equal(generated.replace(/\r\n/g, "\n"), source.replace(/\r\n/g, "\n"));
   }
 });

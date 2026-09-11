@@ -1,27 +1,17 @@
 ---
 name: wayfinder
-description: Plan a huge chunk of work — more than one agent session can hold — as a shared map of investigation tickets on GitHub Issues, and resolve them one at a time until the way to the destination is clear.
+description: Plan an explicitly requested epic as bounded investigation tickets and a shared decision map. Resolve uncertainty before implementation; honor configured tracker semantics.
 ---
 
-Resolve this skill's real filesystem path before following relative references.
-The package root is two directories above this SKILL.md; retain its sibling
-skills, scripts, and templates together.
+Resolve this skill's real filesystem path; package root is `../..` from its directory.
 
 
-Read the repository lifecycle and local overrides first. When `tracker: github-projects`
-or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
-its field/status/label rules override the GitHub/Linear defaults below.
+Read repository configuration/local overrides and `../../templates/lifecycle-contract.md`.
+Load only the tracker operation and mode needed for this request.
 
-
-A loose idea has arrived — too big for one agent session, and wrapped in fog:
-the way from here to the **destination** isn't visible yet. Wayfinding is
-about finding that way, not charging at the destination. This skill charts the
-way as a **shared map** on GitHub Issues, then works its tickets one at a time
-until the route is clear.
-
-The destination varies per effort, and naming it is the first act of charting.
-It might be a spec to hand off, a decision to lock before planning starts, or
-a change made in place. The map is domain-agnostic.
+Plan an explicitly requested epic too large for one context as a map of
+bounded investigation tickets. State the destination and resolve decisions
+before handing off implementation.
 
 ## Plan, don't do
 
@@ -39,6 +29,15 @@ Every map and ticket is an issue, so it has a **name** — its title. In
 everything the human reads, refer to it by that name, never by a bare number.
 A wall of `#42, #43, #44` is illegible. The number and URL ride *inside* the
 name as a link, never stand in for it.
+
+## Tracker ownership
+
+Select the configured tracker adapter before publication. GitHub defaults
+below apply only to ordinary GitHub Issues. Linear/Projects own labels,
+statuses, relations and write destinations; do not create wayfinder labels or
+close Linear issues automatically. Read-only planning may draft the map in
+chat; publish only within explicit authorization. Create folders only for
+actual artifacts.
 
 ## How it lives on GitHub
 

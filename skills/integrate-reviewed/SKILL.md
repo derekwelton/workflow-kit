@@ -1,12 +1,10 @@
 ---
 name: integrate-reviewed
-description: Integrate or merge a human-tested workflow-kit workload branch after its issues reached In Review. Use when the user explicitly accepts a named workload, wants its umbrella PR merged, wants reviewed work refreshed from main, or wants the workload reconciled and cleaned; never use for unreviewed issue branches.
+description: Refresh or merge a named human-tested workload after review and integration gates. Requires explicit action authorization; preserves final-head acceptance and cleanup boundaries.
 ---
 
-Read the repository lifecycle and local overrides first. When `tracker: github-projects`
-or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
-its field/status/label rules override the GitHub/Linear defaults below.
-
+Read repository configuration/local overrides and `../../templates/lifecycle-contract.md`.
+Load only the tracker operation and mode needed for this request.
 
 # Integrate reviewed workload
 
@@ -17,8 +15,10 @@ environment; do not turn unknown prerequisites into a ready claim. Preserve
 dirty/active worktrees and confirm process command/start-time/ownership before
 stopping any owned runtime. Keep domain-specific commands in the consuming repo.
 
-Accept `--run <workload-id>` and `--mode merged|local-main`. Default to no
-action when either is missing; show the manifest and ask for the explicit mode.
+Accept `--run <workload-id>` and `--mode merged|local-main`. Resolve a named workload and mode from explicit natural-language authorization
+as well as flags ("merge workload X" selects merged). If the target or action is
+ambiguous, show the manifest and ask only for what is missing. Acceptance alone
+is not merge authorization.
 Invocation with `--mode merged` is authorization to merge only the named
 workload's umbrella PR after every gate below passes.
 
@@ -32,8 +32,10 @@ and the run manifest using `../orchestrate/scripts/workload-manifest.mjs`.
    receipts, combined tests, and one umbrella PR.
 2. Confirm the checked-out/tested integration head still equals the manifest
    head and the remote PR head. Stop on drift.
-3. Re-fetch every issue and require `In Review`. Never overwrite another
-   status.
+3. Re-fetch every issue and require the configured human-review status
+   (`In Review` for Linear, verified inReview mapping for Projects). Ordinary
+   GitHub uses the completed human-review checkpoint and manifest gates rather
+   than an invented status. Never overwrite an unexpected status.
 4. Fetch the remote default branch. If it advanced after the recorded base,
    combine it into the integration branch, resolve conflicts only there,
    independently review manual resolutions, rerun the repository integration
@@ -64,7 +66,8 @@ commits.
 ## Wrap
 
 Update the manifest integration state to `merged` only after verifying the
-merge. Post one final sync-thread reply per issue with the merge commit and
+merge. Publish one final checkpoint per issue through the configured tracker
+adapter (verified sync thread only for Linear), with merge commit and
 verification. Remove only manifest-leased worktrees/processes and prune only
 merged branches after resolving every target path inside the sanctioned
 worktree root.

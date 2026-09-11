@@ -1,6 +1,6 @@
 {
   "name": "workflow-kit",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "Issue-driven delivery with portable skills, conservative model routing, independent review, and resumable workloads.",
   "author": { "name": "Derek Welton" },
   "skills": "./skills/",

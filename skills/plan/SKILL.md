@@ -1,13 +1,11 @@
 ---
 name: plan
-description: Bulk intake and triage — turn an unstructured brain-dump of bugs, ideas, and leftover work into structured, deduped, prioritized issues in one approval-gated pass. Use when the user arrives with a list of things that need doing rather than a single unit of work.
+description: Turn an explicitly requested bulk work dump into deduplicated, reviewable issue drafts. Publish within authorized scope using the configured tracker.
 disable-model-invocation: true
 ---
 
-Read the repository lifecycle and local overrides first. When `tracker: github-projects`
-or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
-its field/status/label rules override the GitHub/Linear defaults below.
-
+Read repository configuration/local overrides and `../../templates/lifecycle-contract.md`.
+Load only the tracker operation and mode needed for this request.
 
 # plan
 
@@ -77,11 +75,11 @@ Collect clarifying questions and ask them **all at once, at the end** — never
 one question per item. If a question only affects one item's body, prefer
 routing that item to `Triage` over blocking the whole batch on it.
 
-### 5. One approval before any write
+### 5. Review the concrete publication scope
 
-**Show the full drafted set and get a single approval before creating
-anything.** Creating issues is an outward-facing write, and a batch of them is
-hard to undo.
+Show the full drafted set. If the user already authorized creating this batch,
+proceed within that scope; do not ask again. Otherwise obtain one approval for
+the concrete set before publishing through the shared tracker-write contract.
 
 Present a table: proposed title, type/label, priority, starting status, and
 either "new" or the existing issue it duplicates. Below the table, show the

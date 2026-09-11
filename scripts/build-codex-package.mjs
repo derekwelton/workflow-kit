@@ -2,11 +2,17 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { renderPortable, skillPathPreamble } from "./lib/portable-contract.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const output = path.join(root, "plugins", "workflow-kit");
 const check = process.argv.includes("--check");
 const expected = new Map();
 const readText = (file) => fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n");
+const portablePath = path.join(root, "templates", "feature-lifecycle-portable.md");
+const portable = renderPortable(root);
+if (check) {
+  if (!fs.existsSync(portablePath) || readText(portablePath) !== portable) throw new Error("Portable contract drift; run build-codex-package.mjs");
+} else fs.writeFileSync(portablePath, portable);
 function collect(relative) {
   const source = path.join(root, relative);
   for (const entry of fs.readdirSync(source, { withFileTypes: true })) {
@@ -18,7 +24,7 @@ function collect(relative) {
         // Claude controls invocation in frontmatter; Codex uses agents/openai.yaml.
         content = content.replace(/^disable-model-invocation: true\r?\n/gm, "");
         const frontmatterEnd = content.indexOf("\n---", 4) + 4;
-        content = content.slice(0, frontmatterEnd) + "\n\nResolve this skill's real filesystem path before following relative references.\nThe package root is two directories above this SKILL.md; retain its sibling\nskills, scripts, and templates together.\n" + content.slice(frontmatterEnd);
+        content = content.slice(0, frontmatterEnd) + `\n\n${skillPathPreamble}\n` + content.slice(frontmatterEnd);
       }
       expected.set(name, content);
     }
@@ -26,7 +32,7 @@ function collect(relative) {
 }
 collect("skills");
 collect("templates");
-for (const file of ["workload-manifest.mjs", "workflow-doctor.mjs", "managed-version.mjs", "validate-package.mjs", "install-codex-skills.mjs", "sync-codex-policy.mjs"]) expected.set(path.join("scripts", file), readText(path.join(root, "scripts", file)));
+for (const file of ["workload-manifest.mjs", "workflow-doctor.mjs", "managed-version.mjs", "validate-package.mjs", "install-codex-skills.mjs", "sync-codex-policy.mjs", "refresh-lifecycle.mjs"]) expected.set(path.join("scripts", file), readText(path.join(root, "scripts", file)));
 collect("scripts/lib");
 expected.set(path.join(".codex-plugin", "plugin.json"), readText(path.join(root, "templates/codex-plugin.json")));
 expected.set(path.join(".claude-plugin", "plugin.json"), readText(path.join(root, ".claude-plugin/plugin.json")));

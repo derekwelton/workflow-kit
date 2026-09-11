@@ -1,12 +1,10 @@
 ---
 name: workflow-doctor
-description: Run a read-only workflow-kit health audit for the current repository and machine. Use to diagnose stale workflow versions, broken Linear/GitHub sync, missing review statuses, plugin cache corruption, dead Codex jobs, inconsistent workload manifests, worktree/process leaks, permission conflicts, or why orchestration cannot resume safely.
+description: Diagnose workflow installation and repository readiness with a read-only audit. Use explicit doctor requests; ordinary work uses only capability-scoped preflight.
 ---
 
-Read the repository lifecycle and local overrides first. When `tracker: github-projects`
-or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
-its field/status/label rules override the GitHub/Linear defaults below.
-
+Read repository configuration/local overrides and `../../templates/lifecycle-contract.md`.
+Load only the tracker operation and mode needed for this request.
 
 # Workflow doctor
 

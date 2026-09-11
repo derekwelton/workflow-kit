@@ -16,7 +16,15 @@ test("coding and review resolve conservatively without machine defaults", () => 
 test("high needs a reason and unsupported efforts cannot reach a worker", () => {
   for (const effort of ["xhigh", "max", "ultra", "none", "minimal"]) assert.throws(() => resolveRouting({ effort }), /Unsupported effort/);
   assert.throws(() => resolveRouting({ effort: "high" }), /High effort requires/);
-  assert.equal(resolveRouting({ task: "orchestration" }).effort, "high");
+  for (const provider of ["codex", "claude"]) {
+    for (const task of ["orchestration", "intense"]) {
+      const route = resolveRouting({ provider, task });
+      assert.equal(route.effort, "medium");
+      assert.equal(route.highReason, null);
+      assert.equal(resolveRouting({ provider, task, effort: "low" }).effort, "low");
+      assert.throws(() => resolveRouting({ provider, task, effort: "high" }), /High effort requires/);
+    }
+  }
   assert.equal(resolveRouting({ effort: "high", highReason: "intense deadlock reasoning" }).effort, "high");
   assert.throws(() => resolveRouting({ availableModels: ["gpt-5.6-terra"] }), /unavailable/);
   assert.throws(() => resolveRouting({ model: "fable" }), /cannot run/);

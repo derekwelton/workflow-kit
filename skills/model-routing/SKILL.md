@@ -1,57 +1,59 @@
 ---
 name: model-routing
-description: Choose models and reasoning effort for workflow implementation, orchestration, and independent review. Use before delegating coding or review work; preserve explicit user choices and host limits.
+description: Choose worker models and reasoning effort for implementation, orchestration and independent review. Preserve explicit choices, host capacity and observed execution provenance.
 ---
 
 # Model routing
 
-The canonical policy is workflow-kit's `scripts/lib/model-policy.mjs`, relative
-to the package root. Codex-kit carries a generated copy of this skill and module.
-Never maintain a separate model ranking or infer a model from a machine default.
+Executable defaults: `../../scripts/lib/model-policy.mjs`. Codex-kit receives
+generated copies; never maintain a second ranking or infer machine defaults.
 
-| Work | Codex | Claude | Effort |
+## Decide whether to delegate
+
+Keep short lookups, immediate dependencies and tightly coupled edits local.
+Launch an authorized bounded independent task only with useful parallel
+coordinator work. Independent review needs fresh context even without a speed
+benefit. Describe the task class and reason before launch; file count alone
+does not determine complexity. Missing requirements/tools need clarification
+or access, not higher effort.
+
+| Task class | Codex default | Claude default | Effort |
 |---|---|---|---|
-| Simple, mechanical, clear-spec changes | Terra | Keep the chosen session, or delegate to Terra | low; medium if needed |
-| Normal coding, including Fable delegating implementation | Astra | Fable 5.1 when Claude is selected | low; medium if needed |
-| Independent review | Astra | Fable 5.1 | medium; low for a small routine diff |
-| Coordinator or intense reasoning | Astra | Fable 5.1 | high only when justified |
+| Simple: mechanical, clear acceptance criteria | Terra | chosen session; optional Terra delegation | low; medium on evidence |
+| Coding: implementation judgment | Astra | Fable 5.1 | low; medium on evidence |
+| Independent review of a fixed diff | Astra | Fable 5.1 | medium; low for small routine diff |
+| Orchestration or specific intense reasoning | Astra | Fable 5.1 | medium |
 
-**Only low, medium, and high are permitted. Never select xhigh, max, or ultra.**
-Most workers should use low or medium. Record why high is necessary. Complexity
-alone is not a reason to start every worker at high. Escalate low to medium on
-evidence; reserve high for orchestration or intense reasoning. Do not increase
-reasoning to compensate for missing requirements or unavailable tools.
+Only low/medium/high are allowed. Never xhigh/max/ultra. Most workers stay
+low/medium; high requires an explicit selection and recorded reason, never an
+automatic task-class escalation. Preserve explicit
+allowed user choices. These are worker defaults, not current-session or global
+settings. Fable can delegate ordinary coding/UI to Astra, simple work to Terra;
+follow repo design/typography/verification rules without provider quality claims.
 
-Fable may delegate coding and UI implementation to Astra at low or medium.
-Use Terra at low or medium for very simple tasks. Follow repository design
-systems, typography locks, and visual verification requirements regardless of
-provider. Do not make provider-wide claims about visual quality.
+## Launch and provenance
 
-Use explicit model and effort parameters on every worker launch. Supported IDs:
-`gpt-6-astra`, `gpt-5.6-terra`, `gpt-5.6-sol`, `claude-fable-5-1`,
-`claude-opus-5`. Sol and Opus are explicit compatibility choices, not automatic
-defaults. No automatic Sonnet, Haiku, or Luna routing. Honor an explicit allowed
-choice; do not silently substitute an unavailable model. Check host model
-capabilities/access before launching when observable; otherwise report access
-as unverified and treat a launch failure as a blocker. Never claim availability
-from a public model listing alone.
+Use explicit model/effort on every launch. Supported IDs: gpt-6-astra,
+gpt-5.6-terra, gpt-5.6-sol, claude-fable-5-1, claude-opus-5.
+Sol/Opus are explicit compatibility choices, not automatic defaults.
+No automatic Sonnet/Haiku/Luna routing. Check observable host access; if unknown,
+record unverified. An unavailable requested model is a reported blocker;
+never silently substitute. Public model listings do not prove account access.
 
-Provider pairing stays independent from model choice. Cross-provider review
-uses the provider opposite the implementation author, with fresh context; a
-same-provider mode still uses a separate session. Record requested/resolved
-model, effort, worker/session ID, policy version, and any explicit fallback reason.
-If the runtime does not expose the resolved model, record it as unknown rather
-than presenting the request as observed execution metadata.
+Record task class/delegation reason, requested/resolved model, effort, worker ID,
+policy version, escalation evidence and explicit fallback reason. If runtime
+does not expose resolved identity, record unknown, not the requested model.
+Provider independence is separate from model choice; cross review pairs against
+the implementation author. Same-provider review still requires a fresh session.
+Workload pairing/gates are owned by its workload contract.
 
-Delegate only when authorized by the user, applicable skill, and host policy.
-Count the coordinator, active workers, and nested reviewers against host slots.
-Configured worker limits are ceilings. Queue excess work; if host capacity is
-unknown, run one worker at a time without nested delegation. Never ask an
-unsupported fork to change models; use a fresh task with the minimum necessary
-context. The coordinator owns tracker writes and final integration.
+Count coordinator, active workers and nested reviewers against host slots using
+workerCapacity in the module. Limits are ceilings. Queue excess; unknown capacity
+means one worker and no nesting. Honor host/user delegation restrictions.
+Use a fresh bounded brief for model overrides when full-history forks cannot
+change models. Coordinator owns tracker writes and final integration.
 
-For Claude-to-Codex delegation use codex-kit's task/reviewer adapters. Pass
-`--model astra --effort low` for ordinary coding, `--model terra --effort low`
-for simple work, and `--model astra --effort medium` for normal review. High
-requires `--high-reason` explaining orchestration or intense reasoning. Do not
-reintroduce hand-written CLI wrappers or manual companion-state polling.
+Claude-to-Codex uses codex-kit's task/reviewer adapters: --model astra --effort low
+for ordinary coding, --model terra --effort low for simple work, --model astra
+--effort medium for review. High needs --high-reason explaining the actual
+orchestration/intense reasoning. No hand-written wrappers or companion polling.

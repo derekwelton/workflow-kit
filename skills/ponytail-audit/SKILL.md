@@ -1,11 +1,6 @@
 ---
 name: ponytail-audit
-description: >
-  Whole-repo audit for over-engineering: a ranked list of what to delete,
-  simplify, or replace with stdlib/native equivalents. Use when the user says
-  "audit this codebase", "audit for over-engineering", "what can I delete from
-  this repo", "find bloat", "ponytail-audit", or "/ponytail-audit". One-shot
-  report, does not apply fixes.
+description: Audit over-engineering and rank concrete deletion or simplification proposals. Read-only report by default; apply no fixes or tracker intake without authorization.
 license: MIT
 ---
 
@@ -13,9 +8,8 @@ license: MIT
 
 Repo-wide over-engineering scan. Rank findings biggest cut first.
 
-Resolve a `chore` issue and feature folder first (`new-feature` if needed),
-then apply `update-issue` with a Started comment. The audit issue remains the
-control point for the report and the user's decisions.
+Read `../../templates/lifecycle-contract.md`. Advisory report is the default:
+no compulsory issue/folder/comment. Approved implementation uses issue intake.
 
 ## Tags
 
@@ -39,9 +33,8 @@ End with `net: -<N> lines, -<M> deps possible.` Nothing to cut:
 
 For a long report the user will review, render it via `present` using
 `templates/report-audit.html` (findings ranked, each with its proposed cut) — the chat gets the top cuts + the net line.
-In all cases, apply `update-issue` with a **Ready for review** comment that
-includes the top cuts, net estimate, recommended approvals, evidence, and any
-GitHub-reachable artifact links. Local-only HTML must not be required to act.
+For authorized issue-backed publication the caller uses update-issue once.
+Otherwise return the complete findings in chat or the requested report.
 
 ## Boundaries
 
@@ -52,8 +45,8 @@ Lists findings, applies nothing. One-shot.
 
 In this workflow specifically:
 
-- **Acting on findings remains issue-first**: the audit has its own `chore`
-  issue; approved cuts either become checklist items there or separate chore
+- **Acting on findings remains issue-first**: reuse or create an authorized `chore`
+  issue when implementation is selected; approved cuts either become checklist items there or separate chore
   issues when they need independent branches/folders (`to-tickets` if the
   cutting exceeds one session — expand–contract applies to wide deletions).
 - **Division of labor with `improve-codebase-architecture`**: ponytail-audit

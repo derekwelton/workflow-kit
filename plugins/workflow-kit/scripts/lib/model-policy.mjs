@@ -1,5 +1,5 @@
 // Canonical source: derekwelton/workflow-kit. Sync into codex-kit with sync-codex-policy.mjs.
-export const POLICY_VERSION = "2026-09-04";
+export const POLICY_VERSION = "2026-09-10";
 export const ALLOWED_EFFORTS = ["low", "medium", "high"];
 export const MODELS = {
   astra: { id: "gpt-6-astra", provider: "codex" },
@@ -31,8 +31,8 @@ export function resolveRouting({ provider = "codex", task = "coding", model, eff
   const requestedModel = model ?? (provider === "codex" ? (task === "simple" ? "terra" : "astra") : "fable");
   const selected = resolveModel(requestedModel);
   if (selected.provider !== provider) throw new Error(`${requestedModel} cannot run through ${provider}.`);
-  const selectedEffort = effort ?? (["orchestration", "intense"].includes(task) ? "high" : task === "review" ? "medium" : "low");
-  const reason = highReason ?? (["orchestration", "intense"].includes(task) ? task : null);
+  const selectedEffort = effort ?? (["orchestration", "intense", "review"].includes(task) ? "medium" : "low");
+  const reason = highReason ?? null;
   validateEffort(selectedEffort, reason);
   if (availableModels && !availableModels.includes(selected.id)) {
     throw new Error(`${selected.id} is unavailable. Report the blocker and select an explicit available fallback; never silently substitute.`);

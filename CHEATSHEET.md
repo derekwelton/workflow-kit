@@ -211,16 +211,16 @@ integrate-reviewed ──explicit human acceptance──► refresh/retest ─�
 wayfinder ──tickets invoke──► grilling · research · prototype · domain-modeling
 improve-codebase-architecture ──uses──► codebase-design · present · grilling · domain-modeling
 ponytail-audit / work-audit / improve-arch ──approved findings──► new-feature (chore) → the normal loop
-everything with evidence or decisions ──presents via──► present
-present ──always mirrors actionable summary to──► update-issue
-every finished thing ──ends in──► wrap-feature
+requested/useful HTML ──renders supplied content via──► present
+authorized issue-backed caller ──publishes once via──► update-issue
+human-accepted implementation ──verified cleanup via──► wrap-feature
 ```
 
 Key boundaries (the ones that prevent fights between skills):
 
 - **ponytail vs tdd**: ponytail governs implementation code; tdd governs test
-  depth at pre-agreed seams. Ponytail's "one runnable check" applies only
-  where tdd isn't in play.
+  depth at agreed seams. Existing interfaces, tests and acceptance criteria
+  count as routine agreement; verification follows affected behavior.
 - **ponytail vs spec**: the spec is "explicitly requested" — ponytail
   challenges requirements out loud, never by silently not building them.
 - **ponytail-audit vs improve-codebase-architecture**: subtract first, then

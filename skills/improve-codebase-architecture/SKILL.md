@@ -1,6 +1,6 @@
 ---
 name: improve-codebase-architecture
-description: Scan a codebase for deepening opportunities, present them as a visual HTML review doc, then grill through whichever one the user picks.
+description: Audit architectural friction and propose module-deepening opportunities. Advisory report by default; chosen implementation and deeper questioning are separate steps.
 disable-model-invocation: true
 ---
 
@@ -21,17 +21,16 @@ Built on the shared design vocabulary:
   default) names good seams; ADRs (`adrDir`) record decisions this skill
   should not re-litigate.
 
-**Issue-first applies to audits too**: file a `chore` issue for the
-architecture review (via `new-feature`) so the report and subsequent
-refactor work have a tracking handle and folder. Apply `update-issue` with a
-Started comment before exploring.
+Read `../../templates/lifecycle-contract.md`. Default to a read-only advisory
+report with no intake or tracker publication. Chosen implementation follows
+issue-backed intake; a requested report does not authorize that next phase.
 
 ## Process
 
 ### 1. Explore
 
-Read the domain glossary and ADRs in the area first. Then use an Explore
-subagent to walk the codebase. Don't follow rigid heuristics — explore
+Read the domain glossary and ADRs in the area first. Explore locally by default. Delegate only bounded independent investigation
+with useful parallel work under model-routing. Don't follow rigid heuristics — explore
 organically and note where you experience friction:
 
 - Where does understanding one concept require bouncing between many small modules?
@@ -44,15 +43,10 @@ organically and note where you experience friction:
 Apply the **deletion test** to anything you suspect is shallow: would deleting
 it concentrate complexity, or just move it? "Yes, concentrates" is the signal.
 
-### 2. Present candidates as an HTML review doc
+### 2. Present candidates
 
-Generate the report via the `present` skill — use `templates/report-audit.html`
-(each deepening candidate is a proposed change awaiting your pick); the general review-doc template
-in the feature folder's `review/`, self-contained, no CDNs. Hand-build the
-visuals with inline CSS/SVG (mass diagrams, before/after cross-sections);
-be visual.
-
-For each candidate, render a card with:
+Return findings in chat or the requested format. Use pure present for a useful
+or requested HTML report. For each candidate include:
 
 - **Files** — which files/modules are involved
 - **Problem** — why the current architecture causes friction
@@ -71,14 +65,11 @@ clearly ("contradicts ADR-0007 — but worth reopening because…"). Don't list
 every theoretical refactor an ADR forbids.
 
 Do NOT propose interfaces yet. After the doc is written, ask the user:
-"Which of these would you like to explore?" The `present` step must also apply
-`update-issue`: post the candidates, top recommendation, exact choice needed,
-and reachable evidence to the architecture-review issue. The request must be
-answerable there even when the HTML report is local-only.
+"Which of these would you like to explore?" The caller publishes a checkpoint only when authorized; present never does.
 
 ### 3. Grilling loop
 
-Once the user picks a candidate, run the `grilling` skill to walk the design
+Once the user explicitly requests deeper questioning, run the `grilling` skill to walk the design
 tree — constraints, dependencies, the shape of the deepened module, what sits
 behind the seam, what tests survive.
 
@@ -92,7 +83,7 @@ keep the domain model current:
   future reviews don't re-suggest it — only when the reason would actually be
   needed by a future explorer; skip ephemeral or self-evident reasons.
 - **Exploring alternative interfaces for the deepened module?** Use
-  `codebase-design`'s design-it-twice parallel sub-agent pattern.
+  `codebase-design`'s design-it-twice local comparison (bounded parallel work only when justified).
 
 Refactors that come out of this land as tickets (`to-tickets`) or a spec
 (`to-spec`) on the chore issue — the review doc itself stays ephemeral.

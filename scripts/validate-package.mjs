@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { renderPortable } from "./lib/portable-contract.mjs";
 
 export function validatePackage(root) {
   const errors = [];
@@ -11,6 +12,9 @@ export function validatePackage(root) {
   if (claude.version !== codex.version) errors.push("Claude/Codex versions differ");
   if (!read("templates/feature-lifecycle.md").includes(`managed-start version=${codex.version}`)) errors.push("Lifecycle version differs");
   if (!read("scripts/workload-manifest.mjs").includes(`WORKFLOW_KIT_VERSION = "${codex.version}"`)) errors.push("Manifest helper version differs");
+  try {
+    if (read("templates/feature-lifecycle-portable.md").replace(/\r\n/g, "\n") !== renderPortable(root)) errors.push("Portable contract differs from canonical owners");
+  } catch (error) { errors.push(`Portable contract dependency: ${error.message}`); }
   const names = new Set();
   for (const directory of fs.readdirSync(path.join(root, "skills"))) {
     const file = path.join(root, "skills", directory, "SKILL.md");

@@ -1,45 +1,28 @@
 ---
 name: research
-description: Investigate a question against high-trust primary sources and capture the findings as a committed Markdown file in the feature folder. Use when the user wants a topic researched, docs or API facts gathered, or reading legwork delegated to a background agent.
+description: Investigate questions using primary sources. Short lookups stay local with cited answers; reports, durable artifacts and bounded delegation depend on the requested task.
 ---
 
-Read the repository lifecycle and local overrides first. When `tracker: github-projects`
-or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
-its field/status/label rules override the GitHub/Linear defaults below.
+# Research
 
+Read `../../templates/lifecycle-contract.md` for scope and checkpoint ownership.
+Default short documentation lookup to local execution and a cited chat answer.
 
-Spin up a **background agent** to do the research, so you keep working while it
-reads.
+Investigate against primary sources: official docs, source code, specifications,
+or first-party APIs. Verify changeable facts live; separate evidence, inference,
+and unresolved questions. Follow claims to the source that owns them.
 
-Its job:
+Delegate only an authorized, bounded independent question while the coordinator
+has useful parallel work. Read `../model-routing/SKILL.md` before launching.
+A lookup that the coordinator needs immediately normally stays local. A worker
+returns cited findings; it does not create issues or publish checkpoints.
 
-1. Investigate the question against **primary sources** — official docs,
-   source code, specs, first-party APIs — not a secondary write-up of them.
-   Follow every claim back to the source that owns it.
-2. Write the findings to a single Markdown file, citing each claim's source.
-3. Save it to the current feature folder as
-   `<workDir>/features/<issue#>-<slug>/research/<topic>.md` (create the
-   `research/` directory on first use — it's committed text, so findings
-   travel between machines and sessions). If no feature folder exists yet for
-   this work, that's the signal to file the issue first (`new-feature`), not
-   to save the file somewhere loose. Research is the main reason a feature
-   folder gets created — create the folder here if the issue exists but the
-   folder doesn't.
+For an explicit report, deliver the report in the requested format. Persist
+Markdown when requested or when substantial reusable evidence warrants it.
+For issue-backed artifacts use the existing feature's research/ directory,
+creating that directory only when needed. Personal/advisory reports use the
+requested path or chat; no compulsory issue intake, commit, or HTML.
+Use present only for a requested/useful HTML view of already-supplied findings.
 
-When the findings resolve a decision, record the decision in `spec.md` /
-`notes.md` and let the research file carry the evidence. Under Linear mode
-(`../linear-mode/SKILL.md`) those files don't exist: the decision goes
-into the issue — the body if it changes scope or acceptance criteria, a sync-
-thread comment if it's reasoning — while `research/` stays on disk exactly as
-described above. Do not paste research dumps into the issue.
-
-When the findings are long or the user will read them directly, render them
-with `present` using `templates/report-findings.html` — it carries the
-per-claim evidence and confidence markers this skill's output depends on. The
-committed Markdown in `research/` stays canonical either way.
-
-When research finishes, apply `update-issue` to the originating issue with a
-checkpoint summary, the answer, confidence/limitations, and a permalink to
-the findings only when the file is committed and pushed. If the findings need
-a user decision, make it a **Needs decision** comment with the recommendation
-and exact next action; never leave the ask only in the research file or chat.
+Return answer, sources, confidence/limitations and next action. For authorized
+issue-backed work the caller publishes one checkpoint through update-issue.

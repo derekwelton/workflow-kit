@@ -1,7 +1,7 @@
 # workflow-kit
 
-Issue-driven feature workflow for all my repos: **one issue, one folder, one
-lifecycle**. A native Claude Code and Codex plugin with one shared skill catalog.
+Issue-driven implementation with proportional read-only advice. A native Claude
+Code and Codex plugin with one shared skill catalog.
 
 For a visual overview of what the kit provides and where it could be simpler,
 open [the HTML field guide](docs/workflow-kit-guide.html)
@@ -17,19 +17,19 @@ wait on completion notifications. `managed-version.mjs` provides the shared
 read-only lifecycle drift check used by intake, orchestration, board, and doctor.
 
 ```
-idea → issue ⇄ updates → folder → build → present → wrap
+advice → cited answer / requested report
+implementation → issue ⇄ authorized checkpoints → build → independent review → human acceptance → wrap
 ```
 
-- Every unit of work gets a **GitHub issue first** (labels `feature/bug/chore/idea`,
-  task checklist in the body).
+- Repository implementation uses **issue-backed intake**; status, lookups and
+  personal/advisory reports create no issues or tracker writes.
 - All artifacts for one unit of work live in **`work/features/<issue#>-<slug>/`**
   (spec/plan/notes committed; scratch/qa/review gitignored ephemera).
 - The **GitHub issue stays current** at start, meaningful checkpoints, review
   or decision requests, pauses/blockers, and completion. Comments stand alone;
   they never rely on a local-only HTML file or screenshot.
-- **Markdown is canonical for agents; HTML is presentation for me** — anything
-  needing my review renders as a self-contained HTML doc in `review/`, with
-  the actionable summary and decisions also posted to the issue.
+- **HTML is optional presentation** of supplied canonical content. Present is
+  a pure renderer; the caller publishes an authorized checkpoint exactly once.
 - **Ephemera dies at wrap-up**; spec/plan/notes archive; git history + the
   closed issue are the permanent record.
 
@@ -56,10 +56,14 @@ change that GitHub alone can't do:
 today. Linear mode is opt-in per repo, `workflow-init` asks once, and
 `workflow-update` never touches the setting.
 
-The contract (including the sync-thread rule that decides whether a comment
-reaches GitHub at all) is stamped into the repo's lifecycle doc in logical tool
-names, so Codex and Claude follow the same instructions. Full version:
+The compact repository lifecycle routes plugin hosts to the selected operation.
+Its generated portable sibling carries the full fallback for hosts without the
+plugin. Both derive from the same owners; hosts do not load both. Linear router:
 [`skills/linear-mode/SKILL.md`](skills/linear-mode/SKILL.md).
+
+Model and delegation choices are explained in
+[docs/model-decisions.md](docs/model-decisions.md). Issue #9 measurements and
+all-skill dispositions are in [docs/context-efficiency.md](docs/context-efficiency.md).
 
 ## Install and refresh
 
@@ -108,11 +112,12 @@ needs its own plugin update. Neither step substitutes for the other.
 `skills/model-routing/SKILL.md` and `scripts/lib/model-policy.mjs` own model
 selection. Coding defaults to Astra low (medium when needed), simple tasks to
 Terra low/medium, and review to medium. Fable 5.1 can delegate coding and UI work
-to Astra. High requires a reason tied to orchestration or intense reasoning.
+to Astra. Coordination and intense reasoning default to medium. High requires
+an explicit selection and recorded reason.
 Xhigh, max, and ultra are prohibited. Model access is checked independently of
 public availability; no silent fallbacks or inherited machine defaults.
 
-Codex-kit 2.3.0 consumes a generated policy copy. After changing policy, run
+Codex-kit 2.3.1 consumes a generated policy copy. After changing policy, run
 `node scripts/sync-codex-policy.mjs <codex-kit-root>` and validate with `--check`.
 Release both packages together. Runtime adapters belong to codex-kit; lifecycle
 and provider independence belong here.

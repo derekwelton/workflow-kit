@@ -1,17 +1,13 @@
 ---
 name: to-tickets
-description: Break a spec into tracer-bullet vertical-slice tickets published as GitHub sub-issues of the feature issue, each declaring its blocking edges. The escalation path when a feature exceeds one context window — the issue-body checklist stays the default for smaller work.
+description: Split an approved spec into independently deliverable vertical issue slices when requested. Preserve dependencies and expand-contract safety for broad changes.
 ---
 
-Resolve this skill's real filesystem path before following relative references.
-The package root is two directories above this SKILL.md; retain its sibling
-skills, scripts, and templates together.
+Resolve this skill's real filesystem path; package root is `../..` from its directory.
 
 
-Read the repository lifecycle and local overrides first. When `tracker: github-projects`
-or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
-its field/status/label rules override the GitHub/Linear defaults below.
-
+Read repository configuration/local overrides and `../../templates/lifecycle-contract.md`.
+Load only the tracker operation and mode needed for this request.
 
 # To Tickets
 

@@ -1,17 +1,12 @@
 ---
 name: workflow-init
-description: One-time repo bootstrap for the workflow-kit feature lifecycle — creates the work/features scaffold, gitignore rules, GitHub labels, and the per-repo feature-lifecycle.md convention doc. Use when adopting the workflow in a new or existing repo.
+description: Adopt workflow-kit in a repository with local configuration, compact routing and a portable fallback. Preserve existing tracker conventions and agent entrypoints.
 ---
 
-Resolve `<workflow-kit-root>` from this SKILL.md's real filesystem path: two
-directories up. Resolve symlinks first. Use that root for templates and scripts
-on either host; never assume a Claude environment variable exists in Codex.
+Resolve package paths from this skill's real directory, two levels up.
 
-
-Read the repository lifecycle and local overrides first. When `tracker: github-projects`
-or a local GitHub Projects contract is present, read `../github-projects/SKILL.md`;
-its field/status/label rules override the GitHub/Linear defaults below.
-
+Read repository configuration/local overrides and `../../templates/lifecycle-contract.md`.
+Load only the tracker operation and mode needed for this request.
 
 # workflow-init
 
@@ -69,8 +64,8 @@ Linear team or project status without an explicit repository configuration choic
    to the docs home chosen in step 1, filling in the config frontmatter
    (`workDir`, `docsHome`, `labels`, `glossary`, `adrDir`, and optionally
    `linearTeam` — see step 5a) for this repo —
-   keep the template's full versioned managed block, including the
-   skills-catalog tables and managed markers. Repo-specific additions belong
+   keep the compact versioned managed block. Copy the generated
+   templates/feature-lifecycle-portable.md beside it for hosts without the plugin. Repo-specific additions belong
    below the managed-end marker so `workflow-update` can preserve them. The
    document exists so agents that cannot see this plugin (Codex, Gemini,
    Cursor) still follow the convention. Do NOT create the glossary or ADR dir
@@ -98,12 +93,10 @@ Linear team or project status without an explicit repository configuration choic
    ```markdown
    ## Feature workflow
 
-   All feature/bug/chore work follows the issue-driven lifecycle in
-   <docsHome>/feature-lifecycle.md — issue first, one folder per unit of work
-   under <workDir>/features/, markdown canonical / HTML for the user, cleanup
-   at wrap. That doc's skills-catalog table says which skill to use when;
-   Claude invokes them as /workflow-kit:<name>, other agents follow the doc
-   by hand with gh + file operations. Read it before starting any new work.
+   Read <docsHome>/feature-lifecycle.md for configuration and task routing.
+   Plugin hosts load only the selected action/contract; hosts without the
+   plugin use its generated portable sibling. Status and personal advice
+   stay read-only; repository implementation uses issue-backed intake.
    ```
 
 7. **Existing mess detection**: if the repo already has scattered work

@@ -9,7 +9,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 const SCHEMA_VERSION = 3;
-const WORKFLOW_KIT_VERSION = "0.9.2";
+const WORKFLOW_KIT_VERSION = "0.9.3";
 const PAIR_MODES = new Set(["cross", "codex-only", "claude-only"]);
 const ISSUE_STATES = new Set([
   "selected",

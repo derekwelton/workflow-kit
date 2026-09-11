@@ -1,231 +1,136 @@
 # Workload contract
 
-Use this reference for a multi-issue workload. A standalone issue keeps the
-normal implementation → independent review → `In Review` path.
+Canonical owner of multi-issue invariants. Action skills reference these gates;
+the manifest helper enforces their durable state/evidence. Standalone issues
+use implementation → independent review → human review.
 
-## State boundary
+## Membership and ownership
 
-Keep workload issues in `Code Review` after their independent issue review.
-Record `reviewed-pending-integration` in the workload manifest. Move the
-workload's issues to `In Review` only after the integration branch is complete,
-current with its recorded main base, reviewed, verified, pushed, and represented
-by one umbrella PR.
+Freeze repository-scoped, deduplicated issue membership for each run. Do not
+admit new query matches on resume. Default handoff is all-or-nothing.
+--allow-partial requires explicit authorization and a durable explanation
+before removing deferred issues from frozen membership.
 
-Do not introduce a tracker status for the manifest-only intermediate state.
+Only the coordinator changes tracker state/comments, creates/deduplicates
+discoveries, creates/merges PRs, assembles integration, changes membership,
+or launches workers. Workers edit/test leased worktrees and return envelopes;
+review workers cover assigned axes without nested delegation. Audit tracked
+and untracked files before committing or integrating. Preserve dirty/active
+worktrees. Source edits use structured patches, not shell-built edits.
+Follow lifecycle instruction-retention and wait rules; never duplicate a
+worker just because a session ended.
 
-## Model pairing
+## Independent review and routing
 
-Read `../../model-routing/SKILL.md`. Model/effort choices come from that policy;
-this contract owns provider independence, not a fixed generation of models.
+Model/effort is owned by ../../model-routing/SKILL.md. Provider pairing uses
+the author of each implementation diff, not the coordinator:
+- cross: Codex author → fresh Claude reviewer; Claude author → fresh Codex reviewer.
+- codex-only / claude-only: fresh independent same-provider session.
+Explicit implementer/reviewer choices must obey the selected pair mode.
+The same session/agent cannot implement and review an issue.
+Manual integration/conflict-resolution edits require a reviewer from the
+provider opposite their author, even in a same-provider issue pair mode.
+A conflict-free merge needs combined verification, not repeated issue reviews.
 
-Select the reviewer from the provider that authored the implementation diff,
-not from the provider coordinating the run.
+## Review convergence
 
-| Pair mode | Implementation | Review |
-|---|---|---|
-| `cross` | Codex | fresh Claude reviewer from model-routing |
-| `cross` | Claude | fresh Codex reviewer from model-routing |
-| `codex-only` | Codex | fresh independent Codex session |
-| `claude-only` | Claude | fresh independent Claude session |
+Default maxReviewRounds = 2 is a stop/reconcile threshold, never approval.
+Preserve saved policy on resume; absent legacy policy is unverified.
+Strict is default. Convergent policy or live changes require a run-scoped
+user decision recorded via --policy-decision / set-policy.
+Do not infer consent from historical anecdotes or a restarted session.
 
-When providers are mixed, resolve the pair independently for every issue. The
-same session or agent must never implement and review an issue. Explicit
-`--implementer` and `--reviewer` arguments must still obey the selected pair
-mode; choose `codex-only` or `claude-only` explicitly for same-provider work.
+Reserve each launch with set-issue --state code-review. The first implementation
+transition reserves round 1; do not reserve it twice. A new reviewer identity,
+another launch on an unchanged head, or failed launch consumes a round;
+metadata edits for the same worker do not. One dispatch's axes are one round.
+Do not reset counts by reopening implementation. Beyond the cap requires
+--allow-extra-round --reason with explicit user authorization.
 
-Review manual integration/conflict-resolution edits with a provider different
-from the provider that authored those edits. A conflict-free merge still needs
-the combined integration verification gate, but not a repetition of every
-issue review.
+Strict leaves unresolved findings blocking. Approved convergent policy:
+round 1 blocks high/medium; round 2 onward may defer eligible nonblocking
+medium/low. Acceptance, correctness, security and data-loss blockers always
+block regardless of severity. High is never deferred/downgraded to fit a cap.
+Review full scope initially, then fixes/affected behavior; broaden on material
+scope change. Coordinator adjudicates and deduplicates follow-ups.
+Store --review-findings entries: id, severity, category, blocking, status,
+summary, followUp, decision. Stable IDs identify repeats. Fixed = resolved;
+remaining = deferred with real issue key/URL and decision reference before
+completion. No automatic severity/effort escalation from older issue rules.
 
-## Integration branch
+## Evidence and state
 
-Create `integration/<workload-slug>` from the freshly fetched default branch
-after every included issue has a review receipt. Combine exact reviewed heads
-in dependency order. Detect stacked branches and avoid replaying commits twice.
+Dispatch/validate using [worker-envelope.md](worker-envelope.md).
+code-review requires Git-resolved full base/head, implementation provider/
+execution and passing tests containing the exact tested head SHA.
+reviewed-pending-integration also requires reviewer/execution and a receipt:
+<review-provider>:<full-head-sha>:<durable-receipt-id>.
+Head changes invalidate tests and review receipt. Prose completion cannot
+substitute for validated Git/manifest evidence.
 
-Never resolve conflicts on the issue branches. Resolve them only on the
-integration branch, record the affected paths, and independently review the
-resolution diff.
+Record --implementation-execution / --review-execution every launch:
+requested/resolved model, effort, worker ID, policy version, high reason and
+explicit fallback reason. Unexposed resolved identity is null/unknown.
+Schema 2 migration: preview migrate --dry-run then apply; preserve membership,
+status, SHAs/receipts and leave historical execution/counters unknown rather
+than inventing evidence or consent. New work replaces legacy metadata.
 
-Create one draft umbrella PR from the integration branch to the default branch.
-Reference every GitHub twin with `Refs`; never use `Closes` under Linear mode.
-Keep individual PRs available as issue-level review evidence until the workload
-is accepted.
+Keep reviewed issues in tracker Code Review (or local mapped phase), with
+manifest reviewed-pending-integration. No new tracker status for this state.
+GitHub Projects without codeReview keeps inProgress; ordinary GitHub uses
+checkpoints with no invented statuses. Tracker writes follow the shared
+tracker-write contract and selected adapter.
 
-Before final merge, refresh the integration branch from current main and rerun
-the repository integration gate if main has advanced.
+## Integration gate
 
-## All-or-nothing behavior
+After every included issue has a final review receipt, fetch default branch
+and create integration/<slug> from its current remote SHA. Combine exact
+reviewed heads in dependency order, detecting stacked ancestry to avoid
+replaying commits. Audit membership against commits/changed files.
+Resolve conflicts only on integration, record affected paths and conflict
+history, and independently review the manual resolution diff.
+Do not clear recorded conflict history.
 
-Default to an atomic human-review handoff: if any issue is blocked, keep the
-whole workload out of `In Review`. Use `--allow-partial` only when the user
-explicitly requests it. Remove deferred issues from the frozen manifest with a
-durable tracker explanation before continuing; never silently omit one.
+Record ordered integration state pending → assembling → ready-for-human-review
+→ merged. Combined tests must bind to full integration head SHA; conflicts
+require --conflicts-occurred and --conflict-review-receipt
+<provider:head-sha:receipt-id>, never a bare boolean.
+Run repository integration checks once, serializing shared build outputs.
+Create/push the authorized draft umbrella PR against default branch; use Refs,
+never Closes under Linear. Keep individual PRs as evidence until acceptance.
+Orchestration never merges.
 
-The Linear writes are sequential rather than transactional. After each write,
-record the result. On interruption, resume by reconciling the manifest against
-the tracker and complete or roll back the handoff visibly.
+## Human handoff and resume
 
-Keep integration state `assembling` while validating all review receipts and
-the complete branch receipt. Immediately before the batch transition, re-fetch
-every issue. If every expected issue is still `Code Review`, move them to
-`In Review`, set their manifest states to `in-review`, then set integration
-state `ready-for-human-review` and run final manifest validation. If one changed
-unexpectedly, stop rather than overwriting it; do not mark integration ready
-while tracker and manifest disagree.
+While assembling, validate every issue receipt and integration gate.
+Immediately before batch transition refetch all issues; require each expected
+Code Review/mapped status. Unexpected status stops/reconciles, never overwrites.
+Publish one workload-ready checkpoint per issue, move eligible statuses to
+In Review, record each sequential result, set manifest issues in-review,
+then integration ready-for-human-review and validate again.
+Never mark ready while tracker and manifest disagree. On interruption reconcile
+successful and unknown writes individually, then visibly complete or roll back
+the batch; writes are not transactional. Do not blindly repeat comments.
+Never set Done.
 
-## Single writer
+Before final merge fetch current main again; advancement requires recombination
+and combined verification. Manual resolutions/material behavior changes require
+fresh human acceptance of the new head. Merge/destructive cleanup require
+explicit authorization. Preserve leased worktrees/processes; verify process
+command/start-time/ownership, never stop by PID alone.
 
-Only the workload coordinator may:
+Manifest is canonical state; tracker is canonical narrative. Optional
+--handoff-snapshot is derived and checked against manifest updatedAt on resume.
+--resume-context records intended-environment acceptance evidence, owned jobs/
+processes, unresolved schema/config/deployment/live-data prerequisites and next
+action. Unknown prerequisites remain unknown; passing unit checks is not proof
+the unavailable core user task works.
 
-- create or deduplicate discovered issues;
-- change tracker statuses or post sync-thread comments;
-- create or merge PRs;
-- assemble the integration branch;
-- change workload manifest membership.
+## Final dashboard
 
-Workers edit and test their leased worktrees, then return a structured envelope.
-The coordinator audits tracked and untracked files before committing or
-integrating them.
-
-Only the coordinator spawns workers. Workers must not spawn their own subagents;
-review workers evaluate both axes themselves or return the need for a separate
-axis to the coordinator. Wait on harness completion notifications or supported
-Monitor conditions. Blocking `sleep` is forbidden; long waits belong in background
-tasks with completion delivery, not polling loops.
-
-Source edits use Edit/Write or the host's structured patch tool (`apply_patch`).
-Bash/PowerShell is for build, test, Git, and read-only inspection. Do not patch
-source through heredocs or inline Python. The failure signature
-`unexpected EOF while looking for matching` is a reason to switch to structured
-edits, not retry an increasingly escaped command. Use [worker-prompt.md](worker-prompt.md).
-
-## Review convergence and checkpoints
-
-Default `maxReviewRounds` is a 2-round non-convergence threshold per new issue,
-not an approval shortcut. Existing runs retain recorded policy; migration marks
-absent policy unverified and requires reconciliation before new review.
-Use `set-policy --policy-decision <reference>` for authorized policy changes.
-Record implementation/review routes with `--routing`; keep requested versus
-adapter-reported model/effort separate, with null for unverified values.
-Policy history records run scope, decision reference, settings, and time.
-`set-issue --state code-review` reserves
-each launch, including another review of an unchanged head. The first transition
-from implementation reserves round 1. A new review worker identity also consumes
-a round; metadata updates for the same worker do not. Extra rounds require the
-user's authorization and `--allow-extra-round --reason <text>`. Record all review
-axes from one dispatch as one round. A failed launch consumes its reserved round;
-report it rather than silently retrying. Never reset the count by reopening work.
-
-Strict review is default. Only `--review-policy convergent` with a run-scoped
-`--policy-decision` permits eligible deferrals: round 1 blocks on high/medium;
-later rounds can defer nonblocking medium/low findings. Unmet acceptance criteria
-and correctness/security/data-loss blockers always block regardless of severity.
-Begin with broad review; repeat reviews focus on fixes and affected behavior,
-returning to broad review when scope materially changes. Eligible findings
-become linked follow-ups, deduplicated by the coordinator,
-with `chore` where supported by the local tracker contract. Store the adjudicated
-findings via `--review-findings` as `{id, severity, category, blocking, status,
-summary, followUp, decision}` entries. Stable IDs identify repeated findings.
-High findings cannot be deferred; medium findings cannot be deferred in round 1.
-Use `resolved` for fixed findings and `deferred` with a real issue link/key and
-approval reference for
-the remainder. The final-SHA review and human acceptance gates remain mandatory.
-Review defaults to medium; high needs a reason from canonical model-routing.
-Sonnet/Haiku are not allowed worker routes; preserve the actual requested and
-resolved model evidence, including explicit unknown identity when not exposed.
-
-Successful mutations retain gates, rounds, evidence, follow-ups, blockers, and
-integration state in the manifest. Canonical narrative follows the existing
-handoff contract (a synced issue comment in Linear). A dated local summary at
-`<git-common>/workflow-kit/runs/<id>/handoff-<date>.md` is opt-in through
-`--handoff-snapshot`; it is derived, never a second canonical state store.
-Migration initializes counters without inventing past rounds or past consent.
-Use `--resume-context` for acceptance evidence, runtime ownership, prerequisites,
-and next action. Verify the core user task in the intended environment before
-claiming ready; tool/skill loads are not completed outcomes. Keep process commands
-and executable acceptance scenarios in the consuming repository.
-
-## Worker envelope
-
-Require every implementation and review worker to return:
-
-```json
-{
-  "issue": "KEY-123",
-  "stage": "implementation|review|integration",
-  "branch": "owner/key-123-slug",
-  "worktree": "absolute path",
-  "baseSha": "commit",
-  "headSha": "commit",
-  "provider": "codex|claude",
-  "execution": { "requestedModel": "gpt-6-astra", "resolvedModel": null, "resolutionStatus": "unverified", "effort": "low", "highReason": null, "workerId": "runtime-session-id", "policyVersion": "2026-09-04", "fallbackReason": null },
-  "state": "complete|blocked",
-  "summary": ["plain-language outcome"],
-  "changedFiles": [],
-  "untrackedFiles": [],
-  "tests": [
-    {
-      "command": "exact command",
-      "status": "passed|failed|blocked|skipped",
-      "tests": 0,
-      "headSha": "exact tested commit",
-      "details": "optional useful result"
-    }
-  ],
-  "reviewReceipt": null,
-  "blocker": null,
-  "discoveries": []
-}
-```
-
-The coordinator validates the envelope against Git and the manifest. Do not
-trust a prose-only completion claim.
-
-`stage` and `summary` are required so the presentation layer never describes an
-independent review as an implementation pass or substitutes a file list for an
-outcome. A legacy envelope without `stage` may be rendered generically, but the
-coordinator must supply the known stage to the renderer. A completed envelope
-without conclusive passing verification is incomplete and cannot advance the
-issue. Keep the exact tested SHA in the structured `headSha` test field; the
-default renderer omits it while `--technical` exposes exact machine details.
-
-The envelope is an internal protocol, not a user report. Store and validate it
-as structured data, but never paste it into chat, a final answer, or a tracker
-checkpoint unless the user explicitly requests raw JSON. Render a human
-checkpoint with outcome, changes, verification, relevant notes, and next
-action. Keep absolute paths, schema fields, and full SHAs in the envelope; show
-them only when they are actionable or explicitly requested.
-
-When persisting the envelope, record full Git-resolved base/head commits. The
-`tests` evidence must include the exact tested head SHA. A final review receipt
-must use `<review-provider>:<full-head-sha>:<durable-receipt-id>`. Changing the
-head invalidates both old values. The manifest helper enforces integration
-state order (`pending → assembling → ready-for-human-review → merged`) and
-requires a head-bound conflict review receipt when conflicts occurred.
-
-## Final handoff
-
-Show one table with issue, implementer, reviewer, issue branch, review receipt,
-integration membership, tests, blocker, review rounds/limit, and linked follow-ups. Then state:
-
-- integration branch and exact base/main SHA;
-- umbrella PR;
-- whether main advanced after the gate;
-- workload issues transitioned to `In Review`;
-- SQL, configuration, deployment, live-data, and human verification gates;
-- explicitly: `Not merged to main`.
-
-## Execution metadata and migration
-
-Record each worker envelope's `execution` through `set-issue` using
-`--implementation-execution` or `--review-execution` with JSON. Schema 3 requires
-these records at completed gates. A null resolvedModel means the host did not
-expose it; never fabricate observed model identity. Replace execution metadata
-on every new worker launch. A high effort record must explain why it was needed.
-
-Schema 2 remains readable. Before continuing an older run, preview
-`migrate --run <id> --dry-run`, then apply `migrate --run <id>`. Migration preserves
-all issue membership, status, SHAs, and receipts; historical model/effort/worker
-identity stays explicitly unknown. New work must replace legacy metadata.
+Return human-readable outcome plus a table: issue, implementer, reviewer,
+branch, receipt, membership, tests, blocker, rounds/limit and linked follow-ups.
+Include integration branch/base/main SHA, umbrella PR, whether main advanced,
+observed issue transitions, remaining prerequisites and exact checkout/test
+action. State **Not merged to main** until a separately authorized merge succeeds.
+Never paste raw envelopes unless explicitly requested.

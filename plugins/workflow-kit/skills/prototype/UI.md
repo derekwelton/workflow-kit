@@ -35,7 +35,8 @@ In both sub-shapes the floating bottom bar is identical.
 
 ### 1. State the question and pick N
 
-Default to **3 variants**. More than 5 stops being radically different and starts being noise — cap there.
+Use one experiment for a small tweak; two alternatives when comparison answers
+an open question. Use three or more only for explicitly requested broad exploration.
 
 Write down the plan in one line, in the prototype's location or a top-of-file comment:
 
