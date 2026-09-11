@@ -36,7 +36,7 @@ export function refreshLifecycle({ lifecycle, check = false, packageRoot = root 
   const current = readRegular(target);
   const next = refreshDocument(current, fs.readFileSync(path.join(packageRoot, "templates/feature-lifecycle.md"), "utf8"));
   const fallback = path.join(path.dirname(target), "feature-lifecycle-portable.md");
-  const portable = fs.readFileSync(path.join(packageRoot, "templates/feature-lifecycle-portable.md"), "utf8");
+  const portable = fs.readFileSync(path.join(packageRoot, "templates/feature-lifecycle-portable.md"), "utf8").replace(/\r\n/g, "\n");
   const existing = readRegular(fallback, true);
   if (existing !== null && !existing.startsWith("<!-- workflow-kit:portable version=")) throw new Error("Portable destination is not a generated regular file; reconcile before replacing.");
   const changed = [next !== current && target, existing !== portable && fallback].filter(Boolean);

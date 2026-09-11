@@ -61,3 +61,19 @@ test("check makes no files and apply refreshes both router and portable fallback
     assert.equal(fs.readFileSync(fallback, "utf8"), "owner-authored document");
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("a CRLF package checkout produces the canonical portable document without refresh churn", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "workflow-consumer-crlf-"));
+  try {
+    const packageRoot = path.join(dir, "package");
+    fs.mkdirSync(path.join(packageRoot, "templates"), { recursive: true });
+    const portable = renderPortable(root);
+    fs.writeFileSync(path.join(packageRoot, "templates/feature-lifecycle.md"), template.replace(/\r?\n/g, "\r\n"));
+    fs.writeFileSync(path.join(packageRoot, "templates/feature-lifecycle-portable.md"), portable.replace(/\n/g, "\r\n"));
+    const lifecycle = path.join(dir, "feature-lifecycle.md");
+    fs.writeFileSync(lifecycle, old);
+    assert.equal(refreshLifecycle({ lifecycle, packageRoot }).changed.length, 2);
+    assert.equal(fs.readFileSync(path.join(dir, "feature-lifecycle-portable.md"), "utf8"), portable);
+    assert.deepEqual(refreshLifecycle({ lifecycle, packageRoot, check: true }).changed, []);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});

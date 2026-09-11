@@ -1,4 +1,4 @@
-<!-- workflow-kit:portable version=0.9.3; generated, do not edit -->
+<!-- workflow-kit:portable version=0.9.4; generated, do not edit -->
 
 # Portable feature lifecycle
 

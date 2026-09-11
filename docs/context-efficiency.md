@@ -1,6 +1,6 @@
 # Issue #9: context efficiency and workflow replay
 
-Implementation base: `db7fde95c5c9832fc8f20c6b547aef838c3592dc` (0.9.2). Working package: 0.9.3.
+Implementation base: `db7fde95c5c9832fc8f20c6b547aef838c3592dc` (0.9.2). Working package: 0.9.4.
 This report records implementation evidence; live rollout checks remain separate.
 
 ## Measured source footprint
