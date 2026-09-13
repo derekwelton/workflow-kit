@@ -469,7 +469,7 @@ test("project-local installation retains the workload renderer and is idempotent
     assert.equal(installed.healthy, true);
     assert.deepEqual(
       installed.selections.codex.included.length,
-      23
+      Object.keys(JSON.parse(fs.readFileSync(path.join(ROOT, "catalog.json"), "utf8")).skills).length
     );
     assert.equal(
       fs.existsSync(path.join(targetDir, "orchestrate-queue", "scripts", "render-worker-result.mjs")),

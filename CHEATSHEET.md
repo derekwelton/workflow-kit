@@ -1,5 +1,9 @@
 # Workflow skills quick reference
 
+Choose skills interactively from this checkout with `node scripts/select-skills.mjs`.
+After publication, use `npx --yes --package github:derekwelton/workflow-kit workflow-kit`
+from the target project.
+
 Install everything in a project:
 
 ```powershell
@@ -14,6 +18,10 @@ Then invoke setup-workflow-skills if the project needs configuration.
 | Simplify coding decisions / audit existing complexity | ponytail / ponytail-audit |
 | Diagnose a hard bug / implement behavior test-first | diagnosing-bugs / tdd |
 | Investigate documentation | research |
+| Interview a plan with recommendations for each decision | grill-me |
+| Prepare a fresh-agent continuation document | handoff |
+| Draft questions for another person | to-questionnaire |
+| Write skills and agent instructions | writing-for-agents |
 | Interview and record terminology / decisions | grill-with-docs / domain-modeling |
 | Explore interfaces / architecture opportunities | codebase-design / improve-codebase-architecture |
 | Try a throwaway design | prototype |

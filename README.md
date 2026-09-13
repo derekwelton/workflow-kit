@@ -1,12 +1,37 @@
 # workflow-kit
 
-23 engineering skills you install **inside a project**. Install all of them or
+27 engineering and productivity skills you install **inside a project**. Install all of them or
 choose a few. Workflow skills activate explicitly; narrowly scoped craft skills
 can activate when relevant. Installing everything does not load every skill body.
 
 ## Install into a project
 
-Requires Node.js 22 or newer. From this checkout:
+Requires Node.js 22 or newer. Once these changes are pushed to GitHub, run this
+from the project where you want the skills:
+
+```powershell
+npx --yes --package github:derekwelton/workflow-kit workflow-kit
+```
+
+Pick skills by number or name (or `all`), then choose Codex, Claude Code, or both.
+Required dependencies are included automatically. This uses the kit's installer,
+which also bundles shared references and helpers. The generic `npx skills add`
+folder-copy flow does not resolve those dependencies.
+
+From this checkout, the same picker is available now:
+
+```powershell
+node scripts/select-skills.mjs
+```
+
+Pass `--interactive --project F:/Projects/my-project` to pick for another project.
+Explicit flags work without a terminal, for example:
+
+```powershell
+npx --yes --package github:derekwelton/workflow-kit workflow-kit --host both --skills grill-me,handoff,to-questionnaire,writing-for-agents
+```
+
+Or use the existing installer directly:
 
 ```powershell
 # All skills, for both Codex and Claude Code
@@ -47,6 +72,9 @@ stamp a full lifecycle framework into the project or read every skill body.
 | Explicit invocation | Model- or user-invocable |
 |---|---|
 | grill-with-docs | code-review |
+| grill-me | writing-for-agents |
+| handoff | |
+| to-questionnaire | |
 | implement | codebase-design |
 | improve-codebase-architecture | diagnosing-bugs |
 | orchestrate | domain-modeling |

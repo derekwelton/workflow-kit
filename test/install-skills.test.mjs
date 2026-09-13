@@ -29,10 +29,10 @@ function snapshot(directory) {
   visit(directory); return files;
 }
 
-test("install-all copies 23 skills for both hosts and preserves explicit activation", () => fixture(project => {
+test("install-all copies every catalog skill for both hosts and preserves explicit activation", () => fixture(project => {
   fs.writeFileSync(path.join(project, "AGENTS.md"), "Owner rules\n");
   const result = installSkills({ project, host: "both", all: true });
-  for (const host of ["codex", "claude"]) assert.equal(result.selections[host].included.length, 23);
+  for (const host of ["codex", "claude"]) assert.equal(result.selections[host].included.length, Object.keys(JSON.parse(fs.readFileSync(path.join(root, "catalog.json"), "utf8")).skills).length);
   assert.equal(read(project, "AGENTS.md"), "Owner rules\n");
   assert.match(read(project, ".claude/skills/triage/SKILL.md"), /disable-model-invocation: true/);
   assert.doesNotMatch(read(project, ".agents/skills/triage/SKILL.md"), /disable-model-invocation:/);

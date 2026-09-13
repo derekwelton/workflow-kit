@@ -27,8 +27,7 @@ callers and UI metadata. Original explicit-invocation policies are preserved.
 
 `skills/grill-with-docs/references/interview.md` derives from
 `skills/productivity/grilling/SKILL.md` at the same pin. Its fact-finding step
-allows local lookup or useful permitted delegation. No standalone grilling
-entrypoint is installed. Architecture, triage and wayfinder share this reference.
+allows local lookup or useful permitted delegation. The standalone `grill-me` entrypoint now reads this same reference. Architecture, triage and wayfinder share this reference.
 
 For a fresh vendor comparison, use a clean checkout at the recorded revision.
 `node scripts/vendor-engineering.mjs <checkout>` deliberately replaces the 17
@@ -65,3 +64,18 @@ The 0.9.4 framework and its detailed prior adaptation history remain in Git at
 `8ab784585df2508b462f9e308d680350542585b7`. It originally imported Matt's collection
 at `391a2701dd948f94f56a39f7533f8eea9a859c87`, then selectively refreshed it.
 The 1.0 import above supersedes those mixed engineering revisions.
+
+## Productivity additions
+
+Imported `grill-me`, `handoff`, `to-questionnaire`, and `writing-for-agents`
+from `skills/productivity/` at the same `3cca18b368ae95cdbdebbff572ccafa662551015`
+revision above, including Codex metadata and the writing mechanics reference.
+The existing MIT notice covers these imports. `grill-me` reuses the bundled
+interview reference; its declared dependency installs the reference owner and
+its dependencies without invoking their workflows. Handoff uses host-neutral
+skill invocation and preserves verification and authorization boundaries.
+Questionnaires reuse known context, respect output locations, and require
+separate authorization for sending. Writing mechanics reflect this kit's
+host metadata, dependency catalog, and invocation policies rather than the
+upstream Claude-only assumptions. The engineering vendor script does not
+refresh these four productivity additions.

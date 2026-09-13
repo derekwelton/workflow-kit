@@ -1,0 +1,10 @@
+{
+  "name": "@derekwelton/workflow-kit",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Select and install project-local workflow skills",
+  "bin": { "workflow-kit": "scripts/select-skills.mjs" },
+  "engines": { "node": ">=22" },
+  "files": ["scripts/", "skills/", "templates/", "catalog.json", "licenses/", "UPSTREAM.md", ".claude-plugin/plugin.json"]
+}
