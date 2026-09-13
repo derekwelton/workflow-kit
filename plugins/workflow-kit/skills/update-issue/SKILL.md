@@ -1,6 +1,8 @@
 ---
 name: update-issue
 description: Publish one authorized phase checkpoint on the originating issue. Use at meaningful lifecycle gates; deduplicate recent updates and preserve read-only scope.
+metadata:
+  internal: true
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.

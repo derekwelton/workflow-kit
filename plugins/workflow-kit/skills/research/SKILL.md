@@ -1,6 +1,8 @@
 ---
 name: research
 description: Investigate a question against primary sources and return cited findings. Use for technical research, documentation lookup, or delegated reading.
+metadata:
+  internal: true
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.

@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
 
 const cli = process.argv[2];
 if (!cli || !fs.existsSync(cli)) throw new Error("Usage: node scripts/test-skills-cli.mjs <skills-package/bin/cli.mjs>");
@@ -14,7 +15,13 @@ const source = process.argv[3] ?? root;
 const temporary = fs.mkdtempSync(path.join(os.tmpdir(), "workflow-skills-smoke-"));
 const home = path.join(temporary, "home");
 fs.mkdirSync(home);
+// Update's child installs detect available hosts rather than forwarding --agent.
+fs.mkdirSync(path.join(home, ".claude"));
 const env = { ...process.env, HOME: home, USERPROFILE: home, CODEX_HOME: path.join(home, ".codex"), XDG_CONFIG_HOME: path.join(home, ".config"), APPDATA: path.join(home, "AppData/Roaming"), LOCALAPPDATA: path.join(home, "AppData/Local"), DISABLE_TELEMETRY: "1", DO_NOT_TRACK: "1", CI: "1" };
+env.CLAUDE_CONFIG_DIR = path.join(home, ".claude");
+// Model the user's terminal: inherited Codex detection otherwise restricts
+// update's child installs to Codex even when Claude was selected originally.
+for (const key of ["CODEX_SANDBOX", "CODEX_CI", "CODEX_THREAD_ID"]) delete env[key];
 function run(args, cwd) {
   const result = spawnSync(process.execPath, [path.resolve(cli), ...args], { cwd, env, encoding: "utf8", windowsHide: true, timeout: 120000 });
   assert.equal(result.status, 0, result.stderr + result.stdout);
@@ -38,6 +45,38 @@ try {
       console.log(`Passed ${host}, ${copy ? "copy" : "default symlink/fallback"}: selected skills only, bundled interview and executable helper.`);
     }
   }
+  // Exercise the updater's full-depth, duplicate-preserving discovery against
+  // an isolated Git source, including the generated native-plugin copies.
+  const upstream = path.join(temporary, "upstream.git");
+  const project = path.join(temporary, "update-project");
+  fs.mkdirSync(upstream);
+  fs.mkdirSync(project);
+  for (const directory of ["skills/grill-me", "skills/orchestrate", "plugins/workflow-kit/skills/grill-me", "plugins/workflow-kit/skills/orchestrate"]) {
+    fs.cpSync(path.join(root, directory), path.join(upstream, directory), { recursive: true });
+  }
+  function git(args) {
+    const result = spawnSync("git", args, { cwd: upstream, env, encoding: "utf8", windowsHide: true });
+    assert.equal(result.status, 0, result.stderr + result.stdout);
+  }
+  git(["init"]);
+  git(["add", "."]);
+  git(["-c", "user.name=Smoke Test", "-c", "user.email=smoke@example.invalid", "-c", "commit.gpgsign=false", "commit", "-m", "Initial fixture"]);
+  const upstreamUrl = pathToFileURL(upstream).href;
+  run(["add", upstreamUrl, "--skill", "*", "--agent", "codex", "claude-code", "--yes", "--copy"], project);
+  const marker = "\nUpdate smoke test: latest canonical instructions.\n";
+  for (const directory of ["grill-me", "orchestrate"]) fs.appendFileSync(path.join(upstream, "skills", directory, "SKILL.md"), marker);
+  git(["add", "."]);
+  git(["-c", "user.name=Smoke Test", "-c", "user.email=smoke@example.invalid", "-c", "commit.gpgsign=false", "commit", "-m", "Update fixture"]);
+  const updated = run(["update", "--project", "--yes"], project);
+  assert.doesNotMatch(updated, /Multiple current paths|Failed to|✗/);
+  for (const host of [".agents", ".claude"]) {
+    for (const name of ["grill-me", "orchestrate-queue"]) {
+      const content = fs.readFileSync(path.join(project, host, "skills", name, "SKILL.md"), "utf8").replace(/\r\n/g, "\n");
+      assert.ok(content.endsWith(marker), `${host}/${name} did not update from canonical source`);
+      assert.doesNotMatch(content, /internal: true/);
+    }
+  }
+  console.log("Passed real CLI update: duplicate native-plugin copies excluded; both hosts received canonical changes.");
 } finally {
   assert.equal(path.dirname(temporary), path.resolve(os.tmpdir()));
   fs.rmSync(temporary, { recursive: true, force: true });

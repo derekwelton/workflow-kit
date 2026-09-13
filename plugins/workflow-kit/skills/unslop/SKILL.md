@@ -1,6 +1,8 @@
 ---
 name: unslop
 description: Cut AI tells from any writing. Must always apply.
+metadata:
+  internal: true
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.

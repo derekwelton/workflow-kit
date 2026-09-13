@@ -1,6 +1,8 @@
 ---
 name: to-spec
 description: "Turn the current conversation into a spec and publish it to the project issue tracker: no interview, just synthesis of what you've already discussed."
+metadata:
+  internal: true
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.

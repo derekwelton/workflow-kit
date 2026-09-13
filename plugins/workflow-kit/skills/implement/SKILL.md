@@ -1,6 +1,8 @@
 ---
 name: implement
 description: "Implement a piece of work based on a spec or set of tickets."
+metadata:
+  internal: true
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.

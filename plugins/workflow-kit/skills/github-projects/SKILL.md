@@ -1,6 +1,8 @@
 ---
 name: github-projects
 description: Apply a repository's GitHub Projects tracker contract, issue types and status mappings. Use only when Projects is configured; distinguish reads from authorized writes.
+metadata:
+  internal: true
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.

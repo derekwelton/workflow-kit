@@ -1,6 +1,8 @@
 ---
 name: to-questionnaire
 description: Turn a decision you can't fully answer into a questionnaire for someone else to fill in.
+metadata:
+  internal: true
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.

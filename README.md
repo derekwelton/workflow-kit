@@ -31,7 +31,26 @@ npx skills@latest add F:/Projects/workflow-kit
 
 Use `--copy` if you prefer copied files to the installer's default symlinks.
 Keep the generated `skills-lock.json` with the project. Update these installations
-with `npx skills@latest update`; review local edits before updating.
+with the standard installer; review local edits before updating. Run from each
+project's root after the workflow-kit changes have been pushed to GitHub:
+
+```powershell
+# Update installed skills; choose Project when prompted
+npx skills@latest update
+
+# Or explicitly select the current project
+npx skills@latest update --project
+
+# Re-run the original command to reinstall or change the workflow-kit selection
+npx skills@latest add derekwelton/workflow-kit
+```
+
+Repeat in each project you want to update. `update` also updates installed skills
+from other sources; it does not scan other project directories.
+
+Generated native-plugin copies under `plugins/workflow-kit/skills/` carry
+`metadata.internal: true` so standard updates discover only the canonical root
+skills. Keep `INSTALL_INTERNAL_SKILLS` unset for standard installation/update.
 
 ## Alternative managed installer
 
@@ -125,6 +144,11 @@ It is optional, with isolated workers, independent final-SHA review, resumable
 manifests and combined integration checks. Its separately authorized merge mode
 is documented in its references. Tracker adapters remain conditional; install
 the configured adapter if you selected orchestration without install-all.
+
+After the combined PR and human-review handoff are verified, orchestration cleans
+up its safely integrated worker branches and clean inactive worktrees. It keeps
+the combined PR branch for review and reports any worker artifacts retained
+because they contain active, changed, unintegrated, or separately referenced work.
 
 ## Preview and update managed installations
 

@@ -1,6 +1,8 @@
 ---
 name: orchestrate-queue
 description: Run or resume an explicitly selected multi-issue workload with isolated workers, independent review and combined integration verification. Supports read-only planning.
+metadata:
+  internal: true
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.
@@ -46,6 +48,8 @@ Read only the configured tracker adapter; writes use
 4. Serialize dependent/overlapping work; parallelize bounded independent work
    only while the coordinator has useful work. Respect model-routing capacity.
    Lease one worktree per issue, using Linear gitBranchName or local convention.
+   Record which branches/worktrees this run creates in issue --resume-context;
+   distinguish reused artifacts so final cleanup can prove ownership.
    For dispatch read `references/worker-prompt.md` and
    `references/worker-envelope.md`. Give each worker relevant repo rules,
    issue acceptance criteria, allowed files, base/head and focused verification.
@@ -67,6 +71,11 @@ Read only the configured tracker adapter; writes use
 8. Validate the manifest and perform the contract's reconciled tracker handoff.
    The coordinator publishes each authorized checkpoint once, verifying write
    results. Follow local Projects mappings or ordinary GitHub checkpoints.
+9. After the combined PR and handoff are verified, follow
+   `references/cleanup-integrated.md` to remove this run's safely integrated
+   worker branches and clean inactive worktrees. This is part of normal
+   completion; do not ask for another cleanup approval. Retain the integration
+   branch and report cleaned/retained items with reasons.
 
 ## Output and continuity
 

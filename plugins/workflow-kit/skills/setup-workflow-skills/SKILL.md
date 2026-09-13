@@ -1,6 +1,8 @@
 ---
 name: setup-workflow-skills
 description: Configure the installed workflow skills for this project, reusing its tracker, triage vocabulary and domain-document conventions. Use for initial setup or an explicitly requested migration.
+metadata:
+  internal: true
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.

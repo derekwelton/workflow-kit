@@ -74,6 +74,8 @@ export function projectPayload({ root = sourceRoot, host, selected, catalog }) {
       return replacement.startsWith(".") ? replacement : `./${replacement}`;
     });
     if (relative.endsWith("/SKILL.md")) {
+      // Generated native-plugin discovery metadata is not consumer skill policy.
+      text = text.replace(/^metadata:\n  internal: true\n/m, "");
       const metadata = read(path.join(root, path.dirname(relative), "agents/openai.yaml"));
       const explicitOnly = /allow_implicit_invocation: false/.test(metadata);
       text = text.replace(/^disable-model-invocation: true\n/gm, "");

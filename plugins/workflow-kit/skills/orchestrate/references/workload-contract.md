@@ -113,10 +113,19 @@ successful and unknown writes individually, then visibly complete or roll back
 the batch; writes are not transactional. Do not blindly repeat comments.
 Never set Done.
 
+After the verified PR/handoff, perform the bounded worker-branch cleanup in
+`cleanup-integrated.md` as part of completing the run. Keep the integration
+branch, review evidence and manifest for human review and resume. Record each
+cleanup result in the affected issue's --resume-context, preserving existing
+context. A recorded cleanup explains an absent source branch/worktree on resume;
+do not recreate it merely because it is absent. Reconcile the saved SHAs against
+the retained integration branch and receipt before continuing.
+
 Before final merge fetch current main again; advancement requires recombination
 and combined verification. Manual resolutions/material behavior changes require
-fresh human acceptance of the new head. Merge/destructive cleanup require
-explicit authorization. Preserve leased worktrees/processes; verify process
+fresh human acceptance of the new head. Final merge and cleanup beyond the
+bounded end-of-run worker cleanup require explicit authorization. Preserve
+retained leased worktrees/processes; verify process
 command/start-time/ownership, never stop by PID alone.
 
 Manifest is canonical state; tracker is canonical narrative. Optional
@@ -133,4 +142,7 @@ branch, receipt, membership, tests, blocker, rounds/limit and linked follow-ups.
 Include integration branch/base/main SHA, umbrella PR, whether main advanced,
 observed issue transitions, remaining prerequisites and exact checkout/test
 action. State **Not merged to main** until a separately authorized merge succeeds.
+Report removed and retained worker branches/worktrees, with reasons for anything
+left behind. A cleanup failure does not undo a verified PR/handoff; report partial
+cleanup separately and retain its next action for resume.
 Never paste raw envelopes unless explicitly requested.

@@ -23,6 +23,10 @@ function collect(relative) {
     else {
       let content = readText(path.join(root, name));
       if (entry.name === "SKILL.md") {
+        // Standard installer updates scan the whole repository for duplicate
+        // names. These native-plugin copies are internal; root skills are public.
+        if (/^metadata:/m.test(content)) throw new Error(`Merge internal discovery metadata explicitly: ${name}`);
+        content = content.replace("\n---", "\nmetadata:\n  internal: true\n---");
         // Claude controls invocation in frontmatter; Codex uses agents/openai.yaml.
         content = content.replace(/^disable-model-invocation: true\r?\n/gm, "");
         content = content.replace(`\n\n${skillPathPreamble}\n`, "");

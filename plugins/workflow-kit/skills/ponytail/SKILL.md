@@ -2,6 +2,8 @@
 name: ponytail
 description: Apply reuse and root-cause principles while coding. Read affected behavior and callers, preserve explicit requirements and use proportionate verification.
 license: MIT
+metadata:
+  internal: true
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.

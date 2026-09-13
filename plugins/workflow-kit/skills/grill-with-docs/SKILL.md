@@ -1,6 +1,8 @@
 ---
 name: grill-with-docs
 description: A relentless interview to sharpen a plan or design, which also creates docs (ADR's and glossary) as we go.
+metadata:
+  internal: true
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.

@@ -2,6 +2,8 @@
 name: ponytail-audit
 description: Audit over-engineering and rank concrete deletion or simplification proposals. Read-only by default; apply fixes only when requested.
 license: MIT
+metadata:
+  internal: true
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.

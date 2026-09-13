@@ -1,6 +1,8 @@
 ---
 name: linear-mode
 description: Read Linear issues or route authorized sync-thread writes, status transitions and intake. Use only for a configured Linear tracker; load operation references conditionally.
+metadata:
+  internal: true
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.

@@ -1,6 +1,8 @@
 ---
 name: grill-me
 description: A relentless interview to sharpen a plan or design.
+metadata:
+  internal: true
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.

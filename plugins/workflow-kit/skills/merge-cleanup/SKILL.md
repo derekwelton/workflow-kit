@@ -1,6 +1,8 @@
 ---
 name: merge-cleanup
 description: Explicitly finish a named PR, branch or workload through merge, issue reconciliation and owned cleanup.
+metadata:
+  internal: true
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.

@@ -1,6 +1,8 @@
 ---
 name: cleanup-audit
 description: Explicitly audit repository clutter and propose evidenced cleanup; execute only subsequently selected recommendations.
+metadata:
+  internal: true
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.
