@@ -14,7 +14,7 @@ npx skills@latest add derekwelton/workflow-kit
 ```
 
 Choose the skills and target agents in the picker. Each selected folder contains
-its required references, dependency instructions, helper scripts, and licenses.
+its required references, dependency instructions, helper scripts.
 Dependencies are available on demand inside that folder; they do not become extra
 entries in your installed skill list.
 
@@ -215,4 +215,4 @@ existing companion installations.
 
 Engineering skills are adapted from [mattpocock/skills](https://github.com/mattpocock/skills);
 Ponytail skills from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail).
-See [UPSTREAM.md](UPSTREAM.md) and `licenses/` for pinned revisions and adaptations.
+See [UPSTREAM.md](UPSTREAM.md) for pinned revisions and adaptations.

@@ -6,5 +6,5 @@
   "description": "Select and install project-local workflow skills",
   "bin": { "workflow-kit": "scripts/select-skills.mjs" },
   "engines": { "node": ">=22" },
-  "files": ["scripts/", "skills/", "templates/", "catalog.json", "licenses/", "UPSTREAM.md", ".claude-plugin/plugin.json"]
+  "files": ["scripts/", "skills/", "templates/", "catalog.json", "UPSTREAM.md", ".claude-plugin/plugin.json"]
 }

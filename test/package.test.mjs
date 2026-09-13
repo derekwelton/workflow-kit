@@ -24,7 +24,7 @@ test("generated compatibility package runs independently and detects missing dep
 test("generated parity survives Windows CRLF checkouts", () => {
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), "workflow-crlf-"));
   try {
-    for (const name of ["skills", "scripts", "templates", ".claude-plugin", "plugins", "catalog.json", "licenses", "UPSTREAM.md"]) {
+    for (const name of ["skills", "scripts", "templates", ".claude-plugin", "plugins", "catalog.json", "UPSTREAM.md"]) {
       fs.cpSync(path.join(root, name), path.join(temporary, name), { recursive: true });
     }
     function crlf(directory) {

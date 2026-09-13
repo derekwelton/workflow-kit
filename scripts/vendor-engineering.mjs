@@ -43,6 +43,4 @@ for (const entry of fs.readdirSync(engineering, { withFileTypes: true })) {
 }
 fs.mkdirSync(path.join(root, "skills/grill-with-docs/references"), { recursive: true });
 fs.writeFileSync(path.join(root, "skills/grill-with-docs/references/interview.md"), "# Interview rounds\n\n" + interview);
-fs.mkdirSync(path.join(root, "licenses"), { recursive: true });
-fs.copyFileSync(path.join(upstream, "LICENSE"), path.join(root, "licenses/mattpocock-skills-MIT.txt"));
 console.log(`Imported 17 engineering skills from ${pin}. Apply and review documented local adaptations before building.`);

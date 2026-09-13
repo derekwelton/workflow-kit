@@ -43,7 +43,6 @@ for (const file of ["workload-manifest.mjs", "managed-version.mjs", "validate-pa
 collect("scripts/lib");
 for (const file of ["install-skills.mjs"]) expected.set(path.join("scripts", file), readText(path.join(root, "scripts", file)));
 for (const file of ["catalog.json", "UPSTREAM.md"]) expected.set(file, readText(path.join(root, file)));
-collect("licenses");
 expected.set(path.join(".codex-plugin", "plugin.json"), readText(path.join(root, "templates/codex-plugin.json")));
 expected.set(path.join(".claude-plugin", "plugin.json"), readText(path.join(root, ".claude-plugin/plugin.json")));
 for (const [relative, content] of expected) {

@@ -88,7 +88,7 @@ export function projectPayload({ root = sourceRoot, host, selected, catalog }) {
     }
     payload.set(output, text);
   }
-  for (const license of ["licenses/mattpocock-skills-MIT.txt", "licenses/ponytail-MIT.txt", "licenses/pstack-LICENSE.txt", "UPSTREAM.md"]) {
+  for (const license of ["UPSTREAM.md"]) {
     if (fs.existsSync(path.join(root, license))) payload.set(destination(license), read(path.join(root, license)));
   }
   return payload;

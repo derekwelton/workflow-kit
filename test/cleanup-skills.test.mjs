@@ -25,7 +25,7 @@ for (const name of ["cleanup-audit", "merge-cleanup", "unslop"]) {
           assert.ok(!installed.selections[host].included.includes("linear-mode"));
         } else {
           assert.deepEqual(installed.selections[host].included, ["unslop"]);
-          assert.match(read("workflow-kit/licenses/pstack-LICENSE.txt"), /Copyright.*Lauren Tan/);
+          assert.ok(!fs.existsSync(path.join(project, dir, "workflow-kit/licenses")));
         }
       }
       assert.equal(installSkills({ project, host: "both", skills: [name] }).changes.length, 0);

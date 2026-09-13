@@ -37,12 +37,11 @@ export function bundlePayload(sourceRoot, owner, catalog) {
     }
     for (const support of catalog.skills[name].support ?? []) sourceFiles.add(support);
   }
-  for (const name of fs.readdirSync(path.join(sourceRoot, "licenses"))) sourceFiles.add(`licenses/${name}`);
   sourceFiles.add("UPSTREAM.md");
   // Follow helper imports and shared references transitively, independent of any
   // existing generated bundle on disk (stale copies must never mask a missing owner).
   for (const relative of sourceFiles) {
-    if (relative === "UPSTREAM.md" || relative.startsWith("licenses/")) continue;
+    if (relative === "UPSTREAM.md") continue;
     const content = read(path.join(sourceRoot, relative));
     for (const match of content.matchAll(fileReferences)) {
       if (match[0].endsWith("bundled/dependencies.md")) continue;
@@ -65,7 +64,7 @@ export function bundlePayload(sourceRoot, owner, catalog) {
   for (const relative of sourceFiles) {
     const output = destination(relative);
     let content = read(path.join(sourceRoot, relative));
-    if (relative !== "UPSTREAM.md" && !relative.startsWith("licenses/")) content = content.replace(fileReferences, reference => {
+    if (relative !== "UPSTREAM.md") content = content.replace(fileReferences, reference => {
       if (reference.endsWith("bundled/dependencies.md")) return relativeLink(output, "bundled/dependencies.md");
       const canonical = canonicalReference(relative, reference);
       return sourceFiles.has(canonical) ? relativeLink(output, destination(canonical)) : reference;
