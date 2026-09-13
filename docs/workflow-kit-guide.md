@@ -2,6 +2,8 @@
 
 Historical framework guide. The 1.0 project-local collection supersedes this
 workflow; see README.md and docs/project-local-migration.md for current usage.
+Version 1.1.0 has 31 skills. Counts in the dated September 4/9 overview below
+describe that historical snapshot, not the current catalog.
 
 ## September 9 update
 
@@ -479,7 +481,6 @@ Eight executable helper entry points and two shared libraries are listed below. 
 | scripts/workflow-doctor.mjs | Diagnostic helper | Read-only package/CLI/link checks and optional sanitized capability JSON. Complements the broader workflow-doctor skill; it cannot prove every loaded session or account entitlement. |
 | scripts/install-codex-skills.mjs | Fallback installer | Links the complete skill catalog for hosts without native plugin support. --check --json inspects conflicts; --target-dir supports an isolated target. |
 | scripts/build-codex-package.mjs | Package maintenance | Generates plugins/workflow-kit from root sources. --check detects drift. Generated copies are not extra skills. |
-| scripts/sync-codex-policy.mjs | Companion parity | Copies the canonical policy to a specified codex-kit root; --check verifies parity. |
 | scripts/validate-package.mjs | Package validation | Checks package structure, manifests, and skill packaging; accepts a package root. |
 | scripts/test-codex-install.py | Isolated install test | Checks native installation in an isolated home without changing the user’s live plugin/model settings or launching model work. |
 | scripts/lib/model-policy.mjs | Library, not a command | Model routing, effort validation, and worker capacity calculations shared by callers. |
@@ -500,7 +501,11 @@ Eight executable helper entry points and two shared libraries are listed below. 
 
 `.claude-plugin/plugin.json` declares the Claude package; `.agents/plugins/marketplace.json` advertises the native Codex package. `plugins/workflow-kit/` is generated from root sources, including its native manifest. Generated skill copies do not increase the count of 30.
 
-codex-kit is a separate companion project. Its review/job execution and control commands are not additional workflow-kit skills. workflow-kit owns the issue lifecycle and review/integration rules; the companion supplies execution capabilities when configured.
+The codex-cli skill invokes the official CLI directly without a companion plugin.
+Workflow-kit owns lifecycle, model policy, review receipts and integration rules.
+Prefer the other provider for review; Claude reviews use Opus high, then Fable
+medium/low, then fresh Codex if neither is available. Record availability
+evidence. See [migration](codex-cli-migration.md).
 
 Machine refresh and repository refresh are different: update the installed plugin on each machine, then use workflow-update in adopted repositories. An already-loaded session can need a restart or reread.
 

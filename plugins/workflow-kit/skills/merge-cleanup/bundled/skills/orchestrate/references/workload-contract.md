@@ -24,12 +24,24 @@ worker just because a session ended.
 
 Model/effort is owned by `../../../templates/model-routing.md`. Provider pairing uses
 the author of each implementation diff, not the coordinator:
-- cross: Codex author → fresh Claude reviewer; Claude author → fresh Codex reviewer.
+- cross: prefer Codex author → fresh Claude reviewer; Claude author → fresh Codex reviewer.
+  If the other CLI or its authorized reviewers are unavailable, use a fresh same-provider session and
+  record --review-fallback JSON: reason `cli-not-installed`, missingProvider
+  (`claude` or `codex`), and nonempty evidence from the coordinator's CLI lookup.
+  Pass this to init/pair or set-issue when the missing CLI is discovered later.
+  Installed but unusable reviewers instead use reason `review-models-unavailable`,
+  unavailableProvider and attempts [{model, reason, evidence}]. Record observed
+  credentials/quota/model-access failures for both Claude Opus 5 and Fable 5.1
+  before falling back to Codex (or Codex Astra before falling back to Claude).
+  Unknown availability or transient failures do not authorize substitution.
+  Claude review defaults to Opus high; Fable medium/low is its alternative.
 - codex-only / claude-only: fresh independent same-provider session.
 Explicit implementer/reviewer choices must obey the selected pair mode.
 The same session/agent cannot implement and review an issue.
-Manual integration/conflict-resolution edits require a reviewer from the
-provider opposite their author, even in a same-provider issue pair mode.
+Manual integration/conflict-resolution edits prefer a reviewer from the provider
+opposite their author. The same availability fallback applies; record its evidence
+and both session identities in integration review evidence. Explicit same-provider
+choices still require a fresh reviewer. Never approve one's own implementation.
 A conflict-free merge needs combined verification, not repeated issue reviews.
 
 ## Review convergence

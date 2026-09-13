@@ -39,7 +39,7 @@ function collect(relative) {
 }
 collect("skills");
 collect("templates");
-for (const file of ["workload-manifest.mjs", "managed-version.mjs", "validate-package.mjs", "install-codex-skills.mjs", "sync-codex-policy.mjs", "refresh-lifecycle.mjs"]) expected.set(path.join("scripts", file), readText(path.join(root, "scripts", file)));
+for (const file of ["workload-manifest.mjs", "managed-version.mjs", "validate-package.mjs", "install-codex-skills.mjs", "refresh-lifecycle.mjs"]) expected.set(path.join("scripts", file), readText(path.join(root, "scripts", file)));
 collect("scripts/lib");
 for (const file of ["install-skills.mjs"]) expected.set(path.join("scripts", file), readText(path.join(root, "scripts", file)));
 for (const file of ["catalog.json", "UPSTREAM.md"]) expected.set(file, readText(path.join(root, file)));

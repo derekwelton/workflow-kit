@@ -1,6 +1,6 @@
 # workflow-kit
 
-30 engineering and productivity skills you install **inside a project**. Install all of them or
+31 engineering and productivity skills you install **inside a project**. Install all of them or
 choose a few. Workflow skills activate explicitly; narrowly scoped craft skills
 can activate when relevant. Installing everything does not load every skill body.
 
@@ -205,8 +205,13 @@ and helper execution in isolated projects and a temporary home.
 The optional legacy native-plugin smoke test uses an isolated home:
 `python scripts/test-codex-install.py`.
 Model policy remains in `scripts/lib/model-policy.mjs` and
-`templates/model-routing.md`; `scripts/sync-codex-policy.mjs` can produce the
-compatible codex-kit copies. Do not change global policy settings to test this kit.
+`templates/model-routing.md`. The `codex-cli` skill calls the official Codex CLI
+directly; no codex-kit companion is needed. Prefer the other provider for review;
+Claude reviewers default to Opus 5 high, then Fable medium/low, then fresh Codex
+if neither is available. Missing CLI, credentials, quota and model access need
+recorded evidence. Do not change global policy settings to test this kit.
+See [the migration and pilot checklist](docs/codex-cli-migration.md) before retiring
+existing companion installations.
 
 Engineering skills are adapted from [mattpocock/skills](https://github.com/mattpocock/skills);
 Ponytail skills from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail).

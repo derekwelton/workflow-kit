@@ -8,6 +8,15 @@ metadata:
 Resolve bundled relative file paths from this skill's directory, not the project working directory.
 
 
+Prefer the provider opposite the implementation author, following
+`./bundled/templates/model-routing.md`. Claude review defaults to Opus 5 high,
+with Fable medium/low as the alternative, then fresh Codex if neither is usable.
+If the other provider's CLI or authorized reviewers are unavailable, use a fresh
+same-provider session and record the availability evidence.
+No optional CLI installation is required. For a direct Codex launch follow
+`./bundled/skills/codex-cli/INSTRUCTIONS.md`. Native fresh same-provider agents
+are also valid; never pass the implementer's conversation or reuse its session.
+
 Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
 
 - **Standards**: does the code conform to this repo's documented coding standards, and could it preserve the required behavior more simply?

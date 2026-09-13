@@ -105,6 +105,69 @@ test("normalizes workload names and enforces cross-provider review", () => {
   assert.equal(reviewerFor("codex-only", "codex"), "codex");
 });
 
+test("missing optional CLI permits a recorded fresh same-provider review for either author", () => {
+  for (const provider of ["codex", "claude"]) withRepository(directory => {
+    const missingProvider = provider === "codex" ? "claude" : "codex";
+    const fallback = { reason: "cli-not-installed", missingProvider, evidence: `Get-Command ${missingProvider}: not found` };
+    const initialized = run(directory, "init", "--name", "fallback", "--issues", "I-1",
+      "--implementer", provider, "--reviewer", provider, "--review-fallback", JSON.stringify(fallback));
+    assert.equal(initialized.status, 0, initialized.stderr);
+    const manifest = JSON.parse(initialized.stdout).manifest;
+    assert.deepEqual(manifest.issues[0].reviewFallback, fallback);
+    assert.deepEqual(validateManifest(manifest), []);
+    delete manifest.issues[0].reviewFallback;
+    assert.match(validateManifest(manifest).join("\n"), /different review provider/);
+    manifest.issues[0].reviewFallback = fallback;
+    manifest.issues[0].implementationExecution = JSON.parse(execution(provider, "implementation"));
+    manifest.issues[0].reviewExecution = { ...manifest.issues[0].implementationExecution };
+    assert.match(validateManifest(manifest).join("\n"), /different worker sessions/);
+    manifest.issues[0].reviewExecution.workerId = "fresh-review-session";
+    assert.deepEqual(validateManifest(manifest), []);
+    for (const invalid of [{ ...fallback, reason: "login-failed" }, { ...fallback, evidence: " " }, { ...fallback, missingProvider: provider }]) {
+      manifest.issues[0].reviewFallback = invalid;
+      assert.match(validateManifest(manifest).join("\n"), /fallback requires/);
+    }
+  });
+});
+
+test("a saved cross run can record a missing CLI later and clear fallback on return", () => {
+  withRepository(directory => {
+    assert.equal(run(directory, "init", "--name", "later", "--issues", "I-1", "--implementer", "codex").status, 0);
+    const fallback = JSON.stringify({ reason: "cli-not-installed", missingProvider: "claude", evidence: "command -v claude: exit 1" });
+    const changed = run(directory, "set-issue", "--run", "later", "--issue", "I-1", "--reviewer", "codex", "--review-fallback", fallback);
+    assert.equal(changed.status, 0, changed.stderr);
+    const restored = run(directory, "set-issue", "--run", "later", "--issue", "I-1", "--reviewer", "claude", "--review-fallback", "null");
+    assert.equal(restored.status, 0, restored.stderr);
+    assert.equal(JSON.parse(restored.stdout).issue.reviewFallback, null);
+  });
+});
+
+test("quota or credentials fallback requires evidence for all authorized review models", () => {
+  withRepository(directory => {
+    const fallback = {
+      reason: "review-models-unavailable", unavailableProvider: "claude",
+      attempts: [
+        { model: "claude-opus-5", reason: "quota-unavailable", evidence: "Opus review: HTTP 429 usage credits exhausted" },
+        { model: "claude-fable-5-1", reason: "quota-unavailable", evidence: "Fable review: HTTP 429 usage credits exhausted" }
+      ]
+    };
+    const result = run(directory, "init", "--name", "quota", "--issues", "I-1", "--implementer", "codex", "--reviewer", "codex", "--review-fallback", JSON.stringify(fallback));
+    assert.equal(result.status, 0, result.stderr);
+    const manifest = JSON.parse(result.stdout).manifest;
+    assert.deepEqual(validateManifest(manifest), []);
+    manifest.issues[0].reviewFallback.attempts.pop();
+    assert.match(validateManifest(manifest).join("\n"), /every authorized/);
+    manifest.issues[0].reviewFallback = { ...fallback, attempts: fallback.attempts.map(attempt => ({ ...attempt, reason: "network-timeout" })) };
+    assert.match(validateManifest(manifest).join("\n"), /every authorized/);
+    manifest.issues[0].implementationProvider = "claude";
+    manifest.issues[0].reviewProvider = "claude";
+    manifest.issues[0].reviewFallback = { reason: "review-models-unavailable", unavailableProvider: "codex", attempts: [
+      { model: "gpt-6-astra", reason: "credentials-unavailable", evidence: "Codex login status: not authenticated" }
+    ] };
+    assert.deepEqual(validateManifest(manifest), []);
+  });
+});
+
 test("same-provider pair modes force both providers and cross rejects a self-review pair", () => {
   withRepository((directory) => {
     const codexOnly = run(
@@ -417,6 +480,17 @@ test("integration-ready validation requires reviewed issues and a complete branc
   };
   assert.deepEqual(validateManifest(manifest), []);
 
+  for (const invalidReceipt of [
+    `claude:${baseSha}:review-${headSha}`,
+    `path/claude/${headSha}/review`,
+    `codex:${headSha}:claude-review`,
+    `claude:${headSha}:`,
+    `claude:${headSha}:review:extra`
+  ]) {
+    manifest.issues[0].reviewReceipt = invalidReceipt;
+    assert.match(validateManifest(manifest).join("\n"), /reviewReceipt must include/);
+  }
+  manifest.issues[0].reviewReceipt = `claude:${headSha}:review-1`;
   manifest.issues[0].reviewProvider = "codex";
   assert.match(validateManifest(manifest).join("\n"), /different review provider/);
   manifest.issues[0].reviewProvider = "claude";
@@ -459,6 +533,10 @@ test("integration-ready validation requires review of actual conflict resolution
   assert.match(validateManifest(manifest).join("\n"), /conflict resolutions require/);
   manifest.integration.conflictReviewReceipt = `codex:${headSha}:conflict-review-1`;
   assert.deepEqual(validateManifest(manifest), []);
+  for (const invalidReceipt of [`codex:${baseSha}:review-${headSha}`, `path/codex/${headSha}`, 123]) {
+    manifest.integration.conflictReviewReceipt = invalidReceipt;
+    assert.match(validateManifest(manifest).join("\n"), /conflict review receipt must include/);
+  }
 });
 
 test("project-local installation retains the workload renderer and is idempotent", () => {

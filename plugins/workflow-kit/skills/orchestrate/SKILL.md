@@ -60,10 +60,12 @@ Read only the configured tracker adapter; writes use
 6. Dispatch independent review following the workload contract's pairing and
    round reservation rules. Give both Standards and Spec axes. Adjudicate
    findings against evidence, fix, verify, and obtain the final-head receipt.
-   Record reviewed-pending-integration. For Claude-to-Codex review, use the
-   dedicated Codex reviewer adapter; no hand-written Codex CLI wrappers or
-   state-file polling. For Codex-to-Claude review, launch a fresh Claude CLI
-   process directly as described in model-routing; no Claude adapter is required.
+   Record reviewed-pending-integration. For direct Codex launches, follow
+   `./bundled/skills/codex-cli/INSTRUCTIONS.md`. For Claude review, launch a fresh
+   Claude CLI process as described in model-routing. Prefer the other provider;
+   follow model-routing's Opus high → Fable medium/low → Codex fallback when
+   Claude review is unavailable. Record availability evidence for the chosen
+   route. Never reuse the implementation session for review.
 7. Once the workload contract permits assembly, fetch current default branch,
    combine exact reviewed heads in dependency order on integration/<slug>.
    Record assembling, base/head, combined tests and any conflict-review receipt.

@@ -1,5 +1,18 @@
 # Upstream provenance
 
+## Direct Codex review (1.1.0)
+
+`templates/codex-adversarial-review.md` and `templates/codex-review-output.schema.json`
+derive from `prompts/adversarial-review.md` and `schemas/review-output.schema.json`
+in [derekwelton/codex-kit](https://github.com/derekwelton/codex-kit) at
+`e5c69dcf6b55f0b3435e119e497ece810abd70a9`. That fork derives from
+[openai/codex-plugin-cc](https://github.com/openai/codex-plugin-cc) at
+`db52e28f4d9ded852ab3942cea316258ae4ef346` (Apache-2.0, Copyright 2026 OpenAI).
+Full LICENSE and NOTICE are retained in `licenses/codex-plugin-cc-Apache-2.0.txt`
+and `licenses/codex-plugin-cc-NOTICE.txt` and shipped in generated installations.
+Local adaptations add base/head binding, Standards/Spec axes, fresh review and
+coordinator-owned convergence/tracker rules. No runtime, broker or hooks are imported.
+
 ## Engineering collection (1.0.0)
 
 Imported from [mattpocock/skills](https://github.com/mattpocock/skills),

@@ -2,6 +2,8 @@
 
 Historical 0.9.4 report. The 1.0 project-local catalog supersedes this architecture;
 these measurements do not describe current host context use. See README.md.
+The validation results below are historical, including the then-existing policy
+sync check. Version 1.1.0 removes that helper and adds direct codex-cli execution.
 
 Implementation base: `db7fde95c5c9832fc8f20c6b547aef838c3592dc` (0.9.2). Working package: 0.9.4.
 This report records implementation evidence; live rollout checks remain separate.
@@ -124,9 +126,8 @@ total time, requested/resolved route, side effects and delivered outcome.
   refresh-lifecycle preserves consumer configuration/local overrides.
 
 No consumer repository or global model/plugin settings were changed.
-Native installation validation uses an isolated home. Codex-kit sync must be
-performed/check-parity against its selected checkout before a coordinated release;
-the release also synchronizes the owned generated copies in codex-kit 2.3.1.
+Native installation validation uses an isolated home. Direct Codex execution now
+uses codex-cli; model policy stays in workflow-kit with no companion sync.
 
 ## All-skill disposition
 

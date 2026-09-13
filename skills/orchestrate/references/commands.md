@@ -14,6 +14,7 @@ Accept:
 --issues <comma-separated issue keys>
 --parent <issue key>
 --pair <cross|codex-only|claude-only>          default: cross
+--review-fallback <JSON>                     verified unavailable review route; init/pair/set-issue
 --implementer <auto|codex|claude>              default: auto
 --reviewer <auto|codex|claude>                 default: auto
 --max-implementers <n>                         default: 4

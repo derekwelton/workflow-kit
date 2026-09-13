@@ -2,7 +2,7 @@
 tracker: github
 ---
 
-<!-- workflow-kit:managed-start version=1.0.0 -->
+<!-- workflow-kit:managed-start version=1.1.0 -->
 
 # Project workflow configuration
 

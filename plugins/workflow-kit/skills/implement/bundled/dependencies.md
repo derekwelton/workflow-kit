@@ -5,6 +5,7 @@ repository contracts, independent review, and human acceptance boundaries.
 
 - code-review: [instructions](./skills/code-review/INSTRUCTIONS.md)
 - codebase-design: [instructions](./skills/codebase-design/INSTRUCTIONS.md)
+- codex-cli: [instructions](./skills/codex-cli/INSTRUCTIONS.md)
 - ponytail: [instructions](./skills/ponytail/INSTRUCTIONS.md)
 - tdd: [instructions](./skills/tdd/INSTRUCTIONS.md)
 - update-issue: [instructions](./skills/update-issue/INSTRUCTIONS.md)

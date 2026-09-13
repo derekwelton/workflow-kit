@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { resolveModel, resolveRouting, validateEffort } from "./lib/model-policy.mjs";
+import { resolveModel, resolveRouting, validateEffort, validateReviewFallback } from "./lib/model-policy.mjs";
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
@@ -9,7 +9,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 const SCHEMA_VERSION = 3;
-const WORKFLOW_KIT_VERSION = "1.0.0";
+const WORKFLOW_KIT_VERSION = "1.1.0";
 const PAIR_MODES = new Set(["cross", "codex-only", "claude-only"]);
 const ISSUE_STATES = new Set([
   "selected",
@@ -444,7 +444,7 @@ function detectDefaultBaseRef(repository) {
   fail("Could not resolve the repository default branch. Fetch origin or pass --base explicitly.");
 }
 
-function normalizePairSelection(pairMode, implementerValue, reviewerValue) {
+function normalizePairSelection(pairMode, implementerValue, reviewerValue, reviewFallback = null) {
   let implementationProvider = normalizeProvider(implementerValue);
   let explicitReviewer = normalizeProvider(reviewerValue);
 
@@ -469,8 +469,9 @@ function normalizePairSelection(pairMode, implementerValue, reviewerValue) {
     reviewProvider !== "auto" &&
     implementationProvider === reviewProvider
   ) {
-    fail("cross requires different providers. Use --pair codex-only or --pair claude-only for same-provider work.");
+    if (!reviewFallback) fail("cross requires different providers or --review-fallback with missing-CLI evidence. Use --pair codex-only or --pair claude-only for explicit same-provider work.");
   }
+  if (reviewFallback) validateReviewFallback(reviewFallback, implementationProvider, reviewProvider);
   return { implementationProvider, reviewProvider };
 }
 
@@ -487,10 +488,12 @@ function commandInit(cwd, options) {
   if (!PAIR_MODES.has(pairMode)) {
     fail(`Unsupported pair mode "${pairMode}".`);
   }
+  const reviewFallback = options["review-fallback"] === undefined ? null : JSON.parse(requireTextOption(options["review-fallback"], "review-fallback"));
   const { implementationProvider, reviewProvider } = normalizePairSelection(
     pairMode,
     options.implementer,
-    options.reviewer
+    options.reviewer,
+    reviewFallback
   );
   const baseRef = String(options.base ?? detectDefaultBaseRef(repository));
   const branch = String(options.branch ?? `integration/${id}`);
@@ -536,6 +539,7 @@ function commandInit(cwd, options) {
       pullRequest: null,
       implementationProvider: implementationProvider === "auto" ? null : implementationProvider,
       reviewProvider: reviewProvider === "auto" ? null : reviewProvider,
+      reviewFallback,
       implementationExecution: null,
       reviewExecution: null,
       reviewReceipt: null,
@@ -617,6 +621,9 @@ function commandSetIssue(cwd, options) {
     assignIfPresent(issue, "pullRequest", options.pr, String);
     assignIfPresent(issue, "implementationProvider", options.implementer, (value) => normalizeProvider(value, { allowAuto: false }));
     assignIfPresent(issue, "reviewProvider", options.reviewer, (value) => normalizeProvider(value, { allowAuto: false }));
+    if (options["review-fallback"] !== undefined) {
+      issue.reviewFallback = JSON.parse(requireTextOption(options["review-fallback"], "review-fallback"));
+    }
     const nextReviewExecution = options["review-execution"] === undefined ? null
       : JSON.parse(requireTextOption(options["review-execution"], "review-execution"));
     const completedReview = ["reviewed-pending-integration", "in-review", "done"].includes(issue.state);
@@ -663,7 +670,7 @@ function commandSetIssue(cwd, options) {
     issue.updatedAt = nowIso();
     manifest.updatedAt = issue.updatedAt;
     if (issue.reviewHistory.length && (issue.state === "code-review" || completedReview)) {
-      Object.assign(issue.reviewHistory.at(-1), { findings: issue.reviewFindings, receipt: issue.reviewReceipt, execution: issue.reviewExecution });
+      Object.assign(issue.reviewHistory.at(-1), { findings: issue.reviewFindings, receipt: issue.reviewReceipt, execution: issue.reviewExecution, reviewFallback: issue.reviewFallback ?? null });
     }
     assertManifestValid(manifest);
     writeCheckpoint(filePath, manifest);
@@ -794,8 +801,10 @@ function validateManifest(manifest) {
   const isFullCommitSha = (value) => typeof value === "string" && /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(value);
   const evidenceBindsHead = (receipt, headSha) =>
     typeof receipt === "string" && typeof headSha === "string" && receipt.includes(headSha);
-  const receiptBindsReview = (receipt, provider, headSha) =>
-    evidenceBindsHead(receipt, headSha) && typeof provider === "string" && receipt.toLowerCase().includes(provider);
+  const receiptBindsReview = (receipt, provider, headSha) => {
+    const match = typeof receipt === "string" && receipt.match(/^(codex|claude):([0-9a-f]{40}|[0-9a-f]{64}):([^:\s]+)$/);
+    return Boolean(match && match[1] === provider && match[2] === headSha);
+  };
   if (![2, SCHEMA_VERSION].includes(manifest.schemaVersion)) {
     errors.push(`schemaVersion must be ${SCHEMA_VERSION}`);
   }
@@ -914,7 +923,11 @@ function validateManifest(manifest) {
       issue.reviewProvider &&
       issue.implementationProvider === issue.reviewProvider
     ) {
-      errors.push(`${issue.key}: cross mode requires a different review provider`);
+      if (!issue.reviewFallback) errors.push(`${issue.key}: cross mode requires a different review provider or missing-CLI fallback evidence`);
+    }
+    if (issue.reviewFallback) {
+      try { validateReviewFallback(issue.reviewFallback, issue.implementationProvider, issue.reviewProvider); }
+      catch (error) { errors.push(`${issue.key}: ${error.message}`); }
     }
   }
 
@@ -947,7 +960,7 @@ function validateManifest(manifest) {
       manifest.integration.conflictsOccurred &&
       manifest.integration.conflictReviewReceipt &&
       manifest.integration.headSha &&
-      !evidenceBindsHead(manifest.integration.conflictReviewReceipt, manifest.integration.headSha)
+      !receiptBindsReview(manifest.integration.conflictReviewReceipt, typeof manifest.integration.conflictReviewReceipt === "string" ? manifest.integration.conflictReviewReceipt.split(":")[0] : null, manifest.integration.headSha)
     ) {
       errors.push("integration conflict review receipt must include the reviewed headSha");
     }
@@ -1029,6 +1042,7 @@ function printUsage() {
       "Strict review is default. Convergent deferral requires --review-policy convergent --policy-decision <reference>. Thresholds never confer approval.",
       "Extra rounds require --allow-extra-round --reason <authorized reason>. Findings: --review-findings JSON array of {id, severity, category, blocking, status, summary, followUp, decision}.",
       "set-issue accepts --implementation-execution and --review-execution JSON with requestedModel, resolvedModel (null if unverified), effort, highReason, workerId, policyVersion, fallbackReason.",
+      "init, pair and set-issue accept --review-fallback JSON: cli-not-installed with missingProvider/evidence, or review-models-unavailable with unavailableProvider/attempts [{model, reason, evidence}]. Exhaust Claude Opus/Fable or Codex Astra; preserve fresh sessions. Set null to clear it on return to cross-provider review.",
       "set-issue --resume-context accepts JSON for the intended environment, user-task acceptance evidence, owned runtime/jobs, prerequisites, and nextAction.",
       "  workload-manifest.mjs validate --run <id>",
       "  workload-manifest.mjs list",
@@ -1057,7 +1071,8 @@ function main() {
     case "pair": {
       const pairMode = String(options.pair ?? "cross").toLowerCase();
       if (!PAIR_MODES.has(pairMode)) fail(`Unsupported pair mode "${pairMode}".`);
-      result = { pairMode, ...normalizePairSelection(pairMode, options.implementer, options.reviewer) };
+      const reviewFallback = options["review-fallback"] === undefined ? null : JSON.parse(requireTextOption(options["review-fallback"], "review-fallback"));
+      result = { pairMode, ...normalizePairSelection(pairMode, options.implementer, options.reviewer, reviewFallback), reviewFallback };
       break;
     }
     case "migrate":

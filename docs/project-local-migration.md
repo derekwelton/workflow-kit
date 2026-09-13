@@ -1,6 +1,6 @@
 # Moving an existing project to local skills
 
-The current catalog has 30 skills. Installation and migration are separate operations.
+The current catalog has 31 skills. Installation and migration are separate operations.
 The installer copies skills; it does not rewrite AGENTS.md, CLAUDE.md, .ai/ rules,
 feature-lifecycle.md, tracker settings, existing work folders, or global plugins.
 

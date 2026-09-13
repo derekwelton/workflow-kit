@@ -71,6 +71,12 @@ Seed templates (adapt to verified project conventions; do not overwrite owner ed
 
 ## Existing lifecycle migration
 
+For a requested codex-kit migration, replace only the old companion routing block
+with "Claude-to-Codex: follow codex-cli. Prefer the other provider for review;
+follow model-routing's Opus high, Fable medium/low, then Codex availability fallback."
+Preserve local tracker rules, active jobs and receipts. Do not stamp the old
+companion template or uninstall global plugins as part of project setup.
+
 Only when migration is requested, show the exact old managed block and pointers
 to retire. Preserve frontmatter, local overrides, active manifests, review
 receipts and work artifacts. Remove only the selected legacy policy and replace
