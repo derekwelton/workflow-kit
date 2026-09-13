@@ -8,7 +8,7 @@ Do not read its implementation in ordinary execution.
 Accept:
 
 ```text
---name <workload-name>                         required for a new run
+--name <workload-name>                         optional user override; otherwise inferred
 --status <status>                              default: Todo
 --labels <comma-separated labels>
 --issues <comma-separated issue keys>
@@ -29,10 +29,24 @@ Accept:
 --resume <workload-id>
 ```
 
-Reject a new run without a name or without exactly one selection source:
+Reject a new run without exactly one selection source:
 `--issues`, `--parent`, or a tracker query (`--status` plus optional labels).
 Treat bare label/name text conservatively as `--labels`/`--name`; show the
 normalized interpretation before mutating anything.
+
+For a new run, preserve an explicit workload name. Otherwise choose a short,
+descriptive name from the selected issue titles, parent title, or shared
+objective; do not ask the user to supply or approve a name. Use a lowercase
+hyphenated slug, such as `simplify-shop-scheduling`, and pass it to the helper
+as --name (the helper still requires this argument). Its integration branch is
+`integration/<slug>`. If there is no clear shared theme, use the repository
+name plus a concise selection label or issue key. Check existing workload IDs
+and local/remote branch names; for an unrelated collision, append an issue key
+or short numeric suffix. Never overwrite or reuse an unrelated run or branch.
+Report the chosen name and branch with the normalized plan; naming alone does
+not require confirmation. On --resume, retain the saved workload and branch
+names. Issue worktree branches follow the repository/tracker convention; derive
+a descriptive branch name when that convention leaves the choice to the agent.
 
 
 ## Creating a manifest

@@ -29,10 +29,13 @@ Read only the configured tracker adapter; writes use
    `references/preflight.md` for the selected capabilities. Configuration can live
    in docs/agents/issue-tracker.md or an existing repository contract;
    no managed lifecycle document or global plugin is required.
-   A new run needs a name and exactly one selection source: named issues,
+   A new run needs exactly one selection source: named issues,
    parent children, or a status/label query. Scope to this repository, dedupe,
-   then freeze membership. A parent without children may use single implement;
-   never manufacture a workload for a small issue.
+   then freeze membership. Preserve an explicit workload name; otherwise derive
+   a concise descriptive name from the selected issues or shared objective and
+   pass it as --name. Choose names without asking the user; follow the naming
+   and collision rules in `references/commands.md`. A parent without children
+   may use single implement; never manufacture a workload for a small issue.
 2. For --resume, show the saved manifest and reconcile refs, recorded SHAs,
    PRs, tracker states, worktrees and worker jobs. Preserve saved policy and
    authorization; continue the first incomplete gate without duplicate workers.
@@ -54,8 +57,10 @@ Read only the configured tracker adapter; writes use
 6. Dispatch independent review following the workload contract's pairing and
    round reservation rules. Give both Standards and Spec axes. Adjudicate
    findings against evidence, fix, verify, and obtain the final-head receipt.
-   Record reviewed-pending-integration. Use the dedicated reviewer adapter for
-   cross-host review; no hand-written CLI wrappers or state-file polling.
+   Record reviewed-pending-integration. For Claude-to-Codex review, use the
+   dedicated Codex reviewer adapter; no hand-written Codex CLI wrappers or
+   state-file polling. For Codex-to-Claude review, launch a fresh Claude CLI
+   process directly as described in model-routing; no Claude adapter is required.
 7. Once the workload contract permits assembly, fetch current default branch,
    combine exact reviewed heads in dependency order on integration/<slug>.
    Record assembling, base/head, combined tests and any conflict-review receipt.

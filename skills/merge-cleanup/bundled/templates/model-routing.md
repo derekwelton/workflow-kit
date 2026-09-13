@@ -51,4 +51,14 @@ change models. Coordinator owns tracker writes and final integration.
 Claude-to-Codex uses codex-kit's task/reviewer adapters: --model astra --effort low
 for ordinary coding, --model terra --effort low for simple work, --model astra
 --effort medium for review. High needs --high-reason explaining the actual
-orchestration/intense reasoning. No hand-written wrappers or companion polling.
+orchestration/intense reasoning. No hand-written Codex wrappers or companion polling.
+
+Codex-to-Claude review uses a fresh Claude CLI process directly; no Claude
+reviewer adapter is required. Run from the issue worktree with a bounded prompt
+containing the issue requirements, repository standards, Standards and Spec
+axes, and exact base/head SHAs. Select explicit model/effort using the policy
+above; use noninteractive read-only review permissions, JSON output, and no
+session persistence. The coordinator reads the result, adjudicates findings,
+and obtains a fresh review after fixes as the workload contract requires.
+Record the returned session ID and final reviewed head in the receipt
+`claude:<head-sha>:<claude-session-id>`; retain launch provenance and round limits.
