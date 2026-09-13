@@ -5,7 +5,8 @@ description: Apply a repository's GitHub Projects tracker contract, issue types 
 
 # GitHub Projects contract
 
-Read lifecycle frontmatter and local overrides before any tracker operation.
+Read docs/agents/issue-tracker.md or the existing repository tracker contract,
+including lifecycle frontmatter and local overrides, before tracker operations.
 `tracker: github-projects` enables this contract. It overrides ordinary GitHub
 label classification and Linear-specific transitions throughout the workflow.
 An existing repository-specific Projects contract also takes precedence; offer
@@ -63,6 +64,6 @@ report the ambiguity. No Linear API calls for this mode.
    authorization for messages; do not post comments when a task is read-only.
 
 The coordinator is the only tracker writer. Workers return structured results.
-Use `scripts/lib/tracker-policy.mjs` from the package root to validate parsed
+Use `../../scripts/lib/tracker-policy.mjs` to validate parsed
 configuration and phase mappings. Do not invent a missing project field,
 status, label, or organization Issue Type during a routine workflow run.

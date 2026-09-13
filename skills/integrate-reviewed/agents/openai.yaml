@@ -1,4 +1,0 @@
-interface:
-  display_name: "Integrate Reviewed"
-  short_description: "Merge a human-approved workload safely"
-  default_prompt: "Use $integrate-reviewed to validate and integrate an accepted workload."

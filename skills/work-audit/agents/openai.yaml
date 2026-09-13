@@ -1,4 +1,0 @@
-interface:
-  display_name: "Work Audit"
-  short_description: "Workflow guidance for work audit"
-  default_prompt: "Use $work-audit for this repository workflow task."

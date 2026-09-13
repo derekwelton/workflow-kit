@@ -53,7 +53,7 @@ test("GitHub issue identity tolerates harmless URL variants without accepting an
 });
 
 test("distributed instructions preserve the full discovery and no-double-post rules", () => {
-  for (const relative of ["skills/linear-mode/references/write.md", "templates/feature-lifecycle-portable.md"]) {
+  for (const relative of ["skills/linear-mode/references/write.md"]) {
     const source = fs.readFileSync(new URL(`../${relative}`, import.meta.url), "utf8");
     assert.match(source, /[Pp]age/);
     assert.match(source, /[Uu]nique/);

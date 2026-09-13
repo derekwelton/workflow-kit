@@ -1,6 +1,5 @@
 interface:
   display_name: "Improve Codebase Architecture"
-  short_description: "Workflow guidance for improve codebase architecture"
-  default_prompt: "Use $improve-codebase-architecture for this repository workflow task."
+  short_description: "Find and grill architecture improvements"
 policy:
   allow_implicit_invocation: false

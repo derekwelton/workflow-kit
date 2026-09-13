@@ -9,7 +9,9 @@ const destination = path.resolve(target);
 const manifest = JSON.parse(fs.readFileSync(path.join(destination, ".claude-plugin/plugin.json"), "utf8"));
 if (manifest.name !== "codex") throw new Error("Target must be the codex-kit plugin root.");
 for (const relative of ["scripts/lib/model-policy.mjs", "skills/model-routing/SKILL.md"]) {
-  const source = fs.readFileSync(path.join(root, relative));
+  const source = relative.endsWith("SKILL.md")
+    ? Buffer.from("---\nname: model-routing\ndescription: Choose worker models and effort for delegated work.\n---\n\n" + fs.readFileSync(path.join(root, "templates/model-routing.md"), "utf8").replace("../scripts/lib/model-policy.mjs", "../../scripts/lib/model-policy.mjs"))
+    : fs.readFileSync(path.join(root, relative));
   const output = path.join(destination, relative);
   if (process.argv.includes("--check")) {
     if (!fs.existsSync(output) || !source.equals(fs.readFileSync(output))) throw new Error(`Policy drift: ${relative}`);

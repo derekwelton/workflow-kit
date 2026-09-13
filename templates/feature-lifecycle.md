@@ -1,66 +1,24 @@
 ---
-workDir: work
-docsHome: .ai/workflows
-labels: [feature, bug, chore, idea]
-glossary: CONTEXT.md
-adrDir: docs/adr
-# tracker: github-projects  # optional; see Tracker configuration below
-# linearTeam: ABC    # uncomment + set to bind this repo to a Linear team (see "Linear mode")
+tracker: github
 ---
 
-<!-- workflow-kit:managed-start version=0.9.4 -->
+<!-- workflow-kit:managed-start version=1.0.0 -->
 
-# Feature workflow
+# Project workflow configuration
 
-This file owns repository configuration and local overrides, not a second copy
-of plugin policy. Read its frontmatter and additions below the managed block.
-Keep tracker binding, status names, branch conventions and verification
-commands local. Read only the selected route below.
+This compatibility block preserves existing repository configuration and local
+overrides during an explicitly requested legacy refresh. New installations do
+not create a lifecycle file. Configure only installed skills through
+setup-workflow-skills and project-owned docs/agents files as needed.
 
-## Host route
-
-- **Plugin available:** read the installed workflow-kit's
-  templates/lifecycle-contract.md and selected action skill. Do not load
-  feature-lifecycle-portable.md too.
-- **Plugin unavailable:** read [feature-lifecycle-portable.md](feature-lifecycle-portable.md).
-  It is generated from the same policy owners, includes the full fallback
-  contract, and supports manual execution with available Git/tracker tools.
-  Load its selected-mode sections in bounded chunks; report unavailable tools.
-- If plugin identity/version or required files cannot be established, report
-  that limitation and use the verified portable fallback. Do not silently mix
-  versions. Report drift without automatically refreshing/downgrading.
-
-## Task route
-
-| Request | Entry |
-|---|---|
-| Status, lookup, personal advice or review report | Read-only; chat or requested artifact, no issue intake or tracker writes |
-| One implementation issue | implement; reuse issue acceptance criteria and affected tests |
-| New implementation without issue | minimal new-feature intake when authorized |
-| Explicit multi-issue run/resume | orchestrate-queue; workload manifest and integration gates |
-| Independent review | code-review, selected target/queue/workload mode |
-| Accepted work cleanup or named merge | wrap-feature / integrate-reviewed, with explicit action authorization |
-| Requested HTML | present, a pure renderer of supplied content |
-
-Claude invokes /workflow-kit:<directory>; Codex uses $<skill-name>
-(orchestrate's public name is orchestrate-queue). Planning interviews, specs,
-ticket decomposition and epic maps are opt-in.
-
-## Configuration rules
-
-tracker may be github, github-projects or linear. Existing linearTeam without
-tracker selects Linear; otherwise default to ordinary GitHub Issues.
-Conflicting explicit tracker/linearTeam bindings block writes. Projects owns
-verified project/field/status mappings; preserve them on refresh. No automatic
-Done, merge, destructive cleanup or unsolicited messages.
-
-Read-only scope propagates through nested skills. Caller owns one authorized
-checkpoint per meaningful phase. Retain loaded path/version/content identity
-through handoffs, but refresh mutable issue/status state immediately for writes.
-Repository verification overrides remain in force.
+Read only the skill selected for the task. Do not load the entire catalog,
+portable fallback, tracker adapters, or orchestration rules on startup.
+Existing tracker/status mappings and branch conventions remain authoritative.
+Independent implementation/review, final-SHA verification and human acceptance
+remain separate. Agents never mark their own work Done.
 
 <!-- workflow-kit:managed-end -->
 
 ## Local overrides
 
-Add repository-specific workflow and verification rules here.
+Keep repository-specific tracker and verification rules here.

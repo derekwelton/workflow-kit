@@ -1,6 +1,5 @@
 interface:
   display_name: "To Spec"
-  short_description: "Workflow guidance for to spec"
-  default_prompt: "Use $to-spec for this repository workflow task."
+  short_description: "Turn a conversation into a spec"
 policy:
   allow_implicit_invocation: false

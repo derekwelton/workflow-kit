@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "upstream": {"repository": "mattpocock/skills", "revision": "3cca18b368ae95cdbdebbff572ccafa662551015"},
+  "skills": {
+    "code-review": {"dependencies": [], "support": ["templates/project-context.md"]},
+    "codebase-design": {"dependencies": []},
+    "diagnosing-bugs": {"dependencies": []},
+    "domain-modeling": {"dependencies": []},
+    "github-projects": {"dependencies": [], "support": ["scripts/lib/tracker-policy.mjs"]},
+    "grill-with-docs": {"dependencies": ["domain-modeling"]},
+    "implement": {"dependencies": ["ponytail", "tdd", "code-review", "update-issue"], "support": ["templates/project-context.md"]},
+    "improve-codebase-architecture": {"dependencies": ["codebase-design", "grill-with-docs", "domain-modeling"]},
+    "linear-mode": {"dependencies": [], "support": ["templates/tracker-write.md", "scripts/lib/linear-sync-root.mjs"]},
+    "orchestrate": {"name": "orchestrate-queue", "dependencies": ["implement", "code-review", "update-issue", "research"], "support": ["templates/lifecycle-contract.md", "templates/tracker-write.md", "templates/model-routing.md", "scripts/workload-manifest.mjs", "scripts/lib/model-policy.mjs"]},
+    "ponytail": {"dependencies": []},
+    "ponytail-audit": {"dependencies": []},
+    "prototype": {"dependencies": []},
+    "research": {"dependencies": []},
+    "resolving-merge-conflicts": {"dependencies": []},
+    "setup-workflow-skills": {"dependencies": []},
+    "tdd": {"dependencies": ["codebase-design"]},
+    "to-spec": {"dependencies": [], "support": ["templates/project-context.md"]},
+    "to-tickets": {"dependencies": [], "support": ["templates/project-context.md"]},
+    "triage": {"dependencies": ["grill-with-docs", "domain-modeling"], "support": ["templates/project-context.md"]},
+    "wayfinder": {"dependencies": ["grill-with-docs", "domain-modeling", "research", "prototype"], "support": ["templates/project-context.md"]},
+    "wizard": {"dependencies": []},
+    "update-issue": {"dependencies": [], "support": ["templates/lifecycle-contract.md", "templates/tracker-write.md"]}
+  }
+}

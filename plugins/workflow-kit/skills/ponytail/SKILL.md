@@ -4,7 +4,7 @@ description: Apply reuse and root-cause principles while coding. Read affected b
 license: MIT
 ---
 
-Resolve this skill's real filesystem path; package root is `../..` from its directory.
+Resolve bundled relative file paths from this skill's directory, not the project working directory.
 
 
 # Coding principles

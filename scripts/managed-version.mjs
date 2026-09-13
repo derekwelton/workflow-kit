@@ -14,7 +14,7 @@ export function checkManagedVersion({ cwd = process.cwd(), lifecycle, pluginRoot
   const candidates = lifecycle ? [path.resolve(repo, lifecycle)] : defaults.map(f => path.join(repo, f));
   const found = candidates.filter(f => fs.existsSync(f));
   if (found.length > 1) return { status: "ambiguous", installed, message: "Multiple lifecycle docs found; pass --lifecycle with the repository's canonical path." };
-  if (!found.length) return { status: "missing", installed, message: lifecycle ? "Configured lifecycle file is missing; reconcile the repository contract." : "No lifecycle doc found at conventional paths; use --lifecycle for a custom path, or workflow-init for first adoption." };
+  if (!found.length) return { status: "missing", installed, message: lifecycle ? "Configured lifecycle file is missing; reconcile the repository contract." : "No legacy lifecycle doc found. Project-local skills do not require one." };
   const file = found[0];
   const managed = fs.readFileSync(file, "utf8").match(/workflow-kit:managed-start version=([^\s>]+)/)?.[1] ?? null;
   const parse = v => /^\d+\.\d+\.\d+$/.test(v ?? "") ? v.split(".").map(Number) : null;
@@ -23,7 +23,7 @@ export function checkManagedVersion({ cwd = process.cwd(), lifecycle, pluginRoot
   const comparison = current ? current.reduce((result, part, i) => result || Math.sign(part - target[i]), 0) : -1;
   const status = !current ? "unstamped" : comparison < 0 ? "stale" : comparison > 0 ? "newer" : "current";
   const message = ["stale", "unstamped"].includes(status)
-    ? `Run /workflow-kit:workflow-update (Codex: $workflow-update) (${managed ?? "unstamped"} -> ${installed}).`
+    ? `Review the legacy migration guide before an explicit refresh (${managed ?? "unstamped"} -> ${installed}).`
     : status === "newer" ? `Repository lifecycle ${managed} is newer than this package ${installed}; refresh the machine plugin first, do not downgrade the repository.`
     : `Repository lifecycle and this package match (${installed}); loaded session version is not verified.`;
   return { status, managed, installed, file, message };

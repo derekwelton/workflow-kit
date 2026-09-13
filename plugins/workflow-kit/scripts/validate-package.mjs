@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { renderPortable } from "./lib/portable-contract.mjs";
+import { projectPayload, selectSkills } from "./install-skills.mjs";
 
 export function validatePackage(root) {
   const errors = [];
@@ -16,9 +17,11 @@ export function validatePackage(root) {
     if (read("templates/feature-lifecycle-portable.md").replace(/\r\n/g, "\n") !== renderPortable(root)) errors.push("Portable contract differs from canonical owners");
   } catch (error) { errors.push(`Portable contract dependency: ${error.message}`); }
   const names = new Set();
+  const catalog = JSON.parse(read("catalog.json"));
   for (const directory of fs.readdirSync(path.join(root, "skills"))) {
     const file = path.join(root, "skills", directory, "SKILL.md");
     if (!fs.existsSync(file)) continue;
+    if (!catalog.skills[directory]) errors.push(`Unlisted catalog skill: ${directory}`);
     const body = fs.readFileSync(file, "utf8");
     const name = body.match(/^name:\s*([a-z0-9-]+)\s*$/m)?.[1];
     if (!name || names.has(name)) errors.push(`Missing/duplicate skill name: ${directory}`);
@@ -28,7 +31,7 @@ export function validatePackage(root) {
     if (!fs.existsSync(metadata)) errors.push(`Missing Codex metadata: ${directory}`);
     else {
       const yaml = fs.readFileSync(metadata, "utf8");
-      if (!yaml.includes(`$${name}`)) errors.push(`Wrong default_prompt: ${directory}`);
+      if (/default_prompt:/.test(yaml) && !yaml.includes(`$${name}`)) errors.push(`Wrong default_prompt: ${directory}`);
       if (/disable-model-invocation: true/.test(body) && !/allow_implicit_invocation: false/.test(yaml)) errors.push(`Invocation policy differs: ${directory}`);
     }
   }
@@ -39,13 +42,22 @@ export function validatePackage(root) {
       if (entry.isDirectory()) visit(file);
       else if (/\.(md|mjs)$/.test(entry.name)) {
         const content = fs.readFileSync(file, "utf8").replace(/```[\s\S]*?```/g, "");
-        const references = [...content.matchAll(/(?:from\s+["']|\]\(|`)((?:\.\.\/|\.\/)[^\s"'`)#]+\.(?:md|mjs|json|html))/g)];
+        const pattern = entry.name.endsWith(".mjs")
+          ? /from\s+["']((?:\.\.\/|\.\/)[^"']+\.(?:mjs|json))/g
+          : /(?:\]\(|`)((?:\.\.\/|\.\/)[^\s"'`)#]+\.(?:md|mjs|json|html))/g;
+        const references = [...content.matchAll(pattern)];
         for (const match of references) if (!fs.existsSync(path.resolve(path.dirname(file), match[1]))) errors.push(`Missing dependency ${match[1]} in ${path.relative(root, file)}`);
       }
     }
   }
   visit(path.join(root, "skills"));
   visit(path.join(root, "scripts"));
+  for (const name of Object.keys(catalog.skills)) {
+    try {
+      const selected = selectSkills(catalog, [name]);
+      projectPayload({ root, host: "codex", selected, catalog });
+    } catch (error) { errors.push(`${name}: ${error.message}`); }
+  }
   return { valid: errors.length === 0, version: codex.version, skills: names.size, errors };
 }
 

@@ -2,3 +2,5 @@ interface:
   display_name: "Orchestrate Queue"
   short_description: "Run a reviewed multi-issue integration workload"
   default_prompt: "Use $orchestrate-queue to plan and run a named issue workload through integrated human review."
+policy:
+  allow_implicit_invocation: false

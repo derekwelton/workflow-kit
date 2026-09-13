@@ -1,6 +1,0 @@
-interface:
-  display_name: "Handoff"
-  short_description: "Workflow guidance for handoff"
-  default_prompt: "Use $handoff for this repository workflow task."
-policy:
-  allow_implicit_invocation: false

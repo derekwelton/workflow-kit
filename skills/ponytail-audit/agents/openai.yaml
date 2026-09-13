@@ -2,3 +2,5 @@ interface:
   display_name: "Ponytail Audit"
   short_description: "Workflow guidance for ponytail audit"
   default_prompt: "Use $ponytail-audit for this repository workflow task."
+policy:
+  allow_implicit_invocation: false

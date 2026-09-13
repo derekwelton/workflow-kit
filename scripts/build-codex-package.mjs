@@ -32,8 +32,11 @@ function collect(relative) {
 }
 collect("skills");
 collect("templates");
-for (const file of ["workload-manifest.mjs", "workflow-doctor.mjs", "managed-version.mjs", "validate-package.mjs", "install-codex-skills.mjs", "sync-codex-policy.mjs", "refresh-lifecycle.mjs"]) expected.set(path.join("scripts", file), readText(path.join(root, "scripts", file)));
+for (const file of ["workload-manifest.mjs", "managed-version.mjs", "validate-package.mjs", "install-codex-skills.mjs", "sync-codex-policy.mjs", "refresh-lifecycle.mjs"]) expected.set(path.join("scripts", file), readText(path.join(root, "scripts", file)));
 collect("scripts/lib");
+for (const file of ["install-skills.mjs"]) expected.set(path.join("scripts", file), readText(path.join(root, "scripts", file)));
+for (const file of ["catalog.json", "UPSTREAM.md"]) expected.set(file, readText(path.join(root, file)));
+collect("licenses");
 expected.set(path.join(".codex-plugin", "plugin.json"), readText(path.join(root, "templates/codex-plugin.json")));
 expected.set(path.join(".claude-plugin", "plugin.json"), readText(path.join(root, ".claude-plugin/plugin.json")));
 for (const [relative, content] of expected) {
@@ -49,8 +52,16 @@ function inspect(directory) {
   if (!fs.existsSync(directory)) return;
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const file = path.join(directory, entry.name);
-    if (entry.isDirectory()) inspect(file);
-    else if (!expected.has(path.relative(output, file))) throw new Error(`Unexpected generated file (remove explicitly after review): ${file}`);
+    if (entry.isDirectory()) {
+      inspect(file);
+      if (!check && fs.readdirSync(file).length === 0) fs.rmdirSync(file);
+    }
+    else if (!expected.has(path.relative(output, file))) {
+      if (check) throw new Error(`Unexpected generated file: ${file}`);
+      // Output is exclusively generated and confined to this fixed package root.
+      if (!path.resolve(file).startsWith(output + path.sep)) throw new Error("Generated path escaped output");
+      fs.unlinkSync(file);
+    }
   }
 }
 inspect(output);

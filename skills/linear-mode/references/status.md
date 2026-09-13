@@ -2,14 +2,14 @@
 
 | Status | Meaning | Set by |
 |---|---|---|
-| `Triage` | raw idea, needs shaping before anyone can act | `plan`, when it can't infer enough |
-| `Backlog` | real work, not scheduled | `plan` |
-| `Todo` | specified enough for an agent to start cold | `plan`, `to-spec`, `to-tickets` |
+| `Triage` | raw idea, needs shaping before anyone can act | authorized triage |
+| `Backlog` | real work, not scheduled | authorized triage |
+| `Todo` | specified enough for an agent to start cold | `to-spec`, `to-tickets`, authorized triage |
 | `In Progress` | actively being worked | auto on branch push; skills also set it explicitly |
 | `Code Review` | implementation complete, **awaiting independent AI review**; reviewed workload items remain here until combined integration passes | `implement`; PR automation may also set it when configured |
 | `In Review` | AI review complete and, for a workload, its integration branch is ready for human testing | `code-review` for standalone work; Claude `/workflow-kit:orchestrate` or Codex `$orchestrate-queue` for a workload batch |
 | `Done` | merged, or human-verified | **never an agent** — merge or the user |
-| `Canceled` / `Duplicate` | triage outcomes | proposed by `board`, applied on approval |
+| `Canceled` / `Duplicate` | triage outcomes | proposed by triage, applied when authorized |
 
 **Implementation and review are separate handoffs.** The implementation agent
 stops at `Code Review`; it does not review its own work. A later code-review
@@ -17,7 +17,9 @@ agent completes the full review. Standalone work moves to `In Review`;
 workload work waits for the combined integration gate. An agent never marks
 work `Done`; that remains the merge's or the user's decision.
 
-For multi-issue handoff gates read `../../orchestrate/references/workload-contract.md`.
+For multi-issue handoff gates read the installed orchestrate skill's
+references/workload-contract.md only when running a workload. If orchestration
+is not installed, report that prerequisite for the workload operation.
 This adapter only maps those phases onto the exact configured statuses.
 
 Non-code work that has no code-review phase (for example, a research or audit

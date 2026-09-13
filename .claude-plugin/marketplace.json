@@ -1,6 +1,6 @@
 {
   "name": "derekwelton",
-  "description": "Reusable issue-driven delivery workflows for Claude Code and Codex.",
+  "description": "Engineering skills for projects; retained native-plugin compatibility catalog.",
   "owner": {
     "name": "Derek Welton"
   },
@@ -8,7 +8,7 @@
     {
       "name": "workflow-kit",
       "source": "./",
-      "description": "Issue-driven lifecycle plus resumable, model-paired multi-issue workloads."
+      "description": "Engineering skills with explicit workflows and optional reviewed orchestration."
     }
   ]
 }

@@ -3,12 +3,13 @@ name: linear-mode
 description: Read Linear issues or route authorized sync-thread writes, status transitions and intake. Use only for a configured Linear tracker; load operation references conditionally.
 ---
 
-Resolve this skill's real filesystem path; package root is `../..` from its directory.
+Resolve bundled relative file paths from this skill's directory, not the project working directory.
 
 
 # Linear adapter
 
-Read repository tracker configuration first. An explicit tracker/linearTeam
+Read docs/agents/issue-tracker.md or the existing repository tracker configuration
+first; no managed lifecycle file is required. An explicit tracker/linearTeam
 conflict blocks writes. An absent binding means ordinary GitHub; do not infer
 Linear from connected tools. Unreadable configuration is unknown, not permission
 to silently select a different write destination.

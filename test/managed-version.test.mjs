@@ -17,7 +17,7 @@ test("managed drift distinguishes stale, newer, unstamped, absent, and ambiguous
       const result = checkManagedVersion({ cwd });
       assert.equal(result.status, status);
       assert.equal(fs.readFileSync(file, "utf8"), text);
-      if (status === "stale") assert.match(result.message, /workflow-update.*0.0.1 ->/);
+      if (status === "stale") assert.match(result.message, /legacy migration.*0.0.1 ->/);
       if (status === "newer") assert.match(result.message, /do not downgrade/);
     }
     fs.mkdirSync(path.join(cwd, "docs"));

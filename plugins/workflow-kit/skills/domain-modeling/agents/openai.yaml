@@ -1,4 +1,3 @@
 interface:
   display_name: "Domain Modeling"
-  short_description: "Workflow guidance for domain modeling"
-  default_prompt: "Use $domain-modeling for this repository workflow task."
+  short_description: "Build and sharpen a domain model"

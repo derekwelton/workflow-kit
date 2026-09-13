@@ -1,4 +1,0 @@
-interface:
-  display_name: "Wrap Feature"
-  short_description: "Workflow guidance for wrap feature"
-  default_prompt: "Use $wrap-feature for this repository workflow task."

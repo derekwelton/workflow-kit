@@ -1,5 +1,8 @@
 # Issue #9: context efficiency and workflow replay
 
+Historical 0.9.4 report. The 1.0 project-local catalog supersedes this architecture;
+these measurements do not describe current host context use. See README.md.
+
 Implementation base: `db7fde95c5c9832fc8f20c6b547aef838c3592dc` (0.9.2). Working package: 0.9.4.
 This report records implementation evidence; live rollout checks remain separate.
 

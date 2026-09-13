@@ -1,7 +1,7 @@
 {
   "name": "workflow-kit",
-  "description": "Issue-driven feature workflow with Linear/GitHub control-plane support, isolated implementation, independent model-paired review, resumable multi-issue workloads, integration branches, and human-review handoffs.",
-  "version": "0.9.4",
+  "description": "Project-local engineering skills with selective or install-all distribution, explicit workflow activation, and optional reviewed orchestration.",
+  "version": "1.0.0",
   "author": {
     "name": "Derek Welton"
   }

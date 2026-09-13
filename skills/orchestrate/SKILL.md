@@ -1,15 +1,18 @@
 ---
 name: orchestrate-queue
 description: Run or resume an explicitly selected multi-issue workload with isolated workers, independent review and combined integration verification. Supports read-only planning.
+disable-model-invocation: true
 ---
 
 # Orchestrate queue
 
-Explicit multi-issue execution or read-only --plan. Claude uses
-/workflow-kit:orchestrate; Codex uses $orchestrate-queue.
+Explicit multi-issue execution or read-only --plan. Project-local Claude uses
+/orchestrate; Codex uses $orchestrate-queue. For a separately authorized merge
+or local-main acceptance test of a named reviewed run, read
+`references/integrate-reviewed.md` and follow that mode instead of Execute.
 
 Read repository configuration/local overrides, `../../templates/lifecycle-contract.md`,
-`references/workload-contract.md`, and `../model-routing/SKILL.md`.
+`references/workload-contract.md`, and `../../templates/model-routing.md`.
 The workload contract owns provider independence, review convergence, final-SHA
 receipts, integration gates, single-writer rules and human acceptance.
 Read only the configured tracker adapter; writes use
@@ -18,9 +21,10 @@ Read only the configured tracker adapter; writes use
 ## Execute
 
 1. Reconcile the repository/default branch, issue selection, existing PRs,
-   branches, worktrees and configured tracker. Run managed-version with the
-   canonical lifecycle path; report drift without refreshing. Use
-   `../workflow-doctor/references/preflight.md` for the selected capabilities.
+   branches, worktrees and configured tracker. Use
+   `references/preflight.md` for the selected capabilities. Configuration can live
+   in docs/agents/issue-tracker.md or an existing repository contract;
+   no managed lifecycle document or global plugin is required.
    A new run needs a name and exactly one selection source: named issues,
    parent children, or a status/label query. Scope to this repository, dedupe,
    then freeze membership. A parent without children may use single implement;

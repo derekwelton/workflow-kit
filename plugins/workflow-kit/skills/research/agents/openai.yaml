@@ -1,4 +1,3 @@
 interface:
   display_name: "Research"
-  short_description: "Workflow guidance for research"
-  default_prompt: "Use $research for this repository workflow task."
+  short_description: "Research from high-trust sources"

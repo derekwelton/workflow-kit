@@ -3,7 +3,7 @@ name: update-issue
 description: Publish one authorized phase checkpoint on the originating issue. Use at meaningful lifecycle gates; deduplicate recent updates and preserve read-only scope.
 ---
 
-Resolve this skill's real filesystem path; package root is `../..` from its directory.
+Resolve bundled relative file paths from this skill's directory, not the project working directory.
 
 
 # Update issue
@@ -19,8 +19,8 @@ Do not narrate every tool call or duplicate a checkpoint already published.
 
 Use a short outcome followed by relevant completed work, verification,
 limitations, questions with recommendations, reachable evidence, and exact next
-action/owner. Larger examples are in
-`../linear-mode/references/checkpoint-examples.md`; load only when needed.
+action/owner. Optional larger examples are in the installed linear-mode skill's
+references/checkpoint-examples.md; use only if available and needed.
 Tick only completed acceptance/tasks on the freshly fetched issue body.
 A phase result does not close the parent or satisfy human acceptance.
 

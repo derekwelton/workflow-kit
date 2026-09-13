@@ -6,7 +6,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { reconcileCodexSkillLinks } from "../scripts/install-codex-skills.mjs";
+import { installSkills } from "../scripts/install-skills.mjs";
 import { reviewerFor, slugify, validateManifest, withFileLock } from "../scripts/workload-manifest.mjs";
 
 const ROOT = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -461,25 +461,25 @@ test("integration-ready validation requires review of actual conflict resolution
   assert.deepEqual(validateManifest(manifest), []);
 });
 
-test("Codex skill installer creates stable links and is idempotent", () => {
+test("project-local installation retains the workload renderer and is idempotent", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "workflow-kit-skills-"));
-  const targetDir = path.join(root, "skills");
+  const targetDir = path.join(root, ".agents", "skills");
   try {
-    const installed = reconcileCodexSkillLinks({ targetDir });
+    const installed = installSkills({ project: root, all: true });
     assert.equal(installed.healthy, true);
     assert.deepEqual(
-      installed.results.map((entry) => entry.status),
-      Array(30).fill("installed")
+      installed.selections.codex.included.length,
+      23
     );
     assert.equal(
       fs.existsSync(path.join(targetDir, "orchestrate-queue", "scripts", "render-worker-result.mjs")),
       true
     );
-    const checked = reconcileCodexSkillLinks({ targetDir, check: true });
+    const checked = installSkills({ project: root, check: true });
     assert.equal(checked.healthy, true);
     assert.deepEqual(
-      checked.results.map((entry) => entry.status),
-      Array(30).fill("current")
+      checked.changes,
+      []
     );
   } finally {
     fs.rmSync(root, { recursive: true, force: true });

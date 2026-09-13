@@ -1,128 +1,79 @@
 ---
 name: to-spec
-description: Synthesize agreed scope, acceptance criteria and decisions into the configured canonical spec. Use when requested; clarify only unresolved material choices.
+description: "Turn the current conversation into a spec and publish it to the project issue tracker: no interview, just synthesis of what you've already discussed."
 disable-model-invocation: true
 ---
 
-Read repository configuration/local overrides and `../../templates/lifecycle-contract.md`.
-Load only the tracker operation and mode needed for this request.
+Read `../../templates/project-context.md` for this project's conventions and tracker scope.
 
-Take the current conversation context and codebase understanding and produce
-the spec. Do NOT interview the user — just synthesize what you already know
-(run `grilling` first if the plan is still full of holes).
+This skill takes the current conversation context and codebase understanding and produces a spec. Do NOT interview the user; just synthesize what you already know.
 
-Where the spec lands depends on the mode — check the lifecycle doc's
-frontmatter for `linearTeam` before writing anything.
-
-**Without `linearTeam` (default):** the spec is written to the feature folder's
-**`spec.md`** — the canonical, committed artifact — not published to the
-tracker. The issue keeps only its task checklist; sync it if the spec changes
-the task breakdown. If no feature folder exists yet, run `new-feature` first
-(issue-first rule).
-
-**With `linearTeam`:** the spec is published to the issue and **no `spec.md` is
-written**. See "Linear mode" at the bottom of this file.
+The issue tracker and triage label vocabulary should have been provided to you. If not, tell the user to run `/setup-workflow-skills`.
 
 ## Process
 
-1. Explore the repo to understand the current state of the codebase, if you
-   haven't already. Use the project's domain glossary vocabulary throughout
-   (see the lifecycle doc's `glossary` config; `CONTEXT.md` by default), and
-   respect any ADRs in the area you're touching.
+1. Explore the repo to understand the current state of the codebase, if you haven't already. Use the project's domain glossary vocabulary throughout the spec, and respect any ADRs in the area you're touching.
 
-2. Sketch the **seams** at which the feature will be tested. Prefer existing
-   seams to new ones; use the highest seam possible; if new seams are needed,
-   propose them at the highest point you can. Existing public interfaces, tests and issue acceptance criteria are routine
-   agreement. Clarify only a material unresolved scope/coverage choice.
+2. Sketch out the seams at which you're going to test the feature. Existing seams should be preferred to new ones. Use the highest seam possible. If new seams are needed, propose them at the highest point you can. The fewer seams across the codebase, the better - the ideal number is one.
 
-3. Write `spec.md` using the template below (keep the standard header: title,
-   issue link, status line). Update the issue's checklist if the breakdown
-   changed, and note the spec update in `notes.md`.
+Use established seams and existing acceptance criteria where sufficient. Ask only
+when a material testing or design decision remains unresolved.
+
+3. Write the spec using the template below, then publish it to the project issue tracker. Apply the `ready-for-agent` triage label - no need for additional triage.
 
 <spec-template>
 
 ## Problem Statement
 
-The problem the user is facing, from the user's perspective.
+The problem that the user is facing, from the user's perspective.
 
 ## Solution
 
 The solution to the problem, from the user's perspective.
 
-## Acceptance Criteria
+## User Stories
 
-A concise checklist of observable outcomes. Add user stories only when they
-convey information the acceptance criteria do not already capture.
+A proportional list of user stories where useful. Each user story can use the format:
+
+1. As an <actor>, I want a <feature>, so that <benefit>
+
+<user-story-example>
+1. As a mobile bank customer, I want to see balance on my accounts, so that I can make better informed decisions about my spending
+</user-story-example>
+
+Cover the requested behavior without inventing actors or requirements. For a small
+change, concise acceptance criteria can replace user stories.
 
 ## Implementation Decisions
 
-A list of implementation decisions that were made: modules built/modified,
-the interfaces of those modules, technical clarifications, architectural
-decisions, schema changes, API contracts, specific interactions.
+A list of implementation decisions that were made. This can include:
 
-Do NOT include specific file paths or code snippets — they go stale fast.
-Exception: if a prototype produced a snippet that encodes a decision more
-precisely than prose can (state machine, reducer, schema, type shape), inline
-it within the relevant decision and note it came from a prototype. Trim to the
-decision-rich parts.
+- The modules that will be built/modified
+- The interfaces of those modules that will be modified
+- Technical clarifications from the developer
+- Architectural decisions
+- Schema changes
+- API contracts
+- Specific interactions
+
+Do NOT include specific file paths or code snippets. They may end up being outdated very quickly.
+
+Exception: if a prototype produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it within the relevant decision and note briefly that it came from a prototype. Trim to the decision-rich parts, not a working demo, just the important bits.
 
 ## Testing Decisions
 
-What makes a good test here (external behavior only, never implementation
-details), which modules will be tested, and prior art for the tests (similar
-tests already in the codebase).
+A list of testing decisions that were made. Include:
+
+- A description of what makes a good test (only test external behavior, not implementation details)
+- Which modules will be tested
+- Prior art for the tests (i.e. similar types of tests in the codebase)
 
 ## Out of Scope
 
-The things consciously excluded from this spec.
+A description of the things that are out of scope for this spec.
 
 ## Further Notes
 
-Anything else future sessions need.
+Any further notes about the feature.
 
 </spec-template>
-
-If the spec is big enough that implementation won't fit one session, follow up
-with `to-tickets`. Apply `update-issue` after writing the spec: summarize the
-locked scope and testing decisions, sync the issue checklist, and link the
-spec only when its branch/commit is reachable from GitHub.
-
-## Linear mode
-
-When the lifecycle doc's frontmatter carries `linearTeam`, follow
-`../linear-mode/SKILL.md`. The process above is unchanged — explore,
-sketch the agreed seams, clarify material unknowns — but step 3 becomes:
-
-**Stop writing `spec.md`.** The spec is split between the issue body and one
-comment, by the rule in linear-mode §6: body = current truth, comments =
-immutable timeline.
-
-1. **Body** (`get_issue`, edit the fetched description, `save_issue`) carries
-   the durable shape of the work — what a reader needs to know *now*:
-   Goal / Why now / In scope / Out of scope / Acceptance criteria / Open
-   questions, plus the `## Tasks` checklist. Use the feature template in
-   linear-mode §8. This replaces both `spec.md` and `plan.md`. Re-fetch
-   immediately before writing; the call replaces the whole description.
-
-2. **A spec comment** on the sync thread (linear-mode §3) records the
-   *reasoning* — the part that would be misleading to edit later: the
-   Implementation Decisions and Testing Decisions from the template above,
-   the alternatives considered and why they were rejected, and the open
-   questions with your recommended answers. This is the durable record of why
-   the spec is what it is, and it is why a bare body is not enough.
-
-   The User Stories section is optional here — write it into the comment only
-   when the feature is big enough that the list earns its length. For most
-   work, acceptance criteria in the body cover it.
-
-3. **Status**: if the spec makes the issue startable cold, move it to `Todo`
-   (linear-mode §4). If the spec surfaced blocking open questions instead,
-   leave the status alone and make the comment a `Needs your decision`.
-
-Do not create a feature folder just to hold a spec — under Linear mode there is
-nothing to put in one. Folders appear only when research or evidence does.
-
-End with one next-step line. If the spec exceeds one practical agent context or
-needs several independently deliverable slices, offer `to-tickets`
-(`/workflow-kit:to-tickets` / `$to-tickets`). Otherwise suggest `implement` with
-the existing checklist. These user-only skills require the user's request.

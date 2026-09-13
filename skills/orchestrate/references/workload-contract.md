@@ -22,7 +22,7 @@ worker just because a session ended.
 
 ## Independent review and routing
 
-Model/effort is owned by ../../model-routing/SKILL.md. Provider pairing uses
+Model/effort is owned by `../../../templates/model-routing.md`. Provider pairing uses
 the author of each implementation diff, not the coordinator:
 - cross: Codex author → fresh Claude reviewer; Claude author → fresh Codex reviewer.
 - codex-only / claude-only: fresh independent same-provider session.

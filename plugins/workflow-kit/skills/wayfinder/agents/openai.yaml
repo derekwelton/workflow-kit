@@ -1,6 +1,5 @@
 interface:
   display_name: "Wayfinder"
-  short_description: "Workflow guidance for wayfinder"
-  default_prompt: "Use $wayfinder for this repository workflow task."
+  short_description: "Map a large effort as decision tickets"
 policy:
   allow_implicit_invocation: false

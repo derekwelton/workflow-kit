@@ -1,4 +1,0 @@
-interface:
-  display_name: "Present"
-  short_description: "Workflow guidance for present"
-  default_prompt: "Use $present for this repository workflow task."

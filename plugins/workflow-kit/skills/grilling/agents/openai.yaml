@@ -1,4 +1,0 @@
-interface:
-  display_name: "Grilling"
-  short_description: "Workflow guidance for grilling"
-  default_prompt: "Use $grilling for this repository workflow task."

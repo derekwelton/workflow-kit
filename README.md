@@ -1,237 +1,125 @@
 # workflow-kit
 
-Issue-driven implementation with proportional read-only advice. A native Claude
-Code and Codex plugin with one shared skill catalog.
+23 engineering skills you install **inside a project**. Install all of them or
+choose a few. Workflow skills activate explicitly; narrowly scoped craft skills
+can activate when relevant. Installing everything does not load every skill body.
 
-For a visual overview of what the kit provides and where it could be simpler,
-open [the HTML field guide](docs/workflow-kit-guide.html)
-([Markdown companion](docs/workflow-kit-guide.md)).
+## Install into a project
 
-New workloads use a two-round non-convergence threshold and strict review.
-Eligible medium/low deferrals require a saved run-scoped decision, adjudication,
-and linked follow-ups; acceptance/correctness/security/data-loss blockers always
-block. Extra rounds require a reason and authorization. Final-code review and
-human acceptance remain intact. Manifest evidence and canonical tracker handoffs
-survive resume; local handoff snapshots are optional. Coordinators alone spawn workers and
-wait on completion notifications. `managed-version.mjs` provides the shared
-read-only lifecycle drift check used by intake, orchestration, board, and doctor.
-
-```
-advice → cited answer / requested report
-implementation → issue ⇄ authorized checkpoints → build → independent review → human acceptance → wrap
-```
-
-- Repository implementation uses **issue-backed intake**; status, lookups and
-  personal/advisory reports create no issues or tracker writes.
-- All artifacts for one unit of work live in **`work/features/<issue#>-<slug>/`**
-  (spec/plan/notes committed; scratch/qa/review gitignored ephemera).
-- The **GitHub issue stays current** at start, meaningful checkpoints, review
-  or decision requests, pauses/blockers, and completion. Comments stand alone;
-  they never rely on a local-only HTML file or screenshot.
-- **HTML is optional presentation** of supplied canonical content. Present is
-  a pure renderer; the caller publishes an authorized checkpoint exactly once.
-- **Ephemera dies at wrap-up**; spec/plan/notes archive; git history + the
-  closed issue are the permanent record.
-
-### Optional: Linear mode
-
-Set `linearTeam: <KEY>` in a repo's `feature-lifecycle.md` frontmatter and
-**Linear becomes the control plane** — status, priority, triage, planning —
-while GitHub stays the execution surface (branches, PRs, diffs). Two things
-change that GitHub alone can't do:
-
-- **`Code Review` and `In Review` are distinct.** An implementation agent moves
-  finished code from `In Progress` to `Code Review`. A separate review agent
-  reviews the final issue SHA. Standalone issues then move to `In Review`; a
-  workload issue stays in `Code Review` until every included issue is reviewed,
-  the current-main integration branch passes its combined gate, and one
-  umbrella PR is ready for the human. Agents never mark their own work `Done`.
-- **Specs and plans live in the issue**, not the repo: the body carries goal,
-  scope, acceptance criteria, and a tickable `## Tasks` checklist; comments
-  carry the reasoning and the running timeline. No `spec.md`/`plan.md`/
-  `notes.md`, and usually no feature folder at all. `research/`, `scratch/`,
-  `qa/`, and `review/` stay on disk where they belong.
-
-**Without the key, nothing changes** — every skill behaves exactly as it does
-today. Linear mode is opt-in per repo, `workflow-init` asks once, and
-`workflow-update` never touches the setting.
-
-The compact repository lifecycle routes plugin hosts to the selected operation.
-Its generated portable sibling carries the full fallback for hosts without the
-plugin. Both derive from the same owners; hosts do not load both. Linear router:
-[`skills/linear-mode/SKILL.md`](skills/linear-mode/SKILL.md).
-
-Model and delegation choices are explained in
-[docs/model-decisions.md](docs/model-decisions.md). Issue #9 measurements and
-all-skill dispositions are in [docs/context-efficiency.md](docs/context-efficiency.md).
-
-## Install and refresh
-
-Claude Code:
+Requires Node.js 22 or newer. From this checkout:
 
 ```powershell
-claude plugin marketplace add derekwelton/workflow-kit
-claude plugin install workflow-kit@derekwelton
+# All skills, for both Codex and Claude Code
+node scripts/install-skills.mjs --project F:/Projects/my-project --host both --all
+
+# Or select skills (required skill dependencies are included and reported)
+node scripts/install-skills.mjs --project F:/Projects/my-project --host codex --skills ponytail,tdd,wizard
 ```
 
-Codex CLI 0.153.0 or newer (after this release is published):
+To download the collection first:
 
 ```powershell
-codex plugin marketplace add derekwelton/workflow-kit
-codex plugin add workflow-kit@derekwelton-workflow
+git clone https://github.com/derekwelton/workflow-kit.git workflow-kit
+node workflow-kit/scripts/install-skills.mjs --project F:/Projects/my-project --host both --all
 ```
 
-For an unpublished local checkout, pass its absolute path to `codex plugin
-marketplace add` instead. The native package exposes the full skill catalog.
-Claude uses `/workflow-kit:<name>`; Codex uses `$<skill-name>` (or its surfaced
-plugin namespace). Orchestration retains `$orchestrate-queue`.
+The project must already exist. `--project` defaults to the current directory;
+`--host` defaults to `codex`. The installer writes plain files into:
 
-For hosts without native plugin support, keep a complete workflow-kit checkout
-and run `node scripts/install-codex-skills.mjs` from it. This exposes the full
-catalog through user-skill links without requiring Claude. `--check --json`
-reports missing/conflicting links without changing them. Do not combine native
-installation and fallback links in the same skill catalog; diagnose duplicate
-names before removing only the links you own. Keep the linked source checkout
-in place: scripts, templates, and sibling references are package dependencies.
+| Host | Skills | Shared helper/reference files |
+|---|---|---|
+| Codex | `.agents/skills/` | `.agents/workflow-kit/` |
+| Claude Code | `.claude/skills/` | `.claude/workflow-kit/` |
 
-Update Claude with `claude plugin marketplace update derekwelton` followed by
-`claude plugin update workflow-kit@derekwelton`. For Codex, inspect
-`codex plugin marketplace upgrade --help`, upgrade the configured marketplace,
-and reinstall the plugin using `codex plugin add workflow-kit@derekwelton-workflow`.
-Refresh fallback links by rerunning their installer after updating the checkout.
-Restart sessions to load refreshed plugin instructions.
+Commit those files and `.workflow-skills.json` with the project when ready.
+The source checkout is no longer needed after installation. No global plugin,
+user-skill links, credentials, model settings, or repository instructions are changed.
+Use this installer for selective installs; copying arbitrary folders with other
+installers does not resolve this collection's shared helpers and dependencies.
 
-Then run `workflow-update` in each adopted repository (`--check` for a read-only
-preview). It preserves configuration and local overrides. Local agents can read
-uncommitted policy edits; already-loaded sessions may need a reread or restart.
-Commit/push distribute repository changes to other machines. Each machine also
-needs its own plugin update. Neither step substitutes for the other.
+In a new session, invoke **`$setup-workflow-skills`** in Codex or
+**`/setup-workflow-skills`** in Claude to configure the installed skills if needed.
+Setup reuses existing tracker, domain-doc and branch conventions. It does not
+stamp a full lifecycle framework into the project or read every skill body.
 
-## Routing and tracker configuration
+## Catalog and activation
 
-`skills/model-routing/SKILL.md` and `scripts/lib/model-policy.mjs` own model
-selection. Coding defaults to Astra low (medium when needed), simple tasks to
-Terra low/medium, and review to medium. Fable 5.1 can delegate coding and UI work
-to Astra. Coordination and intense reasoning default to medium. High requires
-an explicit selection and recorded reason.
-Xhigh, max, and ultra are prohibited. Model access is checked independently of
-public availability; no silent fallbacks or inherited machine defaults.
+| Explicit invocation | Model- or user-invocable |
+|---|---|
+| grill-with-docs | code-review |
+| implement | codebase-design |
+| improve-codebase-architecture | diagnosing-bugs |
+| orchestrate | domain-modeling |
+| ponytail-audit | github-projects (configured operations only) |
+| setup-workflow-skills | linear-mode (configured operations only) |
+| to-spec | ponytail |
+| to-tickets | prototype |
+| triage | research |
+| wayfinder | resolving-merge-conflicts |
+| | tdd |
+| | update-issue (authorized checkpoints) |
+| | wizard |
 
-Codex-kit 2.3.1 consumes a generated policy copy. After changing policy, run
-`node scripts/sync-codex-policy.mjs <codex-kit-root>` and validate with `--check`.
-Release both packages together. Runtime adapters belong to codex-kit; lifecycle
-and provider independence belong here.
+Matt's original invocation policies are preserved. Orchestrate and ponytail-audit
+are also explicit-only. Claude uses `disable-model-invocation: true`; Codex uses
+`policy.allow_implicit_invocation: false` in `agents/openai.yaml`. Explicit skills
+remain available when named by the user or needed within a requested workflow;
+their instructions must not be loaded simply because they are installed.
+Model-invocable skill descriptions remain discoverable; this is not a claim of
+zero catalog overhead or measured token savings.
 
-Ordinary GitHub Issues remains the default; `linearTeam` still enables Linear.
-For GitHub Projects opt in with `tracker: github-projects`; see
-`skills/github-projects/SKILL.md` for configuration and verified field/status
-mapping. Local repository overrides always take precedence. Refresh never
-silently changes trackers, adds statuses, or rewrites branch conventions.
+Codex calls orchestration **`$orchestrate-queue`**; Claude uses **`/orchestrate`**.
+It is optional, with isolated workers, independent final-SHA review, resumable
+manifests and combined integration checks. Its separately authorized merge mode
+is documented in its references. Tracker adapters remain conditional; install
+the configured adapter if you selected orchestration without install-all.
 
-## Validation
+## Preview and update
 
 ```powershell
+# Preview exact file changes without writing anything
+node scripts/install-skills.mjs --project F:/Projects/my-project --host both --diff
+
+# Update the recorded selection after reviewing the diff
+node scripts/install-skills.mjs --project F:/Projects/my-project --host both
+
+# Verify installation without writing (exit 1 if changes are needed)
+node scripts/install-skills.mjs --project F:/Projects/my-project --host both --check
+```
+
+`--dry-run` lists planned files without printing their contents; `--json` provides
+a machine-readable report. New `--skills` selections are additive. The record
+stores requested/included skills, package version, upstream revision and file
+hashes. Updates refuse locally modified, unowned, or linked destination files
+before writing. Reconcile custom changes against the proposed source separately;
+there is no force-overwrite switch. Existing global installations can still cause
+duplicate skills until separately removed; the installer does not change them.
+
+## Existing projects and maintenance
+
+See [migration](docs/project-local-migration.md) before replacing old lifecycle
+instructions. No consumer project is migrated merely by updating this repository.
+Version 0.9.4 remains recoverable at commit
+`8ab784585df2508b462f9e308d680350542585b7`.
+
+Root `skills/`, `scripts/`, `templates/`, and `catalog.json` are the source.
+`plugins/workflow-kit/` remains a generated compatibility artifact; it is not
+the recommended installation path. Never hand-edit it.
+
+```powershell
+node scripts/build-codex-package.mjs
 node scripts/build-codex-package.mjs --check
 node scripts/validate-package.mjs
 node --test test/*.test.mjs
-node scripts/sync-codex-policy.mjs ../codex-kit --check
 ```
 
-Schema 3 records worker model/effort/session provenance. Older schema 2 manifests
-remain readable. Preview `node scripts/workload-manifest.mjs migrate --run <id>
---dry-run` before applying migration; historical execution data remains unknown.
+Tests install into temporary projects without model calls or live tracker writes.
+The optional legacy native-plugin smoke test uses an isolated home:
+`python scripts/test-codex-install.py`.
+Model policy remains in `scripts/lib/model-policy.mjs` and
+`templates/model-routing.md`; `scripts/sync-codex-policy.mjs` can produce the
+compatible codex-kit copies. Do not change global policy settings to test this kit.
 
-## Adopt in a repo (existing or brand-new)
-
-Tell the agent in that repo:
-
-```
-Fetch BOOTSTRAP.md from derekwelton/workflow-kit with gh and follow it.
-```
-
-`BOOTSTRAP.md` validates/install-or-updates the plugin on the machine, runs
-the repo initialization or managed refresh (even in a session where the
-skills aren't loaded yet), verifies the CLAUDE.md/AGENTS.md entrypoints, and
-cleans up after itself. It lives only in this repo — don't keep copies in
-projects.
-
-## Commands
-
-Lifecycle (the container of work):
-
-| Command | Purpose |
-|---|---|
-| `/workflow-kit:workflow-init` | One-time repo bootstrap (scaffold, gitignore, labels, lifecycle doc, AGENTS.md pointer) |
-| `/workflow-kit:workflow-update [--check]` | Refresh an adopted repo from the installed plugin without overwriting repo-specific configuration |
-| `/workflow-kit:plan` | Bulk dump of work → deduped, classified, prioritized issues in one approval-gated pass |
-| `/workflow-kit:orchestrate --name <name> ...` | Freeze and run a bounded issue workload through isolated implementation, opposite-provider review, one integration branch, combined verification, umbrella PR, then batch `In Review` |
-| `/workflow-kit:integrate-reviewed --run <id> --mode <merged\|local-main>` | After explicit human acceptance, refresh and merge only the named workload; retest/re-review on drift |
-| `/workflow-kit:workflow-doctor` | Read-only health check for lifecycle drift, Linear/GitHub sync, workload manifests, Codex jobs, plugins, permissions, and worktrees |
-| `/workflow-kit:new-feature <slug>` | File issue + create feature folder with stub spec/notes |
-| `/workflow-kit:update-issue` | Keep the issue current at starts, checkpoints, decisions, pauses, and completion |
-| `/workflow-kit:present [topic]` | Generate a self-contained HTML review doc from feature state |
-| `/workflow-kit:wrap-feature <issue#>` | Verify shipped → close issue (or preserve Linear's `In Review`/`Done` boundary) → delete ephemera → archive folder → prune git |
-| `/workflow-kit:work-audit` | Propose cleanup of stale work in the repo (never deletes without approval) |
-| `/workflow-kit:board [audit]` | "What should I work on?" — awaiting-you, awaiting AI code review, available, in-flight, recently shipped. `audit` adds the stale-work sweep |
-
-Craft (inside the build; adapted from [mattpocock/skills](https://github.com/mattpocock/skills), MIT — see `UPSTREAM.md`):
-
-| Command | Purpose |
-|---|---|
-| `/workflow-kit:grilling` | Relentless interview in bulk-question rounds, recommended answers, until shared understanding |
-| `/workflow-kit:research` | Background agent → primary-source findings in the folder's `research/` |
-| `/workflow-kit:prototype` | Throwaway code that answers a design question (logic or UI branch) |
-| `/workflow-kit:to-spec` | Crystallize the conversation into the folder's `spec.md`, or the issue body + spec comment under Linear mode (no interview) |
-| `/workflow-kit:to-tickets` | Escalate a big feature into tracer-bullet vertical-slice sub-issues with blocking edges |
-| `/workflow-kit:implement` | Build one ticket/spec per fresh session — ponytail + TDD; default mode reviews/commits, Linear mode commits and hands off at `Code Review` |
-| `/workflow-kit:ponytail [lite\|full\|ultra]` | Persistent lazy-senior-dev mode: the laziest solution that works (auto-active on coding) |
-| `/workflow-kit:tdd` | Test-first reference: seams, red–green tracer bullets, anti-patterns |
-| `/workflow-kit:code-review [queue]` | Independent Standards + Spec review; standalone work advances to `In Review`, while workload work records a final-SHA receipt and waits for integration |
-| `/workflow-kit:codebase-design` | Deep-module vocabulary: module, interface, seam, depth, leverage, locality |
-| `/workflow-kit:domain-modeling` | Maintain the domain glossary + sparing ADRs as decisions crystallize |
-| `/workflow-kit:improve-codebase-architecture` | Scan for deepening opportunities → visual HTML report → grill through one |
-| `/workflow-kit:handoff` | Committed session-handoff doc the next session (or other machine) resumes from |
-| `/workflow-kit:wayfinder` | Chart a foggy epic as a map issue + decision-ticket sub-issues; resolve one per session |
-| `/workflow-kit:ponytail-audit` | Repo-wide over-engineering scan: ranked delete/stdlib/native/yagni/shrink list |
-
-Anti-over-engineering skills adapted from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) (MIT — see `UPSTREAM.md`).
-
-**See [`CHEATSHEET.md`](CHEATSHEET.md)** for the full map: every skill, how they
-interact, when they auto-load vs. need a slash command, and ordered
-walkthroughs from tiny bug to foggy epic.
-
-## Validate workflow-kit changes
-
-Run `node --test test/*.test.mjs` and `claude plugin validate .` before
-publishing a change.
-
-## Layout
-
-- `skills/` — the complete portable skill catalog, including the portable workload
-  orchestrator, integration finisher, and workflow doctor
-- `scripts/workload-manifest.mjs` — deterministic, worktree-shared workload state
-- `scripts/install-codex-skills.mjs` — idempotent Codex user-skill links
-- `skills/orchestrate/scripts/render-worker-result.mjs` — converts private worker
-  JSON into stage-aware human checkpoints; exact machine details are opt-in
-- `skills/linear-mode/SKILL.md` — the Linear-mode contract every skill defers to
-  (gating, sync-thread rule, status contract, templates). Not a skill; a shared reference.
-- `templates/feature-lifecycle.md` — per-repo convention doc stamped by `workflow-init`
-  (config frontmatter: `workDir`, `docsHome`, `labels`, `glossary`, `adrDir`, optional
-  `linearTeam`; body carries the skills catalog so non-Claude agents learn the system
-  from the repo itself)
-- `templates/report-checkin.html` — `board`'s check-in (awaiting-you first, AI review queue second, history last)
-- `templates/report-audit.html` — ranked proposals awaiting one approval (`board audit`, `work-audit`, `ponytail-audit`)
-- `templates/report-findings.html` — evidence-and-confidence findings, optional two axes (`code-review`, `research`, `plan`)
-- `templates/review-doc.html` — the general visual shell (screenshot grid, comparison columns)
-
-  All four share one design system and are responsive, light-mode, and print-clean.
-- `UPSTREAM.md` — provenance of vendored skills
-
-Designed 2026-07-12 in the Ironwood-Website repo; canonical design spec lives
-there at `work/features/6-feature-workflow/spec.md`.
-
-Native Codex files in `plugins/workflow-kit/` are generated. Edit root skills,
-templates, or scripts, then run `node scripts/build-codex-package.mjs`.
-
-Run `python scripts/test-codex-install.py` to verify actual Codex CLI installation
-and packaged script execution in an isolated temporary home, without model calls.
+Engineering skills are adapted from [mattpocock/skills](https://github.com/mattpocock/skills);
+Ponytail skills from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail).
+See [UPSTREAM.md](UPSTREAM.md) and `licenses/` for pinned revisions and adaptations.

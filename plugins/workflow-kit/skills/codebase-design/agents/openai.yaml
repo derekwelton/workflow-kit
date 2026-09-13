@@ -1,4 +1,3 @@
 interface:
   display_name: "Codebase Design"
-  short_description: "Workflow guidance for codebase design"
-  default_prompt: "Use $codebase-design for this repository workflow task."
+  short_description: "Vocabulary for deep-module design"

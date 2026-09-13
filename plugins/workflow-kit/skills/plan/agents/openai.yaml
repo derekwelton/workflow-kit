@@ -1,6 +1,0 @@
-interface:
-  display_name: "Plan"
-  short_description: "Workflow guidance for plan"
-  default_prompt: "Use $plan for this repository workflow task."
-policy:
-  allow_implicit_invocation: false

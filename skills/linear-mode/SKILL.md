@@ -5,7 +5,8 @@ description: Read Linear issues or route authorized sync-thread writes, status t
 
 # Linear adapter
 
-Read repository tracker configuration first. An explicit tracker/linearTeam
+Read docs/agents/issue-tracker.md or the existing repository tracker configuration
+first; no managed lifecycle file is required. An explicit tracker/linearTeam
 conflict blocks writes. An absent binding means ordinary GitHub; do not infer
 Linear from connected tools. Unreadable configuration is unknown, not permission
 to silently select a different write destination.

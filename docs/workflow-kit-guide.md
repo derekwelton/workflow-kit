@@ -1,5 +1,8 @@
 # Workflow-kit, without the ceremony
 
+Historical framework guide. The 1.0 project-local collection supersedes this
+workflow; see README.md and docs/project-local-migration.md for current usage.
+
 ## September 9 update
 
 The September 4 catalog below remains a dated overview. Two additional helper

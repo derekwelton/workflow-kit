@@ -15,7 +15,7 @@ workflow-kit defaults, not claims about which model is objectively best.
    allowed choices. Verify observable access and slot limits. Report an
    unavailable model instead of silently substituting one.
 4. **Which defaults apply?** The executable owner is
-   `scripts/lib/model-policy.mjs`; `skills/model-routing/SKILL.md` explains its
+   `scripts/lib/model-policy.mjs`; `templates/model-routing.md` explains its
    use. Codex-kit receives generated copies, never an independent ranking.
 
 | Work | Default Codex worker | Default effort |

@@ -19,11 +19,13 @@ stops here without loading a write adapter or performing a mutation.
    ambiguous target, incomplete discovery or unknown write outcome. Verify the
    result after mutation. Never overwrite an unexpected status or set Done.
 5. Use only the configured adapter:
-   - Linear: ../skills/linear-mode/SKILL.md and its write reference.
-   - GitHub Projects: ../skills/github-projects/SKILL.md; verify item/field/option
+   - Linear: the installed linear-mode skill and its write reference.
+   - GitHub Projects: the installed github-projects skill; verify item/field/option
      IDs and preserve local mapping. Missing code-review column stays In Progress.
    - GitHub Issues: gh issue view/edit/comment on the verified repository/issue;
      use structured bodies or --body-file. No synthetic project statuses.
+   If the configured adapter is not installed, report that prerequisite. Do not
+   load other adapters or silently switch the write destination.
 6. Follow the workload contract for batch review handoffs and interrupted
    sequential transitions; the tracker adapter does not own integration gates.
 
