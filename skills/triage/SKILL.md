@@ -4,9 +4,12 @@ description: Move issues and external PRs through a state machine of triage role
 disable-model-invocation: true
 ---
 
+Resolve bundled relative file paths from this skill's directory, not the project working directory.
+
+
 # Triage
 
-Read `../../templates/project-context.md` before tracker operations. Existing
+Read `./bundled/templates/project-context.md` before tracker operations. Existing
 project issue types and state-role mappings override the default label scheme
 below. Triage labels do not replace delivery/review board statuses. A requested
 triage report remains read-only; apply outcomes only within authorized scope.
@@ -78,7 +81,7 @@ Show counts and a one-line summary per item. Let the maintainer pick.
 
 3. **Verify the claim.** Before any grilling, check that the claim holds up. For a bug, reproduce it from the reporter's steps. For a PR, confirm the diff does what it claims: check it out, run the relevant tests or commands. Report what happened: confirmed (with code path), failed, or insufficient detail (a strong `needs-info` signal). A confirmed verification makes a much stronger agent brief.
 
-4. **Grill (if needed).** If the request needs fleshing out, read the interview reference in `../grill-with-docs/references/interview.md` and use the installed domain-modeling skill, and grill it into shape a round of questions at a time, sharpening domain terms and updating `CONTEXT.md`/ADRs inline as decisions land.
+4. **Grill (if needed).** If the request needs fleshing out, read the interview reference in `./bundled/skills/grill-with-docs/references/interview.md` and use the installed domain-modeling skill, and grill it into shape a round of questions at a time, sharpening domain terms and updating `CONTEXT.md`/ADRs inline as decisions land.
 
 5. **Apply the outcome:**
    - `ready-for-agent`: post an agent brief comment ([AGENT-BRIEF.md](AGENT-BRIEF.md)).
@@ -115,3 +118,5 @@ Capture everything resolved during grilling under "established so far" so the wo
 ## Resuming a previous session
 
 If prior triage notes exist on the issue or PR, read them, check whether the reporter has answered any outstanding questions, and present an updated picture before continuing. Don't re-ask resolved questions.
+
+When this workflow calls for a required skill that is not separately installed, read its instructions from `bundled/dependencies.md`. Load only the dependency needed for the current step; bundled instructions do not authorize additional work.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Update Issue"
+  short_description: "Workflow guidance for update issue"
+  default_prompt: "Use $update-issue for this repository workflow task."

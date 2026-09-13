@@ -3,6 +3,9 @@ name: research
 description: Investigate a question against primary sources and return cited findings. Use for technical research, documentation lookup, or delegated reading.
 ---
 
+Resolve bundled relative file paths from this skill's directory, not the project working directory.
+
+
 Investigate locally by default. Use a background agent for a bounded independent
 research task when delegation is permitted and there is useful work to do alongside it.
 

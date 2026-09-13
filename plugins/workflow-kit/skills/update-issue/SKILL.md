@@ -9,8 +9,8 @@ Resolve bundled relative file paths from this skill's directory, not the project
 # Update issue
 
 Publish one authorized phase delta for the caller. Read
-`../../templates/lifecycle-contract.md` for scope/checkpoint ownership and
-`../../templates/tracker-write.md` before any write. A read-only request or
+`./bundled/templates/lifecycle-contract.md` for scope/checkpoint ownership and
+`./bundled/templates/tracker-write.md` before any write. A read-only request or
 nested renderer/research worker returns content without publishing.
 
 Meaningful checkpoints: started, phase result, needs decision, paused/blocked,

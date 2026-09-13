@@ -4,6 +4,9 @@ description: Apply reuse and root-cause principles while coding. Read affected b
 license: MIT
 ---
 
+Resolve bundled relative file paths from this skill's directory, not the project working directory.
+
+
 # Coding principles
 
 Use these principles when editing code, scoped to the requested behavior.

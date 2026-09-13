@@ -1,0 +1,57 @@
+# Orchestration command reference
+
+Use the helper's --help and structured errors for exact command arguments.
+Do not read its implementation in ordinary execution.
+
+## Arguments
+
+Accept:
+
+```text
+--name <workload-name>                         required for a new run
+--status <status>                              default: Todo
+--labels <comma-separated labels>
+--issues <comma-separated issue keys>
+--parent <issue key>
+--pair <cross|codex-only|claude-only>          default: cross
+--implementer <auto|codex|claude>              default: auto
+--reviewer <auto|codex|claude>                 default: auto
+--max-implementers <n>                         default: 4
+--max-reviewers <n>                            default: 2
+--max-review-rounds <n>                        default: 2 per issue
+--review-policy <strict|convergent>             default: strict
+--policy-decision <reference>                   required for convergent policy or live policy changes
+--routing <JSON>                               effective implementation/review routes
+--handoff-snapshot                             optional local derived handoff; off by default
+--allow-extra-round --reason <text>            explicit authorization for one extra round
+--allow-partial                                default: false
+--plan                                         read-only plan; create nothing
+--resume <workload-id>
+```
+
+Reject a new run without a name or without exactly one selection source:
+`--issues`, `--parent`, or a tracker query (`--status` plus optional labels).
+Treat bare label/name text conservatively as `--labels`/`--name`; show the
+normalized interpretation before mutating anything.
+
+
+## Creating a manifest
+
+```bash
+node <skill-dir>/scripts/workload-manifest.mjs init \
+  --name "<name>" --issues "<frozen keys>" \
+  --status "<status>" --labels "<labels>" \
+  --pair "<pair>" --implementer "<provider>" --reviewer "<provider>" \
+  --max-implementers <n> --max-reviewers <n> --max-review-rounds <n> \
+  --review-policy <strict|convergent> --routing '<implementation/review JSON>'
+```
+
+Use `--dry-run` for `--plan`. Report the frozen queue, dependency/file-overlap
+lanes, provider pairs, branch name, and terminal behavior; make no tracker,
+Git, file, or manifest writes. Include `maxReviewRounds: 2` (or the explicit
+threshold), the effective review policy, routing, and the decision source/scope.
+Strict review is default. Convergent deferral requires a run-scoped user decision
+passed through `--policy-decision`; a threshold means stop and reconcile, never
+automatic approval. Preserve saved policy on resume. Change live policy only
+with `set-policy --run <id> --policy-decision <reference>` and explicit settings.
+Do not infer consent or a new route from a historical anecdote or session restart.

@@ -1,0 +1,5 @@
+interface:
+  display_name: "Merge Cleanup"
+  short_description: "Merge named work and reconcile owned cleanup"
+policy:
+  allow_implicit_invocation: false

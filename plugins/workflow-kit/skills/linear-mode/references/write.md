@@ -1,6 +1,6 @@
 # Linear write adapter
 
-Read `../../../templates/tracker-write.md` first. This reference owns sync-root
+Read `../bundled/templates/tracker-write.md` first. This reference owns sync-root
 discovery and Linear body updates, not workload integration invariants.
 
 ## 3. The sync-thread rule — get this right or comments go nowhere
@@ -37,7 +37,7 @@ The designated sync root has `parentId: null` and this sync message:
    top-level fallback as **Linear-only; GitHub delivery unverified**. Do not claim
    cross-posting succeeded or automatically post a second copy through GitHub.
 
-Use the canonical selector in `../../../scripts/lib/linear-sync-root.mjs`
+Use the canonical selector in `../bundled/scripts/lib/linear-sync-root.mjs`
 (or equivalent conditions) after collecting every comment page. It does not
 fetch pages or perform writes.
 

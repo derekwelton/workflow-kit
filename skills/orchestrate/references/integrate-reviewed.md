@@ -1,4 +1,4 @@
-Read repository configuration/local overrides and `../../../templates/lifecycle-contract.md`.
+Read repository configuration/local overrides and `../bundled/templates/lifecycle-contract.md`.
 Load only the tracker operation and mode needed for this request.
 
 # Integrate reviewed workload
@@ -21,6 +21,8 @@ Read `workload-contract.md`, the repository's tracker configuration,
 and the run manifest using `../scripts/workload-manifest.mjs`.
 
 ## Gates
+
+For an already-merged target, use the verified resume path under Wrap.
 
 1. Validate the manifest. Require integration state
    `ready-for-human-review`, every included issue `in-review`, final-SHA review
@@ -52,20 +54,25 @@ or set `Done`.
 ### `merged`
 
 Require the umbrella PR to target the default branch and contain every manifest
-head. Merge through GitHub using the repository's configured merge method.
-Allow GitHub/Linear merge automation to set `Done`; never write `Done`
-directly. Verify the default branch contains the integration head and reconcile
-individual draft PRs as already integrated/superseded without duplicating
-commits.
+head. Apply `../bundled/templates/merge-completion.md` for merge verification and
+issue/PR reconciliation. This shared procedure supports squash/rebase delivery
+without requiring source-SHA ancestry and preserves tracker automation rules.
+If already merged, verify delivery and resume reconciliation without merging again.
 
 ## Wrap
 
 Update the manifest integration state to `merged` only after verifying the
-merge. Publish one final checkpoint per issue through the configured tracker
-adapter (verified sync thread only for Linear), with merge commit and
-verification. Remove only manifest-leased worktrees/processes and prune only
-merged branches after resolving every target path inside the sanctioned
-worktree root.
+merge. For an already-merged resume, retain the saved review/acceptance evidence
+and verify the recorded merge and current destination instead of requiring the
+old pre-merge status/head gates again. Unmerged or drifted work still requires
+all applicable gates above.
+
+Follow `../bundled/templates/cleanup-owned.md` for authorized cleanup, limited to
+manifest-leased worktrees/processes and owned artifacts inside sanctioned roots.
+Do not invoke an explicit-only cleanup entrypoint from orchestration. The shared
+completion procedure owns the single final checkpoint per issue; do not repeat it.
+Local-main mode retains its no-push/no-close/no-Done boundaries and does not run
+merged-mode record reconciliation.
 
 Report the merged/local head, issue transitions observed, individual PR
 reconciliation, cleanup, SQL/configuration/deployment/live-data gates, and any

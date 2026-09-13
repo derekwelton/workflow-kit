@@ -1,0 +1,5 @@
+interface:
+  display_name: "Cleanup Audit"
+  short_description: "Audit repository clutter before selected cleanup"
+policy:
+  allow_implicit_invocation: false

@@ -4,9 +4,12 @@ description: Break a plan, spec, or the current conversation into a set of trace
 disable-model-invocation: true
 ---
 
+Resolve bundled relative file paths from this skill's directory, not the project working directory.
+
+
 # To Tickets
 
-Read `../../templates/project-context.md` for this project's conventions and tracker scope.
+Read `./bundled/templates/project-context.md` for this project's conventions and tracker scope.
 
 Break a plan, spec, or conversation into a set of **tickets**: tracer-bullet vertical slices, each declaring the tickets that **block** it.
 

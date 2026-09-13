@@ -30,6 +30,9 @@ Then invoke setup-workflow-skills if the project needs configuration.
 | Implement a ticket / review a diff independently | implement / code-review |
 | Run a bounded multi-issue workload | orchestrate (Codex: orchestrate-queue) |
 | Use the configured tracker / publish an authorized checkpoint | github-projects or linear-mode / update-issue |
+| Audit clutter without changing it | cleanup-audit (explicit only) |
+| Merge named work, reconcile issues and clean owned artifacts | merge-cleanup (explicit only) |
+| Remove AI writing patterns | unslop |
 | Resolve an active merge conflict | resolving-merge-conflicts |
 | Generate a procedure requiring human interaction | wizard |
 

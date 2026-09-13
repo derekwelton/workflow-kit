@@ -13,7 +13,7 @@ Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
 
 Both axes run as **parallel sub-agents** so they don't pollute each other's context, then this skill aggregates their findings.
 
-Read `../../templates/project-context.md` for repository conventions and tracker
+Read `./bundled/templates/project-context.md` for repository conventions and tracker
 scope. For a dispatched workload review, the coordinator already owns dispatch:
 review the assigned axes yourself without nested agents, return findings and
 the exact base/head SHA plus durable review evidence, and leave tracker writes

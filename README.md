@@ -1,6 +1,6 @@
 # workflow-kit
 
-27 engineering and productivity skills you install **inside a project**. Install all of them or
+30 engineering and productivity skills you install **inside a project**. Install all of them or
 choose a few. Workflow skills activate explicitly; narrowly scoped craft skills
 can activate when relevant. Installing everything does not load every skill body.
 
@@ -73,7 +73,9 @@ stamp a full lifecycle framework into the project or read every skill body.
 |---|---|
 | grill-with-docs | code-review |
 | grill-me | writing-for-agents |
-| handoff | |
+| handoff | unslop |
+| cleanup-audit | |
+| merge-cleanup | |
 | to-questionnaire | |
 | implement | codebase-design |
 | improve-codebase-architecture | diagnosing-bugs |
@@ -87,6 +89,15 @@ stamp a full lifecycle framework into the project or read every skill body.
 | | tdd |
 | | update-issue (authorized checkpoints) |
 | | wizard |
+
+Cleanup Audit proposes a read-only report before selected execution. Merge Cleanup
+finishes a named PR, child branch or workload, including already-merged cleanup.
+Invoke `$cleanup-audit` or `$merge-cleanup` in Codex, `/cleanup-audit` or
+`/merge-cleanup` in Claude. Neither activates on a casual merge request or ordinary
+implementation completion. Unslop can activate automatically for writing.
+Selective merge-cleanup installation includes orchestration references and their
+dependencies for workload mode; standalone work needs no manifest. Install the
+configured tracker adapter separately when needed.
 
 Matt's original invocation policies are preserved. Orchestrate and ponytail-audit
 are also explicit-only. Claude uses `disable-model-invocation: true`; Codex uses

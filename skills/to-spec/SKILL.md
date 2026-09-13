@@ -4,7 +4,10 @@ description: "Turn the current conversation into a spec and publish it to the pr
 disable-model-invocation: true
 ---
 
-Read `../../templates/project-context.md` for this project's conventions and tracker scope.
+Resolve bundled relative file paths from this skill's directory, not the project working directory.
+
+
+Read `./bundled/templates/project-context.md` for this project's conventions and tracker scope.
 
 This skill takes the current conversation context and codebase understanding and produces a spec. Do NOT interview the user; just synthesize what you already know.
 

@@ -2,7 +2,7 @@
 
 import process from "node:process";
 
-import { main } from "../../../scripts/workload-manifest.mjs";
+import { main } from "../bundled/scripts/workload-manifest.mjs";
 
 try {
   main();

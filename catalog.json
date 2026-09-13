@@ -2,6 +2,9 @@
   "schema": 1,
   "upstream": {"repository": "mattpocock/skills", "revision": "3cca18b368ae95cdbdebbff572ccafa662551015"},
   "skills": {
+    "cleanup-audit": {"dependencies": [], "support": ["templates/cleanup-owned.md", "templates/merge-completion.md", "templates/lifecycle-contract.md"]},
+    "merge-cleanup": {"dependencies": ["orchestrate"], "support": ["templates/cleanup-owned.md", "templates/merge-completion.md"]},
+    "unslop": {"dependencies": []},
     "code-review": {"dependencies": [], "support": ["templates/project-context.md"]},
     "codebase-design": {"dependencies": []},
     "diagnosing-bugs": {"dependencies": []},

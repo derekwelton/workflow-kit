@@ -4,6 +4,9 @@ description: Configure the installed workflow skills for this project, reusing i
 disable-model-invocation: true
 ---
 
+Resolve bundled relative file paths from this skill's directory, not the project working directory.
+
+
 # Setup Workflow Skills
 
 Adapt the per-project setup from Matt's engineering collection to the skills

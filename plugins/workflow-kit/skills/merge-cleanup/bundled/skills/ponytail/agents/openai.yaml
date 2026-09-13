@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ponytail"
+  short_description: "Workflow guidance for ponytail"
+  default_prompt: "Use $ponytail for this repository workflow task."

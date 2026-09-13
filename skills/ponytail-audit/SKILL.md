@@ -5,6 +5,9 @@ disable-model-invocation: true
 license: MIT
 ---
 
+Resolve bundled relative file paths from this skill's directory, not the project working directory.
+
+
 # Ponytail audit
 
 Scan the requested scope for unnecessary complexity. Rank concrete findings

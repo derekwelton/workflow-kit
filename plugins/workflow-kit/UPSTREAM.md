@@ -79,3 +79,11 @@ separate authorization for sending. Writing mechanics reflect this kit's
 host metadata, dependency catalog, and invocation policies rather than the
 upstream Claude-only assumptions. The engineering vendor script does not
 refresh these four productivity additions.
+
+## Unslop
+
+Imported from [cursor/plugins](https://github.com/cursor/plugins/blob/e8d856f0273b42ebafe0ec3546bd645709e7c1b0/pstack/skills/unslop/SKILL.md),
+`pstack/skills/unslop/SKILL.md`, at `e8d856f0273b42ebafe0ec3546bd645709e7c1b0`.
+The only body/frontmatter adaptation removes `disable-model-invocation: true`
+as requested; added Codex metadata allows implicit invocation. The upstream
+license is preserved in `licenses/pstack-LICENSE.txt` and shipped by both installers.

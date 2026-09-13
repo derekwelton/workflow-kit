@@ -3,6 +3,9 @@ name: linear-mode
 description: Read Linear issues or route authorized sync-thread writes, status transitions and intake. Use only for a configured Linear tracker; load operation references conditionally.
 ---
 
+Resolve bundled relative file paths from this skill's directory, not the project working directory.
+
+
 # Linear adapter
 
 Read docs/agents/issue-tracker.md or the existing repository tracker configuration

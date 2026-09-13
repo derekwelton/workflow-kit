@@ -3,6 +3,9 @@ name: code-review
 description: "Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes: Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/spec asked for?). Runs both reviews in parallel sub-agents and reports them side by side. Use when the user wants to review a branch, a PR, work-in-progress changes, or asks to \"review since X\"."
 ---
 
+Resolve bundled relative file paths from this skill's directory, not the project working directory.
+
+
 Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
 
 - **Standards**: does the code conform to this repo's documented coding standards?
@@ -10,7 +13,7 @@ Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
 
 Both axes run as **parallel sub-agents** so they don't pollute each other's context, then this skill aggregates their findings.
 
-Read `../../templates/project-context.md` for repository conventions and tracker
+Read `./bundled/templates/project-context.md` for repository conventions and tracker
 scope. For a dispatched workload review, the coordinator already owns dispatch:
 review the assigned axes yourself without nested agents, return findings and
 the exact base/head SHA plus durable review evidence, and leave tracker writes

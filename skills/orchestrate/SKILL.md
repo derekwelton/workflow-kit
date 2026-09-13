@@ -4,6 +4,9 @@ description: Run or resume an explicitly selected multi-issue workload with isol
 disable-model-invocation: true
 ---
 
+Resolve bundled relative file paths from this skill's directory, not the project working directory.
+
+
 # Orchestrate queue
 
 Explicit multi-issue execution or read-only --plan. Project-local Claude uses
@@ -11,12 +14,12 @@ Explicit multi-issue execution or read-only --plan. Project-local Claude uses
 or local-main acceptance test of a named reviewed run, read
 `references/integrate-reviewed.md` and follow that mode instead of Execute.
 
-Read repository configuration/local overrides, `../../templates/lifecycle-contract.md`,
-`references/workload-contract.md`, and `../../templates/model-routing.md`.
+Read repository configuration/local overrides, `./bundled/templates/lifecycle-contract.md`,
+`references/workload-contract.md`, and `./bundled/templates/model-routing.md`.
 The workload contract owns provider independence, review convergence, final-SHA
 receipts, integration gates, single-writer rules and human acceptance.
 Read only the configured tracker adapter; writes use
-`../../templates/tracker-write.md`. Do not load the portable fallback too.
+`./bundled/templates/tracker-write.md`. Do not load the portable fallback too.
 
 ## Execute
 
@@ -71,5 +74,7 @@ Use --resume-context for intended-environment acceptance evidence, owned
 processes/jobs, unresolved schema/config/deployment needs and next action.
 An optional --handoff-snapshot is derived from the manifest, never a second
 canonical record; preserve instruction identity/retained content in handoff.
-Research follows `../research/SKILL.md`; cited chat findings suffice unless an
+Research follows `./bundled/skills/research/INSTRUCTIONS.md`; cited chat findings suffice unless an
 artifact is requested or reusable. Follow lifecycle wait rules.
+
+When this workflow calls for a required skill that is not separately installed, read its instructions from `bundled/dependencies.md`. Load only the dependency needed for the current step; bundled instructions do not authorize additional work.

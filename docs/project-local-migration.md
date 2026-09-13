@@ -1,6 +1,6 @@
 # Moving an existing project to local skills
 
-The 1.0 catalog has 23 skills. Installation and migration are separate operations.
+The current catalog has 30 skills. Installation and migration are separate operations.
 The installer copies skills; it does not rewrite AGENTS.md, CLAUDE.md, .ai/ rules,
 feature-lifecycle.md, tracker settings, existing work folders, or global plugins.
 
@@ -29,7 +29,7 @@ feature-lifecycle.md, tracker settings, existing work folders, or global plugins
 
 ## Retired commands
 
-board, grilling, handoff, integrate-reviewed, model-routing, new-feature, plan,
+board, grilling, integrate-reviewed, model-routing, new-feature, plan,
 present, work-audit, workflow-doctor, workflow-init, workflow-update, wrap-feature.
 
 The interview primitive is now an ordinary reference under grill-with-docs.
@@ -47,3 +47,12 @@ The old implementation is preserved in Git at
 8ab784585df2508b462f9e308d680350542585b7 (0.9.4); no global rollback or tag is created
 by the migration. Earlier guides and context measurements describe that version,
 not the current installation model.
+
+Cleanup Audit (`cleanup-audit`) replaces the retired work-audit capability with
+a read-only proposal followed by explicitly selected execution. Merge Cleanup
+(`merge-cleanup`) shares integration and cleanup procedures with orchestration
+and supports standalone and child-to-parent work without a workload manifest.
+Both new entrypoints are explicit-only on Claude and Codex; no consumer activation
+rules or retention policies change. Historical wrap-feature archival defaults
+do not override consumer retention rules. Handoff has returned as a productivity
+skill. Unslop is model-invocable, with the upstream invocation restriction removed.

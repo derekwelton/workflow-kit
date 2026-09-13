@@ -3,9 +3,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { renderPortable, skillPathPreamble } from "./lib/portable-contract.mjs";
+import { buildSkillBundles } from "./build-skill-bundles.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const output = path.join(root, "plugins", "workflow-kit");
 const check = process.argv.includes("--check");
+buildSkillBundles(root, { check });
 const expected = new Map();
 const readText = (file) => fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n");
 const portablePath = path.join(root, "templates", "feature-lifecycle-portable.md");
@@ -23,6 +25,7 @@ function collect(relative) {
       if (entry.name === "SKILL.md") {
         // Claude controls invocation in frontmatter; Codex uses agents/openai.yaml.
         content = content.replace(/^disable-model-invocation: true\r?\n/gm, "");
+        content = content.replace(`\n\n${skillPathPreamble}\n`, "");
         const frontmatterEnd = content.indexOf("\n---", 4) + 4;
         content = content.slice(0, frontmatterEnd) + `\n\n${skillPathPreamble}\n` + content.slice(frontmatterEnd);
       }
