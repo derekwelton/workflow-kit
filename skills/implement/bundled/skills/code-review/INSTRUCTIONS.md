@@ -4,7 +4,7 @@ Resolve this document's relative file paths from the directory containing it, no
 
 Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
 
-- **Standards**: does the code conform to this repo's documented coding standards?
+- **Standards**: does the code conform to this repo's documented coding standards, and could it preserve the required behavior more simply?
 - **Spec**: does the code faithfully implement the originating issue / spec?
 
 Both axes run as **parallel sub-agents** so they don't pollute each other's context, then this skill aggregates their findings.
@@ -51,7 +51,10 @@ On top of whatever the repo documents, the Standards axis always carries the **s
 - **The repo overrides.** A documented repo standard always wins; where it endorses something the baseline would flag, suppress the smell.
 - **Always a judgement call.** Each smell is a labelled heuristic ("possible Feature Envy"), never a hard violation. Like any standard here, skip anything tooling already enforces.
 
-Each smell reads *what it is* → *how to fix*; match it against the diff:
+Each smell reads *what it is* → *a possible remedy*; match it against the diff.
+Recommend a remedy only when it reduces maintenance burden in this context.
+Small duplication can be clearer than a shared abstraction; types, extraction,
+and polymorphism are options, not automatic improvements.
 
 - **Mysterious Name**: a function, variable, or type whose name doesn't reveal what it does or holds. → rename it; if no honest name comes, the design's murky.
 - **Duplicated Code**: the same logic shape appears in more than one hunk or file in the change. → extract the shared shape, call it from both.
@@ -66,13 +69,42 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 - **Middle Man**: a class or function that mostly just delegates onward. → cut it, call the real target direct.
 - **Refused Bequest**: a subclass or implementer that ignores or overrides most of what it inherits. → drop the inheritance, use composition.
 
+#### Simplification check
+
+The Standards reviewer also checks the diff for concrete simplification
+opportunities; no additional reviewer or review stage is needed. Read the
+affected behavior and enough surrounding usage to assess the replacement.
+Keep broader cleanup outside this review; use `ponytail-audit` only when requested.
+
+- Look for existing helpers or patterns to reuse, standard-library or supported
+  platform equivalents, unused options or state, speculative layers, and logic
+  that can be expressed more directly. Prefer already-installed dependencies
+  over new ones when they meet the requirements.
+- Check callers and public usage before proposing deletion. One caller or one
+  implementation alone does not make a wrapper or interface unnecessary.
+  Preserve explicit requirements, public contracts, deliberate ADR choices,
+  security checks, data-loss protection, accessibility, and meaningful tests.
+  Check compatibility and edge cases before claiming equivalent behavior.
+- Each proposal must cite a file/line, name what to remove or change and its
+  replacement (or nothing), and explain the evidence that required behavior is
+  preserved and maintenance becomes easier. If equivalence is uncertain, state
+  what needs checking instead of presenting the cut as ready to apply.
+- Report each underlying concern once, combining a smell and its simpler
+  alternative. Prefer clarity over fewer lines; do not require savings estimates
+  or manufacture suggestions when the code is already straightforward.
+- Simplification suggestions are optional and do not block approval by
+  themselves. If the same code has a demonstrated defect or violates a documented
+  requirement, report that underlying problem as the reason action is required.
+  This review proposes changes; it does not authorize applying them.
+
 ### 4. Spawn both sub-agents in parallel
 
 **Standards sub-agent prompt** should include:
 
 - The full diff command and commit list.
-- The list of standards-source files you found in step 3, **plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
-- The brief: "Report, per file/hunk where relevant, (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls: documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Under 400 words."
+- The list of standards-source files you found in step 3, **plus the smell baseline and simplification check from step 3** pasted in full (the sub-agent has no other access to them).
+- The supplied spec or relevant requirements, when available, so proposed simplifications preserve requested behavior.
+- The brief: "Report documented-standard violations with the source rule and file/line evidence separately from optional smell or simplification suggestions. For each simplification, identify the change, replacement, usage evidence, and maintenance benefit. Apply the baseline and simplification safeguards; deduplicate overlapping concerns. A documented repo standard overrides the baseline. Skip anything tooling enforces. If no worthwhile simplification is found, say so without implying the whole change is approved. Aim for under 400 words without omitting material findings."
 
 **Spec sub-agent prompt** should include:
 
@@ -86,7 +118,11 @@ If the spec is missing, skip the Spec sub-agent and note this in the final repor
 
 Present the two reports under `## Standards` and `## Spec` headings, verbatim or lightly cleaned. Do **not** merge or rerank findings, because the two axes are deliberately separate (see _Why two axes_).
 
-End with a one-line summary: total findings per axis, and the worst issue _within each axis_ (if any). Don't pick a single winner across axes: that's the reranking the separation exists to prevent.
+Within Standards, keep documented violations separate from optional suggestions.
+Optional suggestions alone do not make Standards fail. End with a one-line
+summary: findings per axis, distinguishing Standards violations from optional
+suggestions, and the worst issue within each axis (if any). Do not pick a single
+winner across axes or treat an absence of simplification findings as approval.
 
 ## Why two axes
 
