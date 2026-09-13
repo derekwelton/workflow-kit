@@ -1,5 +1,5 @@
 
-Resolve bundled relative file paths from this skill's directory, not the project working directory.
+Resolve this document's relative file paths from the directory containing it, not the project working directory.
 
 
 Read `../../templates/project-context.md` for this project's conventions and tracker scope.

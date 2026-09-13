@@ -6,30 +6,41 @@ can activate when relevant. Installing everything does not load every skill body
 
 ## Install into a project
 
-Requires Node.js 22 or newer. Once these changes are pushed to GitHub, run this
-from the project where you want the skills:
+Use the standard [skills installer](https://github.com/vercel-labs/skills) from
+the project where you want the skills:
 
 ```powershell
-npx --yes --package github:derekwelton/workflow-kit workflow-kit
+npx skills@latest add derekwelton/workflow-kit
 ```
 
-Pick skills by number or name (or `all`), then choose Codex, Claude Code, or both.
-Required dependencies are included automatically. This uses the kit's installer,
-which also bundles shared references and helpers. The generic `npx skills add`
-folder-copy flow does not resolve those dependencies.
-
-From this checkout, the same picker is available now:
+Choose the skills and target agents in the picker. Each selected folder contains
+its required references, dependency instructions, helper scripts, and licenses.
+Dependencies are available on demand inside that folder; they do not become extra
+entries in your installed skill list.
 
 ```powershell
-node scripts/select-skills.mjs
+# Browse without installing
+npx skills@latest add derekwelton/workflow-kit --list
+
+# Select specific skills for Codex and Claude Code
+npx skills@latest add derekwelton/workflow-kit --skill grill-me handoff to-questionnaire writing-for-agents --agent codex claude-code
+
+# Test an unpublished local checkout using the same installer
+npx skills@latest add F:/Projects/workflow-kit
 ```
 
-Pass `--interactive --project F:/Projects/my-project` to pick for another project.
-Explicit flags work without a terminal, for example:
+Use `--copy` if you prefer copied files to the installer's default symlinks.
+Keep the generated `skills-lock.json` with the project. Update these installations
+with `npx skills@latest update`; review local edits before updating.
 
-```powershell
-npx --yes --package github:derekwelton/workflow-kit workflow-kit --host both --skills grill-me,handoff,to-questionnaire,writing-for-agents
-```
+## Alternative managed installer
+
+The existing workflow-kit installer remains available for installations tracked
+by `.workflow-skills.json`, with dependency skills installed as separate entries,
+file-change previews, and protection for locally edited files. It requires Node.js
+22 or newer. Its local picker is `node scripts/select-skills.mjs`.
+Use one installer for a given project installation; their ownership records and
+update behavior differ.
 
 Or use the existing installer directly:
 
@@ -59,8 +70,8 @@ The project must already exist. `--project` defaults to the current directory;
 Commit those files and `.workflow-skills.json` with the project when ready.
 The source checkout is no longer needed after installation. No global plugin,
 user-skill links, credentials, model settings, or repository instructions are changed.
-Use this installer for selective installs; copying arbitrary folders with other
-installers does not resolve this collection's shared helpers and dependencies.
+The standard installer above uses the self-contained folders instead of this
+shared-file layout.
 
 In a new session, invoke **`$setup-workflow-skills`** in Codex or
 **`/setup-workflow-skills`** in Claude to configure the installed skills if needed.
@@ -107,13 +118,15 @@ their instructions must not be loaded simply because they are installed.
 Model-invocable skill descriptions remain discoverable; this is not a claim of
 zero catalog overhead or measured token savings.
 
-Codex calls orchestration **`$orchestrate-queue`**; Claude uses **`/orchestrate`**.
+Standard installs call orchestration **`$orchestrate-queue`** in Codex and
+**`/orchestrate-queue`** in Claude. The alternative installer retains Claude's
+`/orchestrate` folder alias.
 It is optional, with isolated workers, independent final-SHA review, resumable
 manifests and combined integration checks. Its separately authorized merge mode
 is documented in its references. Tracker adapters remain conditional; install
 the configured adapter if you selected orchestration without install-all.
 
-## Preview and update
+## Preview and update managed installations
 
 ```powershell
 # Preview exact file changes without writing anything
@@ -141,7 +154,15 @@ instructions. No consumer project is migrated merely by updating this repository
 Version 0.9.4 remains recoverable at commit
 `8ab784585df2508b462f9e308d680350542585b7`.
 
-Root `skills/`, `scripts/`, `templates/`, and `catalog.json` are the source.
+Root `skills/` (excluding generated `bundled/` folders), `scripts/`, `templates/`,
+and `catalog.json` are the source. `scripts/build-skill-bundles.mjs` assembles each
+skill's dependency closure from these owners; `build-codex-package.mjs` runs it
+automatically and checks bundle parity with `--check`. Never hand-edit a bundle.
+Cross-folder pointers in authored skills use `bundled/<canonical-repo-path>`;
+bundled skill entrypoints use `INSTRUCTIONS.md` instead of `SKILL.md` to prevent
+nested discovery. After importing canonical upstream paths, run
+`node scripts/build-skill-bundles.mjs --prepare` to relocate those pointers.
+Only load a bundled dependency when the active workflow needs it.
 `plugins/workflow-kit/` remains a generated compatibility artifact; it is not
 the recommended installation path. Never hand-edit it.
 
@@ -153,6 +174,10 @@ node --test test/*.test.mjs
 ```
 
 Tests install into temporary projects without model calls or live tracker writes.
+For a real CLI smoke test, install `skills@latest` into a temporary tool directory,
+then run `node scripts/test-skills-cli.mjs <tool>/node_modules/skills/bin/cli.mjs`.
+It checks discovery, selective installs, both hosts, copy and default link modes,
+and helper execution in isolated projects and a temporary home.
 The optional legacy native-plugin smoke test uses an isolated home:
 `python scripts/test-codex-install.py`.
 Model policy remains in `scripts/lib/model-policy.mjs` and

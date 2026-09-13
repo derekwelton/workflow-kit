@@ -1,16 +1,15 @@
 # Workflow skills quick reference
 
-Choose skills interactively from this checkout with `node scripts/select-skills.mjs`.
-After publication, use `npx --yes --package github:derekwelton/workflow-kit workflow-kit`
-from the target project.
-
-Install everything in a project:
+Choose skills and agents interactively from the target project:
 
 ```powershell
-node scripts/install-skills.mjs --project F:/Projects/my-project --host both --all
+npx skills@latest add derekwelton/workflow-kit
 ```
 
-Or select a few: replace `--all` with `--skills ponytail,tdd,wizard`.
+List choices with `--list`, or select directly with
+`--skill grill-me handoff --agent codex claude-code`.
+For an unpublished checkout use `npx skills@latest add F:/Projects/workflow-kit`.
+
 Then invoke setup-workflow-skills if the project needs configuration.
 
 | Task | Skill |
@@ -28,7 +27,7 @@ Then invoke setup-workflow-skills if the project needs configuration.
 | Synthesize a spec / split work into vertical slices | to-spec / to-tickets |
 | Triage incoming work / map a large uncertain effort | triage / wayfinder |
 | Implement a ticket / review a diff independently | implement / code-review |
-| Run a bounded multi-issue workload | orchestrate (Codex: orchestrate-queue) |
+| Run a bounded multi-issue workload | orchestrate-queue (managed Claude alias: orchestrate) |
 | Use the configured tracker / publish an authorized checkpoint | github-projects or linear-mode / update-issue |
 | Audit clutter without changing it | cleanup-audit (explicit only) |
 | Merge named work, reconcile issues and clean owned artifacts | merge-cleanup (explicit only) |

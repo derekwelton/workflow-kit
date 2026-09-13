@@ -1,11 +1,12 @@
 
-Resolve bundled relative file paths from this skill's directory, not the project working directory.
+Resolve this document's relative file paths from the directory containing it, not the project working directory.
 
 
 # Orchestrate queue
 
-Explicit multi-issue execution or read-only --plan. Project-local Claude uses
-/orchestrate; Codex uses $orchestrate-queue. For a separately authorized merge
+Explicit multi-issue execution or read-only --plan. Standard installs use
+/orchestrate-queue in Claude and $orchestrate-queue in Codex. The managed
+workflow-kit installer retains the Claude /orchestrate folder alias. For a separately authorized merge
 or local-main acceptance test of a named reviewed run, read
 `./references/integrate-reviewed.md` and follow that mode instead of Execute.
 

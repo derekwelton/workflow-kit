@@ -87,3 +87,12 @@ Imported from [cursor/plugins](https://github.com/cursor/plugins/blob/e8d856f027
 The only body/frontmatter adaptation removes `disable-model-invocation: true`
 as requested; added Codex metadata allows implicit invocation. The upstream
 license is preserved in `licenses/pstack-LICENSE.txt` and shipped by both installers.
+
+## Standard skills installer distribution
+
+Root skill folders are self-contained for `npx skills@latest add derekwelton/workflow-kit`.
+Generated `bundled/` trees carry the declared dependency instructions, shared
+references, executable helpers and license notices. Canonical files remain in
+root skills, scripts and templates; no upstream behavior or review gate changes
+merely because a dependency is bundled. Dependency entrypoints are renamed to
+INSTRUCTIONS.md in these copies so they are not independently discovered.

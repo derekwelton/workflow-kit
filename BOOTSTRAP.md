@@ -1,14 +1,8 @@
-# Project-local installation
+# Install workflow skills
 
-Install only in the user's target project. Read README.md for the install-all and
-selective commands. Use `scripts/install-skills.mjs --project <project> --host
-codex|claude|both --all` or `--skills <names>` as requested. If the host is
-unspecified, use Codex; reuse an explicitly selected host. Show included dependencies.
+From the target project, run `npx skills@latest add derekwelton/workflow-kit` and
+choose skills and agents. Each folder includes its required files. Invoke
+setup-workflow-skills only when project configuration is needed.
 
-Do not install a global plugin, create user-skill links, change global settings,
-or stamp lifecycle documents. Installation does not authorize tracker writes,
-commits, or migration of repository instructions. If setup was requested, use
-the newly installed setup-workflow-skills entrypoint and only relevant references.
-
-For a legacy project, inspect docs/project-local-migration.md and the existing
-repository configuration. Preserve local overrides and active workload state.
+See [README.md](README.md) for local-checkout installation and the alternative
+managed installer used by projects with `.workflow-skills.json`.

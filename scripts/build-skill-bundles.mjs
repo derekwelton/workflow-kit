@@ -72,6 +72,7 @@ export function bundlePayload(sourceRoot, owner, catalog) {
     });
     if (relative.endsWith("/SKILL.md") && !relative.startsWith(`skills/${owner}/`)) {
       content = content.replace(/^---\n[\s\S]*?\n---\n/, "");
+      content = content.replace("Resolve bundled relative file paths from this skill's directory, not the project working directory.", "Resolve this document's relative file paths from the directory containing it, not the project working directory.");
     }
     // Own source files are maintained by authors, never overwritten by the builder.
     if (output.startsWith("bundled/")) payload.set(output, content);
