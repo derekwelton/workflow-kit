@@ -11,7 +11,7 @@ Require every implementation and review worker to return:
   "baseSha": "commit",
   "headSha": "commit",
   "provider": "codex|claude",
-  "execution": { "requestedModel": "gpt-6-astra", "resolvedModel": null, "resolutionStatus": "unverified", "effort": "low", "highReason": null, "workerId": "runtime-session-id", "policyVersion": "2026-09-04", "fallbackReason": null },
+  "execution": { "requestedModel": "gpt-6-astra", "resolvedModel": null, "resolutionStatus": "unverified", "effort": "low", "highReason": null, "workerId": "runtime-session-id", "policyVersion": "2026-09-24", "fallbackReason": null },
   "state": "complete|blocked",
   "summary": ["plain-language outcome"],
   "changedFiles": [],

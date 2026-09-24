@@ -1,6 +1,6 @@
 {
   "name": "workflow-kit",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Project-local engineering skills with explicit workflows and optional reviewed orchestration.",
   "author": { "name": "Derek Welton" },
   "skills": "./skills/",

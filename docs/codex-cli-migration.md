@@ -4,7 +4,7 @@ Workflow-kit 1.1.0 owns direct Codex execution through codex-cli. The official
 Codex CLI remains installed where used; the codex-kit plugin is no longer a
 runtime dependency. Prefer the other provider for review. If its CLI or authorized
 reviewers are unavailable, record evidence and use a fresh same-provider session.
-Claude review uses Opus 5 high, then Fable medium/low, then Codex if neither has
+Claude review uses Opus 5.5 high, then Fable medium/low, then Codex if neither has
 usable credentials/quota/model access. Unknown availability and transient
 execution failures do not authorize substitution.
 
@@ -40,7 +40,7 @@ Install the updated selected skills using that project's established installer.
 Replace only the old codex-kit managed routing block with:
 
 > Claude-to-Codex: follow codex-cli. Prefer the other provider for review;
-> follow model-routing's Opus high, Fable medium/low, then Codex availability fallback.
+> follow model-routing's Opus 5.5 high, Fable medium/low, then Codex availability fallback.
 
 Preserve custom instructions, tracker/status mappings, active job artifacts and
 receipts. Verify the new instructions in a fresh host session before proceeding

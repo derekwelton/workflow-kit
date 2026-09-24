@@ -20,24 +20,32 @@ workflow-kit defaults, not claims about which model is objectively best.
 
 | Work | Default Codex worker | Default effort |
 |---|---|---|
-| Simple mechanical change | Terra | low |
+| Simple mechanical change | Luna | low; medium or high freely |
 | Ordinary implementation | Astra | low |
+| UI design and UX generation | Astra | medium |
 | Independent review | Astra | medium |
 | Coordinator/intense reasoning | Astra | medium |
 
-Claude implementation defaults to Fable 5.1. Claude review defaults to Opus 5
-high by explicit owner policy, with that decision recorded as highReason.
-Fable medium (low for a small routine diff) is the alternative; fresh Codex
-Astra medium is permitted if neither Claude reviewer is available. Prefer the
-other provider first; record CLI, credentials, quota or model-access evidence.
-Fable can delegate ordinary coding to Astra or simple work to Terra.
-Sol remains an explicit compatibility choice.
+Claude implementation defaults to Opus 5.5 high by explicit owner policy, with
+that decision recorded as highReason; Opus 5.5 medium is fine for smaller
+coding changes. Fable 5.1 remains an explicit coding pin
+and the default for orchestration and intense reasoning. Claude UI design and
+UX generation defaults to Opus 5.5 medium. Claude review defaults to Opus 5.5 high by explicit
+owner policy, with that decision recorded as highReason. Opus 5.5 never runs at
+low. Fable medium (low for a small routine diff) is the review alternative; fresh
+Codex Astra medium is permitted if neither Claude reviewer is available. Prefer
+the other provider first; record CLI, credentials, quota or model-access evidence.
+A Claude session can delegate ordinary coding to Opus 5.5 high or Astra low,
+simple work to Luna, and UI design to Opus 5.5. Sol (gpt-6-sol) is an explicit workhorse choice, not a default.
+Opus 5, GPT-5.5 and GPT-5.6 Luna are retired and refused; GPT-5.6 Terra and
+GPT-5.6 Sol remain explicit legacy pins only.
 The package permits low, medium and high only. Raising low to medium should
 follow evidence; missing requirements or tools do not justify higher effort.
+Luna is cheap enough that any allowed effort may be chosen without a reason.
 Coordination and intense reasoning default to medium for both providers.
 High remains an explicit choice requiring a recorded reason; the resolver does
-not manufacture one from the task class. The owner-selected Opus review policy
-is the explicit exception. Global settings are unchanged.
+not manufacture one from the task class. The owner-selected Opus 5.5 coding and
+review policies and Luna are the explicit exceptions. Global settings are unchanged.
 
 The host creates a worker with explicit model and effort. Those requests do not
 change the already-running coordinator's model. A full-history fork may not
@@ -53,7 +61,7 @@ fresh reviewer. The coordinator and every active/nested worker share the host
 slot limit; configured concurrency is a ceiling, not a target.
 
 For example, a docs lookup stays local. A clearly specified isolated mechanical
-change may use Terra low if useful parallel work exists. A review of a complex
+change may use Luna at any allowed effort if useful parallel work exists. A review of a complex
 routing change can use a fresh Astra medium reviewer. A conflict-resolution
 review follows the same preference and availability fallback regardless of which
 provider coordinated the run, and always requires a fresh independent session.

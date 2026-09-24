@@ -57,7 +57,7 @@ Read only the configured tracker adapter; writes use
    Record reviewed-pending-integration. For direct Codex launches, follow
    `../codex-cli/INSTRUCTIONS.md`. For Claude review, launch a fresh
    Claude CLI process as described in model-routing. Prefer the other provider;
-   follow model-routing's Opus high → Fable medium/low → Codex fallback when
+   follow model-routing's Opus 5.5 high → Fable medium/low → Codex fallback when
    Claude review is unavailable. Record availability evidence for the chosen
    route. Never reuse the implementation session for review.
 7. Once the workload contract permits assembly, fetch current default branch,

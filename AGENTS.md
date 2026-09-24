@@ -9,8 +9,10 @@
   execution is owned by `skills/codex-cli/`; no companion policy copies are needed.
 - Routine workers use low/medium. High needs a reason for orchestration or intense
   reasoning. Never use xhigh, max, or ultra. Preserve explicit allowed user choices.
-  Owner-selected review exception: Claude Opus 5 high by default, Fable low/medium
-  alternative, then fresh Codex if neither is available; record routing evidence.
+  Owner-selected exceptions: Claude Opus 5.5 high by default for Claude coding and
+  independent review (Fable low/medium review alternative, then fresh Codex if
+  neither is available); Luna may take any allowed effort without a reason.
+  Opus 5.5 never runs at low. Opus 5 is retired. Record routing evidence.
 - Preserve local repository tracker/status mappings and independent review,
   final-SHA verification, and human acceptance boundaries.
 - Preserve unrelated worktree changes. Do not change global plugin/model settings

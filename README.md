@@ -207,7 +207,7 @@ The optional legacy native-plugin smoke test uses an isolated home:
 Model policy remains in `scripts/lib/model-policy.mjs` and
 `templates/model-routing.md`. The `codex-cli` skill calls the official Codex CLI
 directly; no codex-kit companion is needed. Prefer the other provider for review;
-Claude reviewers default to Opus 5 high, then Fable medium/low, then fresh Codex
+Claude reviewers default to Opus 5.5 high, then Fable medium/low, then fresh Codex
 if neither is available. Missing CLI, credentials, quota and model access need
 recorded evidence. Do not change global policy settings to test this kit.
 See [the migration and pilot checklist](docs/codex-cli-migration.md) before retiring

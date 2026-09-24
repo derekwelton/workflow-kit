@@ -14,30 +14,42 @@ or access, not higher effort.
 
 | Task class | Codex default | Claude default | Effort |
 |---|---|---|---|
-| Simple: mechanical, clear acceptance criteria | Terra | chosen session; optional Terra delegation | low; medium on evidence |
-| Coding: implementation judgment | Astra | Fable 5.1 | low; medium on evidence |
-| Independent review of a fixed diff | Astra | Opus 5 | Codex medium; Opus high (owner-selected policy) |
+| Simple: mechanical, clear acceptance criteria | Luna | chosen session; optional Luna delegation | Luna low for trivial lookups; medium or high freely, no reason needed |
+| Coding: implementation judgment | Astra | Opus 5.5 | Astra low, medium on evidence; Opus high (owner-selected policy), medium for smaller changes |
+| Design: UI design and UX generation | Astra | Opus 5.5 | medium; high with a reason |
+| Independent review of a fixed diff | Astra | Opus 5.5 | Codex medium; Opus high (owner-selected policy) |
 | Orchestration or specific intense reasoning | Astra | Fable 5.1 | medium |
 
 Only low/medium/high are allowed. Never xhigh/max/ultra. Most workers stay
 low/medium; high requires an explicit selection and recorded reason, never an
-automatic task-class escalation. Preserve explicit
-allowed user choices. These are worker defaults, not current-session or global
-settings. Fable can delegate ordinary coding/UI to Astra, simple work to Terra;
-follow repo design/typography/verification rules without provider quality claims.
+automatic task-class escalation. Two owner-selected exceptions exist: Luna is
+cheap enough that any allowed effort may be chosen without a recorded reason,
+and Opus 5.5 defaults to high for Claude coding and review with the reasons the
+resolver records. Opus 5.5 never runs at low; medium is its floor. Preserve
+explicit allowed user choices. These are worker defaults, not current-session or
+global settings. A Claude session can delegate ordinary coding to Opus 5.5 high
+or Astra low, simple work to Luna, and UI design or UX generation to Opus 5.5;
+Opus 5.5 medium is fine for smaller coding changes and needs no reason. Follow
+repo design/typography/verification rules without provider quality claims. Fable 5.1 stays the Claude default for orchestration and intense
+reasoning and remains an explicit coding pin.
 
 ## Launch and provenance
 
 Use explicit model/effort on every launch. Supported IDs: gpt-6-astra,
-gpt-5.6-terra, gpt-5.6-sol, claude-fable-5-1, claude-opus-5.
-Sol is an explicit compatibility choice. Claude reviews default to Opus 5 high,
-with recorded highReason `Owner-selected Opus 5 high for independent review (2026-09-13).`
+gpt-6-sol, gpt-6-luna, claude-fable-5-1, claude-opus-5-5. Legacy explicit pins
+only, never defaults: gpt-5.6-terra (`terra`), gpt-5.6-sol (`sol56`).
+Retired and refused: claude-opus-5, gpt-5.5, gpt-5.6-luna.
+Sol (gpt-6-sol) is an explicit workhorse choice, not a default.
+Claude reviews default to Opus 5.5 high, with recorded highReason
+`Owner-selected Opus 5.5 high for independent review (2026-09-24).`
+Claude coding defaults to Opus 5.5 high, with recorded highReason
+`Owner-selected Opus 5.5 high for Claude coding (2026-09-24).`
 If Opus is unavailable, use Fable 5.1 medium (low for a small routine review).
 If neither Claude reviewer is available, use a fresh Codex Astra medium session.
 Keep other-provider preference: Claude-authored work tries Codex first, then the
 Claude chain if Codex is unavailable. Record each fallback; explicit per-run
 model/effort choices override defaults and are never silently substituted.
-No automatic Sonnet/Haiku/Luna routing. Check observable host access; if unknown,
+No automatic Sonnet/Haiku routing. Check observable host access; if unknown,
 record unverified. An unavailable explicitly pinned model is a reported blocker;
 default review routes use the recorded fallback chain above. Public model listings
 do not prove account access. When calling resolveRouting, omit model for package
@@ -59,7 +71,7 @@ Record reviewFallback with reason `cli-not-installed`, missingProvider and the
 lookup evidence. For installed but unusable reviewers, use reason
 `review-models-unavailable`, unavailableProvider and attempts containing each
 model, reason (`credentials-unavailable`, `quota-unavailable`, `model-unavailable`)
-and observed error evidence. Exhaust Opus and Fable before falling back from
+and observed error evidence. Exhaust Opus 5.5 and Fable before falling back from
 Claude, or Astra before falling back from Codex. Unknown availability, transient
 network failures and command errors are not absence. Explicit same-provider
 choices remain valid. Every review requires fresh context: a bounded brief,

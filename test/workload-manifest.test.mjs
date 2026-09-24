@@ -21,7 +21,7 @@ function git(cwd, ...args) {
 const execution = (provider, role) => JSON.stringify({
   requestedModel: provider === "codex" ? "gpt-6-astra" : "claude-fable-5-1",
   resolvedModel: null, resolutionStatus: "unverified", effort: "medium",
-  workerId: `${role}-fixture-session`, policyVersion: "2026-09-04", fallbackReason: null
+  workerId: `${role}-fixture-session`, policyVersion: "2026-09-24", fallbackReason: null
 });
 
 function withExecutionFixtures(args) {
@@ -147,7 +147,7 @@ test("quota or credentials fallback requires evidence for all authorized review 
     const fallback = {
       reason: "review-models-unavailable", unavailableProvider: "claude",
       attempts: [
-        { model: "claude-opus-5", reason: "quota-unavailable", evidence: "Opus review: HTTP 429 usage credits exhausted" },
+        { model: "claude-opus-5-5", reason: "quota-unavailable", evidence: "Opus review: HTTP 429 usage credits exhausted" },
         { model: "claude-fable-5-1", reason: "quota-unavailable", evidence: "Fable review: HTTP 429 usage credits exhausted" }
       ]
     };

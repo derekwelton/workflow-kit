@@ -73,7 +73,7 @@ Seed templates (adapt to verified project conventions; do not overwrite owner ed
 
 For a requested codex-kit migration, replace only the old companion routing block
 with "Claude-to-Codex: follow codex-cli. Prefer the other provider for review;
-follow model-routing's Opus high, Fable medium/low, then Codex availability fallback."
+follow model-routing's Opus 5.5 high, Fable medium/low, then Codex availability fallback."
 Preserve local tracker rules, active jobs and receipts. Do not stamp the old
 companion template or uninstall global plugins as part of project setup.
 

@@ -399,7 +399,7 @@ Keep routine work economical while reserving more reasoning for justified comple
 
 - Use: Applied before delegating implementation or review.
 - Result: An explicit supported model/effort route bounded by host capacity and user choices.
-- Limit: Astra low/medium for coding, Terra low/medium for simple work, review normally medium. Fable can use Astra for coding. High needs a reason; xhigh/max/ultra reasoning are prohibited.
+- Limit: Astra low/medium for Codex coding, Opus 5.5 high for Claude coding and review, Luna at any allowed effort for simple work, Opus 5.5 medium/high for UI design, Codex review normally medium. High needs a reason except on Luna and the owner-selected Opus 5.5 defaults; xhigh/max/ultra reasoning are prohibited.
 - Claude: `/workflow-kit:model-routing`
 - Codex: `$model-routing`
 - Source: `skills/model-routing/SKILL.md:1`
@@ -503,7 +503,7 @@ Eight executable helper entry points and two shared libraries are listed below. 
 
 The codex-cli skill invokes the official CLI directly without a companion plugin.
 Workflow-kit owns lifecycle, model policy, review receipts and integration rules.
-Prefer the other provider for review; Claude reviews use Opus high, then Fable
+Prefer the other provider for review; Claude reviews use Opus 5.5 high, then Fable
 medium/low, then fresh Codex if neither is available. Record availability
 evidence. See [migration](codex-cli-migration.md).
 

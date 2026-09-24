@@ -7,7 +7,8 @@ single tracker/manifest/integration writer.
 - Scope: leased worktree, allowed files, fixed base/head, repository instructions.
 - Route: explicit provider, model, effort, and high reason only when justified.
   Follow workflow-kit's `model-routing` (the same canonical policy synced to
-  workflow-kit's model-routing reference). Never use Sonnet/Haiku or xhigh/max/ultra effort.
+  workflow-kit's model-routing reference). Never use Sonnet/Haiku, retired Opus 5,
+  or xhigh/max/ultra effort. Luna may take any allowed effort; Opus 5.5 never runs low.
 - Review: round number/limit, adjudication rule, Standards and Spec axes.
   Return findings with severity and evidence; do not create follow-up issues.
 - Editing: use Edit/Write or structured `apply_patch` for source edits. Bash or

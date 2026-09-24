@@ -8,7 +8,7 @@ metadata:
 Resolve bundled relative file paths from this skill's directory, not the project working directory.
 
 Read `./bundled/templates/model-routing.md` for model/effort and reviewer fallback.
-CLI baseline: 0.154.0 on Windows; inspect `codex --version`, `codex exec --help`
+CLI baseline: 0.156.1 on Windows; inspect `codex --version`, `codex exec --help`
 and `codex exec resume --help` if flags differ. A newer version alone does not
 prove compatibility. Use the authenticated CLI; do not change global settings.
 

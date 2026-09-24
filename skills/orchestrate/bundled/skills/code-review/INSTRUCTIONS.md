@@ -3,8 +3,9 @@ Resolve this document's relative file paths from the directory containing it, no
 
 
 Prefer the provider opposite the implementation author, following
-`../../templates/model-routing.md`. Claude review defaults to Opus 5 high,
+`../../templates/model-routing.md`. Claude review defaults to Opus 5.5 high,
 with Fable medium/low as the alternative, then fresh Codex if neither is usable.
+Opus 5 is retired; never launch it.
 If the other provider's CLI or authorized reviewers are unavailable, use a fresh
 same-provider session and record the availability evidence.
 No optional CLI installation is required. For a direct Codex launch follow
