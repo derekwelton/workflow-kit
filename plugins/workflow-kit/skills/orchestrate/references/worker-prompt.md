@@ -9,7 +9,9 @@ single tracker/manifest/integration writer.
   Follow workflow-kit's `model-routing` (the same canonical policy synced to
   workflow-kit's model-routing reference). Never use Sonnet/Haiku, retired Opus 5,
   or xhigh/max/ultra effort. Luna may take any allowed effort; Opus 5.5 never runs low.
-- Review: round number/limit, adjudication rule, Standards and Spec axes.
+- Review: dispatch/attempt IDs, completed-review budget, saved scoped authorization,
+  adjudication rule, Standards and Spec axes. Supply existing fixes/affected behavior
+  for verification; never omit the user's authorization record from the prompt.
   Return findings with severity and evidence; do not create follow-up issues.
 - Editing: use Edit/Write or structured `apply_patch` for source edits. Bash or
   PowerShell is for build, test, Git, and read-only inspection. No heredoc or
@@ -22,7 +24,7 @@ single tracker/manifest/integration writer.
   return blockers and stable job IDs rather than repeatedly polling.
 - Evidence: focused verification, exact tested head, changed/untracked files,
   requested/resolved model (null when unverified), effort and worker identity.
-- Return review rounds/limit and any required prerequisites as
+- Return completed reviews/limit, failed attempts separately, and any required prerequisites as
   `{name, status, remedy}` entries. Unknown runtime or user-task prerequisites
   must stay visible; passing isolated tests is not a ready claim for them.
   Findings include stable id, severity, category, blocking flag, and evidence;

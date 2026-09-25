@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: "Review changes since a commit, branch, tag, or merge-base along two axes: Standards (repository conventions and concrete simplification opportunities) and Spec (matches the originating issue/spec). Runs both reviews in parallel sub-agents and reports them side by side. Use for branch, PR, or work-in-progress reviews, or requests to review since a fixed point."
+description: "Review changes since a commit, branch, tag, or merge-base for Standards and Spec. Uses one independent reviewer for small cohesive changes and separate axis reviewers for complex changes. Use for branch, PR, or work-in-progress reviews."
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.
@@ -21,13 +21,16 @@ Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
 - **Standards**: does the code conform to this repo's documented coding standards, and could it preserve the required behavior more simply?
 - **Spec**: does the code faithfully implement the originating issue / spec?
 
-Both axes run as **parallel sub-agents** so they don't pollute each other's context, then this skill aggregates their findings.
+Follow `./bundled/templates/review-policy.md`. For a small cohesive change one fresh
+independent reviewer covers both axes and reports them separately. For complex or
+explicitly requested reviews use separate axis reviewers within host capacity.
 
 Read `./bundled/templates/project-context.md` for repository conventions and tracker
 scope. For a dispatched workload review, the coordinator already owns dispatch:
 review the assigned axes yourself without nested agents, return findings and
 the exact base/head SHA plus durable review evidence, and leave tracker writes
-to the coordinator. Fixes invalidate prior receipts. Standalone review uses
+to the coordinator. Behavioral fixes require focused verification; eligible
+nonfunctional deltas use the shared attestation rules. Standalone review uses
 fresh reviewers within host capacity (sequential if necessary); implementation
 authors cannot approve their own changes. If independent review is unavailable,
 report that gate as incomplete. Only an authorized completed standalone review
@@ -111,7 +114,11 @@ Keep broader cleanup outside this review; use `ponytail-audit` only when request
   requirement, report that underlying problem as the reason action is required.
   This review proposes changes; it does not authorize applying them.
 
-### 4. Spawn both sub-agents in parallel
+### 4. Review the selected axes
+
+For the small-change path, give one independent reviewer both briefs below and
+require separate Standards and Spec results. Otherwise launch the two axis
+reviewers within host capacity. A dispatched workload reviewer handles both itself.
 
 **Standards sub-agent prompt** should include:
 

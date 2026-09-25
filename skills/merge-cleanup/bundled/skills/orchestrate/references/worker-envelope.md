@@ -26,6 +26,7 @@ Require every implementation and review worker to return:
     }
   ],
   "reviewReceipt": null,
+  "completionGuide": null,
   "blocker": null,
   "discoveries": []
 }
@@ -52,6 +53,12 @@ them only when they are actionable or explicitly requested.
 When persisting the envelope, record full Git-resolved base/head commits. The
 `tests` evidence must include the exact tested head SHA. A final review receipt
 must use `<review-provider>:<full-head-sha>:<durable-receipt-id>`. Changing the
-head invalidates both old values. The manifest helper enforces integration
+head invalidates tests; review carry-forward requires the explicit attestation in
+`../../../templates/review-policy.md`. The manifest helper enforces integration
 state order (`pending → assembling → ready-for-human-review → merged`) and
 requires a head-bound conflict review receipt when conflicts occurred.
+
+Implementation workers populate completionGuide using
+`../../../templates/completion-guide.md` and the schema in `commands.md`.
+Review workers may leave it null. The coordinator verifies all feature coverage,
+merges ordered actions and refreshes instructions for the final integrated head.

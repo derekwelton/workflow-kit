@@ -17,6 +17,8 @@ or local-main acceptance test of a named reviewed run, read
 
 Read repository configuration/local overrides, `./bundled/templates/lifecycle-contract.md`,
 `references/workload-contract.md`, and `./bundled/templates/model-routing.md`.
+Read `./bundled/templates/review-policy.md` for review accounting and
+`./bundled/templates/completion-guide.md` for the required user handoff.
 The workload contract owns provider independence, review convergence, final-SHA
 receipts, integration gates, single-writer rules and human acceptance.
 Read only the configured tracker adapter; writes use
@@ -57,8 +59,9 @@ Read only the configured tracker adapter; writes use
    Record code-review with full base/head, execution and head-bound tests;
    publish one implementation checkpoint via update-issue.
 6. Dispatch independent review following the workload contract's pairing and
-   round reservation rules. Give both Standards and Spec axes. Adjudicate
-   findings against evidence, fix, verify, and obtain the final-head receipt.
+   dispatch accounting rules. Give both Standards and Spec axes. Adjudicate
+   findings against evidence, fix, verify, and obtain exact-head review coverage
+   (independent receipt or eligible nonfunctional attestation).
    Record reviewed-pending-integration. For direct Codex launches, follow
    `./bundled/skills/codex-cli/INSTRUCTIONS.md`. For Claude review, launch a fresh
    Claude CLI process as described in model-routing. Prefer the other provider;
@@ -84,6 +87,8 @@ Derive an outcome-led dashboard from validated envelopes/manifest; do not paste
 raw JSON. Use scripts/render-worker-result.mjs as the optional deterministic
 renderer. Include verification, blockers, remaining prerequisites and next action.
 The final dashboard fields and merge statement are in the workload contract.
+Include the complete feature usage/testing guide and ordered setup/script actions;
+verify coverage against every implemented issue before reporting completion.
 
 Use --resume-context for intended-environment acceptance evidence, owned
 processes/jobs, unresolved schema/config/deployment needs and next action.

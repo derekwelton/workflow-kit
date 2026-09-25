@@ -19,7 +19,7 @@ and only the configured tracker adapter. Fetch mutable issues/statuses fresh,
 verify writes and reconcile uncertain delivery before retrying.
 
 For explicitly selected workloads read the orchestrate skill and its selected
-references. Preserve independent implementation/review, final-SHA receipts,
+references. Follow `./review-policy.md` and preserve independent implementation/review, exact-head review coverage,
 combined integration verification and human acceptance. No ordinary task is
 automatically promoted to a workload. Missing runtime capabilities are blockers
 for that operation, not reasons to invent evidence.

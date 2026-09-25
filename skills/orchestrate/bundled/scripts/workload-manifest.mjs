@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 
 import { resolveModel, resolveRouting, validateEffort, validateReviewFallback } from "./lib/model-policy.mjs";
+import { updateReviewDispatch, reviewPolicyErrors, completionGuideErrors } from "./lib/review-policy.mjs";
 import { spawnSync } from "node:child_process";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 const SCHEMA_VERSION = 3;
-const WORKFLOW_KIT_VERSION = "1.2.0";
+const WORKFLOW_KIT_VERSION = "1.3.0";
 const PAIR_MODES = new Set(["cross", "codex-only", "claude-only"]);
 const ISSUE_STATES = new Set([
   "selected",
@@ -338,7 +339,9 @@ function writeCheckpoint(filePath, manifest) {
       ...(issue.reviewHistory ?? []).flatMap(round => round.findings ?? [])]
       .filter(f => f.followUp).map(f => f.followUp))];
     lines.push(`| ${[issue.key, issue.state,
-      `${issue.reviewRounds ?? 0}${issue.reviewHistoryUnknownBeforeMigration ? " + unknown historical rounds" : ""}`,
+      manifest.policy.reviewPolicy === "bounded"
+        ? `${issue.reviewDispatches?.filter(item => item.status === "completed").length ?? 0} completed; ${issue.reviewDispatches?.flatMap(item => item.attempts).filter(item => item.status === "failed").length ?? 0} failed attempts; ${issue.reviewRounds ?? 0} historical launches`
+        : `${issue.reviewRounds ?? 0}${issue.reviewHistoryUnknownBeforeMigration ? " + unknown historical rounds" : ""}`,
       issue.headSha, execution ? `${execution.workerId} (${execution.requestedModel ?? "unknown"}, ${execution.effort ?? "unknown"})` : null,
       `${issue.reviewReceipt ?? "no receipt"}; ${issue.tests ?? "no tests"}`,
       `${issue.blocker ?? "none"}; ${followUps.join(", ")}`
@@ -370,12 +373,26 @@ function beginReviewRound(manifest, issue, options) {
 
 function configurePolicy(manifest, options, { initial = false } = {}) {
   const policy = manifest.policy;
-  const reviewPolicy = options["review-policy"] ?? (initial ? "strict" : policy.reviewPolicy);
-  if (!["strict", "convergent"].includes(reviewPolicy)) fail("--review-policy must be strict or convergent.");
+  const reviewPolicy = options["review-policy"] ?? (initial ? "bounded" : policy.reviewPolicy);
+  if (!["strict", "convergent", "bounded"].includes(reviewPolicy)) fail("--review-policy must be bounded, strict or convergent.");
   const decision = options["policy-decision"] === undefined ? null : requireTextOption(options["policy-decision"], "policy-decision");
   if ((!initial || reviewPolicy === "convergent") && !decision) fail("This policy requires --policy-decision with the run-scoped user decision reference.");
   policy.maxReviewRounds = parsePositiveInteger(options["max-review-rounds"], policy.maxReviewRounds ?? 2, "max-review-rounds");
   policy.reviewPolicy = reviewPolicy;
+  if (reviewPolicy === "bounded") {
+    policy.reviewAccountingVersion = 1;
+    const guides = options["completion-guides"] === undefined ? {} : JSON.parse(requireTextOption(options["completion-guides"], "completion-guides"));
+    // Preserve historical launch counts and receipts; never reinterpret them as completed reviews.
+    for (const issue of manifest.issues) {
+      issue.reviewDispatches ??= [];
+      issue.reviewAuthorizations ??= [];
+      if (guides[issue.key] !== undefined) issue.completionGuide = guides[issue.key];
+      if (issue.reviewReceipt && issue.reviewHistory?.length) {
+        const historical = issue.reviewHistory.findLast(round => round.headSha === issue.headSha);
+        if (historical && !historical.receipt) historical.receipt = issue.reviewReceipt;
+      }
+    }
+  }
   policy.reviewConvergence = { ...REVIEW_CONVERGENCE, laterRoundsBlock: reviewPolicy === "convergent" ? ["high"] : ["high", "medium"] };
   if (options["handoff-snapshot"] !== undefined) policy.handoffSnapshot = booleanOption(options, "handoff-snapshot");
   if (options.routing !== undefined) {
@@ -628,10 +645,10 @@ function commandSetIssue(cwd, options) {
       : JSON.parse(requireTextOption(options["review-execution"], "review-execution"));
     const completedReview = ["reviewed-pending-integration", "in-review", "done"].includes(issue.state);
     // A new review worker is a new round even if a caller omits the state flag.
-    if (options.state === "code-review" ||
+    if (manifest.policy.reviewPolicy !== "bounded" && (options.state === "code-review" ||
         (nextReviewExecution && previousReviewExecution && nextReviewExecution.workerId !== previousReviewExecution.workerId) ||
         (completedReview && issue.reviewHistory.length > 0 && issue.reviewHistory.at(-1).headSha !== issue.headSha) ||
-        (completedReview && issue.reviewRounds === 0 && !issue.reviewHistoryUnknownBeforeMigration)) {
+        (completedReview && issue.reviewRounds === 0 && !issue.reviewHistoryUnknownBeforeMigration))) {
       beginReviewRound(manifest, issue, options);
     }
     for (const role of ["implementation", "review"]) {
@@ -643,7 +660,10 @@ function commandSetIssue(cwd, options) {
     }
     assignIfPresent(issue, "reviewReceipt", options["review-receipt"], String, "review-receipt");
     if (options["review-findings"] !== undefined) {
-      issue.reviewFindings = JSON.parse(requireTextOption(options["review-findings"], "review-findings"));
+      const incoming = JSON.parse(requireTextOption(options["review-findings"], "review-findings"));
+      issue.reviewFindings = manifest.policy.reviewPolicy === "bounded" && Array.isArray(incoming)
+        ? [...new Map([...(issue.reviewFindings ?? []), ...incoming].map(finding => [finding.id, finding])).values()]
+        : incoming;
       if (Array.isArray(issue.reviewFindings)) {
         const previous = issue.reviewHistory.slice(0, -1).flatMap(round => round.findings ?? []);
         issue.reviewFindings = issue.reviewFindings.map(finding => ({ ...finding,
@@ -656,6 +676,30 @@ function commandSetIssue(cwd, options) {
       issue.resumeContext = context;
     }
     assignIfPresent(issue, "tests", options.tests, String);
+    if (manifest.policy.reviewPolicy === "bounded") {
+      const jsonOption = name => options[name] === undefined ? undefined : JSON.parse(requireTextOption(options[name], name));
+      const dispatchInput = jsonOption("review-dispatch");
+      if (dispatchInput?.attempt) dispatchInput.attempt.execution = issue.reviewExecution;
+      updateReviewDispatch(issue, { dispatch: dispatchInput, authorization: jsonOption("review-authorization") }, manifest.policy.maxReviewRounds);
+      const active = issue.reviewDispatches.find(dispatch => dispatch.status === "active");
+      if (active && active.headSha !== issue.headSha) fail("Reconcile the active review before changing its head.");
+      if (options["review-attestation"] !== undefined) {
+        const attestation = jsonOption("review-attestation");
+        if (!attestation || !attestation.reviewedSha || !attestation.reason || !attestation.assessor || !attestation.checks || !attestation.classification) fail("Attestation requires reviewedSha, reason, assessor, checks and classification.");
+        if (!["wording", "comments", "formatting", "mechanical-cleanup"].includes(attestation.classification)) fail("Attestation must classify a nonfunctional delta.");
+        const reviewedSha = resolveCommit(repository, attestation.reviewedSha, "reviewedSha");
+        if (!String(attestation.checks).includes(issue.headSha)) fail("Attestation checks must bind to the current head.");
+        assertAncestor(repository, reviewedSha, issue.headSha, issue.key);
+        const source = issue.reviewDispatches.find(dispatch => dispatch.status === "completed" && dispatch.headSha === reviewedSha && dispatch.receipt === issue.reviewReceipt);
+        if (!source) fail("Attestation requires an existing independent review receipt for reviewedSha.");
+        const delta = runGit(repository.root, ["diff", "--no-ext-diff", "--no-textconv", "--no-color", "--binary", reviewedSha, issue.headSha]).stdout;
+        if (!delta) fail("Attestation requires a nonempty intervening delta.");
+        issue.reviewAttestation = { ...attestation, reviewedSha, headSha: issue.headSha, receipt: source.receipt,
+          deltaHash: createHash("sha256").update(delta).digest("hex"),
+          changedFiles: runGit(repository.root, ["diff", "--name-only", reviewedSha, issue.headSha]).stdout.split("\n"), at: nowIso() };
+      }
+      if (options["completion-guide"] !== undefined) issue.completionGuide = jsonOption("completion-guide");
+    }
     assignIfPresent(issue, "blocker", options.blocker, String);
     if (booleanOption(options, "clear-blocker")) {
       issue.blocker = null;
@@ -669,7 +713,7 @@ function commandSetIssue(cwd, options) {
     }
     issue.updatedAt = nowIso();
     manifest.updatedAt = issue.updatedAt;
-    if (issue.reviewHistory.length && (issue.state === "code-review" || completedReview)) {
+    if (manifest.policy.reviewPolicy !== "bounded" && issue.reviewHistory.length && (issue.state === "code-review" || completedReview)) {
       Object.assign(issue.reviewHistory.at(-1), { findings: issue.reviewFindings, receipt: issue.reviewReceipt, execution: issue.reviewExecution, reviewFallback: issue.reviewFallback ?? null });
     }
     assertManifestValid(manifest);
@@ -821,6 +865,16 @@ function validateManifest(manifest) {
   if (limit !== undefined && limit !== null && (!Number.isSafeInteger(limit) || limit < 1)) errors.push("policy.maxReviewRounds must be a positive safe integer");
 
   for (const issue of manifest.issues ?? []) {
+    const bounded = manifest.policy?.reviewPolicy === "bounded";
+    if (bounded) errors.push(...reviewPolicyErrors(issue, limit).map(error => `${issue.key}: ${error}`));
+    if (bounded) for (const dispatch of issue.reviewDispatches ?? []) {
+      for (const attempt of dispatch.attempts ?? []) {
+        if (attempt.execution) {
+          try { validateExecution(attempt.execution); }
+          catch (error) { errors.push(`${issue.key}: attempt execution: ${error.message}`); }
+        } else errors.push(`${issue.key}: review attempt requires execution provenance`);
+      }
+    }
     if (limit !== undefined) {
       if (!Number.isSafeInteger(issue.reviewRounds) || issue.reviewRounds < 0 ||
           !Array.isArray(issue.reviewHistory) || issue.reviewHistory.length !== issue.reviewRounds) {
@@ -845,6 +899,7 @@ function validateManifest(manifest) {
           errors.push(`${issue.key}: invalid review finding`); continue;
         }
         if (["reviewed-pending-integration", "in-review", "done"].includes(issue.state) && finding.status !== "resolved") {
+          if (bounded && finding.blocking === false && ["style", "simplification", "out-of-scope-enhancement"].includes(finding.category)) continue;
           const approved = manifest.policy.reviewPolicy === "convergent" && manifest.policy.decisions?.some(d => d.reviewPolicy === "convergent" && typeof d.reference === "string" && d.reference.trim());
           if (finding.blocking === true || ["acceptance", "correctness", "security", "data-loss"].includes(finding.category)) {
             errors.push(`${issue.key}: acceptance/correctness/security/data-loss finding blocks regardless of severity`);
@@ -907,12 +962,21 @@ function validateManifest(manifest) {
       }
     }
     if (["reviewed-pending-integration", "in-review", "done"].includes(issue.state)) {
+      if (bounded) {
+        errors.push(...completionGuideErrors(issue.completionGuide, issue.headSha).map(error => `${issue.key}: ${error}`));
+        const source = issue.reviewDispatches?.find(dispatch => dispatch.status === "completed" && dispatch.receipt === issue.reviewReceipt);
+        const attestation = issue.reviewAttestation;
+        if (source?.verdict === "changes-required" && source.headSha === issue.headSha) errors.push(`${issue.key}: changes-required verdict needs fixes and focused verification or nonfunctional attestation`);
+        if (!source && !issue.reviewHistory?.some(round => round.receipt === issue.reviewReceipt && round.headSha === issue.headSha)) errors.push(`${issue.key}: review coverage requires a completed independent dispatch or preserved historical receipt`);
+        if (source && source.headSha !== issue.headSha && (!attestation || attestation.headSha !== issue.headSha || attestation.reviewedSha !== source.headSha || attestation.receipt !== source.receipt || !/^[a-f0-9]{64}$/.test(attestation.deltaHash ?? "") || !attestation.reason || !String(attestation.checks).includes(issue.headSha) || !attestation.assessor || !["wording", "comments", "formatting", "mechanical-cleanup"].includes(attestation.classification))) errors.push(`${issue.key}: changed head requires a complete nonfunctional attestation or new review`);
+        if (issue.reviewDispatches?.some(dispatch => dispatch.status === "active")) errors.push(`${issue.key}: an active review prevents handoff`);
+      }
       if (!issue.reviewReceipt) errors.push(`${issue.key}: reviewed work requires reviewReceipt`);
       if (!issue.reviewProvider) errors.push(`${issue.key}: reviewed work requires reviewProvider`);
       if (
         issue.reviewReceipt &&
         issue.headSha &&
-        !receiptBindsReview(issue.reviewReceipt, issue.reviewProvider, issue.headSha)
+        !receiptBindsReview(issue.reviewReceipt, issue.reviewProvider, bounded && issue.reviewAttestation?.headSha === issue.headSha ? issue.reviewAttestation.reviewedSha : issue.headSha)
       ) {
         errors.push(`${issue.key}: reviewReceipt must include the review provider and reviewed headSha`);
       }
@@ -986,6 +1050,16 @@ function commandShow(cwd, options) {
 function commandValidate(cwd, options) {
   const { filePath, manifest } = commandShow(cwd, options);
   const errors = validateManifest(manifest);
+  const repository = resolveRepository(cwd);
+  for (const issue of manifest.issues) {
+    const evidence = issue.reviewAttestation;
+    if (!evidence || evidence.headSha !== issue.headSha) continue;
+    try {
+      assertAncestor(repository, evidence.reviewedSha, issue.headSha, issue.key);
+      const delta = runGit(repository.root, ["diff", "--no-ext-diff", "--no-textconv", "--no-color", "--binary", evidence.reviewedSha, issue.headSha]).stdout;
+      if (createHash("sha256").update(delta).digest("hex") !== evidence.deltaHash) errors.push(`${issue.key}: attested delta does not match Git`);
+    } catch (error) { errors.push(`${issue.key}: cannot verify attested delta: ${error.message}`); }
+  }
   return { filePath, valid: errors.length === 0, errors, manifest };
 }
 
@@ -1036,11 +1110,15 @@ function printUsage() {
       "  workload-manifest.mjs set-issue --run <id> --issue <key> [fields]",
       "  workload-manifest.mjs set-integration --run <id> [fields]",
       "  workload-manifest.mjs migrate --run <id> [--dry-run]",
-      "  workload-manifest.mjs set-policy --run <id> --policy-decision <reference> [--review-policy strict|convergent] [--max-review-rounds <n>] [--routing <JSON>] [--handoff-snapshot true|false]",
+      "  workload-manifest.mjs set-policy --run <id> --policy-decision <reference> [--review-policy bounded|strict|convergent] [--max-review-rounds <n>] [--completion-guides <issue-keyed JSON>] [--routing <JSON>] [--handoff-snapshot true|false]",
       "  workload-manifest.mjs show --run <id>",
-      "init accepts --max-review-rounds <n> (default 2). Each --state code-review records a new round before dispatch.",
-      "Strict review is default. Convergent deferral requires --review-policy convergent --policy-decision <reference>. Thresholds never confer approval.",
-      "Extra rounds require --allow-extra-round --reason <authorized reason>. Findings: --review-findings JSON array of {id, severity, category, blocking, status, summary, followUp, decision}.",
+      "Bounded review is default: --max-review-rounds <n> (default 2) counts completed reviews, not launches. Preserve saved legacy policies on resume.",
+      "set-issue --review-dispatch JSON: {id, scope, kind: initial|fix-verification, authorizationId?, retryAuthorizationId?, attempt: {id, status: running|failed|completed, reason?, receipt?, verdict?}}. Retry the same dispatch at most twice automatically; repeat IDs are idempotent.",
+      "set-issue --review-authorization JSON: {id, reference, scope, findings: [IDs], allowance, expiresAt?, constraints?, retryDispatchId?, retryAllowance?}. Extra completed reviews or infrastructure attempts require a matching saved allowance.",
+      "set-issue --review-attestation JSON: {reviewedSha, classification: wording|comments|formatting|mechanical-cleanup, reason, assessor, checks}. Checks must include current head; helper records exact delta hash and paths.",
+      "set-issue --completion-guide JSON: {headSha, features: [{name,outcome,access,prerequisites,steps:[text],expected}], actions: [{name,required,cwd,command,purpose,prerequisites,expected,dataImpact,status}], verification,limitations,delivery}.",
+      "Legacy strict/convergent retain launch accounting and --allow-extra-round --reason. Live policy changes require --policy-decision. Thresholds never confer approval.",
+      "Findings: --review-findings JSON array of {id, severity, category, blocking, status, summary, followUp, decision}. Optional style/simplification/out-of-scope-enhancement alone never blocks bounded review.",
       "set-issue accepts --implementation-execution and --review-execution JSON with requestedModel, resolvedModel (null if unverified), effort, highReason, workerId, policyVersion, fallbackReason.",
       "init, pair and set-issue accept --review-fallback JSON: cli-not-installed with missingProvider/evidence, or review-models-unavailable with unavailableProvider/attempts [{model, reason, evidence}]. Exhaust Claude Opus/Fable or Codex Astra; preserve fresh sessions. Set null to clear it on return to cross-provider review.",
       "set-issue --resume-context accepts JSON for the intended environment, user-task acceptance evidence, owned runtime/jobs, prerequisites, and nextAction.",

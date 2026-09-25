@@ -25,8 +25,8 @@ and the run manifest using `../scripts/workload-manifest.mjs`.
 For an already-merged target, use the verified resume path under Wrap.
 
 1. Validate the manifest. Require integration state
-   `ready-for-human-review`, every included issue `in-review`, final-SHA review
-   receipts, combined tests, and one umbrella PR.
+   `ready-for-human-review`, every included issue `in-review`, exact-head review
+   coverage under `../bundled/templates/review-policy.md`, combined tests, and one umbrella PR.
 2. Confirm the checked-out/tested integration head still equals the manifest
    head and the remote PR head. Stop on drift.
 3. Re-fetch every issue and require the configured human-review status
@@ -77,3 +77,4 @@ merged-mode record reconciliation.
 Report the merged/local head, issue transitions observed, individual PR
 reconciliation, cleanup, SQL/configuration/deployment/live-data gates, and any
 remaining human action.
+Return the updated usage/testing guide from `../bundled/templates/completion-guide.md`.

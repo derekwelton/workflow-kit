@@ -18,9 +18,12 @@ establish the seams; don't require a new planning interview for routine work.
 Run affected checks and all required repository verification. Repeat checks after
 changes or failures, not on a fixed cadence unrelated to the work.
 
-Once done, use /code-review with a fresh independent reviewer of the final diff.
+Follow `./bundled/templates/review-policy.md`. Once done, use /code-review with a fresh independent reviewer of the final diff.
 Commit/push only as authorized by the user or repository. If commits are authorized,
-review the final commit SHA; subsequent changes invalidate the review evidence.
+record exact-head review coverage; only eligible nonfunctional changes may carry
+the prior independent receipt forward with an explicit attestation and current-head checks.
+Return the feature usage/testing and setup guide required by
+`./bundled/templates/completion-guide.md`.
 
 For configured Linear/Projects work, read the selected adapter only: implementation
 hands off to Code Review (or its local mapping), independent review hands off to

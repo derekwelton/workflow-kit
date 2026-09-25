@@ -46,29 +46,26 @@ A conflict-free merge needs combined verification, not repeated issue reviews.
 
 ## Review convergence
 
-Default maxReviewRounds = 2 is a stop/reconcile threshold, never approval.
-Preserve saved policy on resume; absent legacy policy is unverified.
-Strict is default. Convergent policy or live changes require a run-scoped
-user decision recorded via --policy-decision / set-policy.
-Do not infer consent from historical anecdotes or a restarted session.
+Follow `../bundled/templates/review-policy.md`. New runs default to bounded:
+maxReviewRounds = 2 completed reviews, with at most two infrastructure retries
+per logical dispatch. No automatic second review after a clean first review.
+Use --review-dispatch with stable dispatch/attempt IDs before launch and update
+the same attempt with its outcome. Metadata updates never reserve another review.
+Use --review-authorization for a concrete additional allowance, saved across resumes.
+See `commands.md` for the protocol. Budget exhaustion never confers approval.
 
-Reserve each launch with set-issue --state code-review. The first implementation
-transition reserves round 1; do not reserve it twice. A new reviewer identity,
-another launch on an unchanged head, or failed launch consumes a round;
-metadata edits for the same worker do not. One dispatch's axes are one round.
-Do not reset counts by reopening implementation. Beyond the cap requires
---allow-extra-round --reason with explicit user authorization.
+Preserve saved strict/convergent policy and historical launch counters. They retain
+their legacy semantics until an explicit set-policy --review-policy bounded
+--policy-decision adopts this policy. Do not reinterpret old launches as completed
+reviews or invent historical verdicts. Schema migration alone does not change policy.
+Existing repository overrides must be reconciled during adoption.
 
-Strict leaves unresolved findings blocking. Approved convergent policy:
-round 1 blocks high/medium; round 2 onward may defer eligible nonblocking
-medium/low. Acceptance, correctness, security and data-loss blockers always
-block regardless of severity. High is never deferred/downgraded to fit a cap.
-Review full scope initially, then fixes/affected behavior; broaden on material
-scope change. Coordinator adjudicates and deduplicates follow-ups.
+Coordinator adjudicates and deduplicates follow-ups under the shared policy.
 Store --review-findings entries: id, severity, category, blocking, status,
 summary, followUp, decision. Stable IDs identify repeats. Fixed = resolved;
-remaining = deferred with real issue key/URL and decision reference before
-completion. No automatic severity/effort escalation from older issue rules.
+optional style/simplification/out-of-scope-enhancement findings may remain open
+without a deferral approval or mandatory ticket. Real defects always block.
+No automatic severity/effort escalation from older issue rules.
 
 ## Evidence and state
 
@@ -77,8 +74,11 @@ code-review requires Git-resolved full base/head, implementation provider/
 execution and passing tests containing the exact tested head SHA.
 reviewed-pending-integration also requires reviewer/execution and a receipt:
 <review-provider>:<full-head-sha>:<durable-receipt-id>.
-Head changes invalidate tests and review receipt. Prose completion cannot
-substitute for validated Git/manifest evidence.
+Head changes invalidate tests. Review coverage for a changed head requires either
+a new independent receipt or --review-attestation for the complete eligible
+nonfunctional delta. Keep the original receipt unchanged. Prose completion cannot
+substitute for validated Git/manifest evidence. Bounded runs also require a
+head-bound --completion-guide before reviewed-pending-integration.
 
 Record --implementation-execution / --review-execution every launch:
 requested/resolved model, effort, worker ID, policy version, high reason and
@@ -95,7 +95,7 @@ tracker-write contract and selected adapter.
 
 ## Integration gate
 
-After every included issue has a final review receipt, fetch default branch
+After every included issue has exact-head review coverage, fetch default branch
 and create integration/<slug> from its current remote SHA. Combine exact
 reviewed heads in dependency order, detecting stacked ancestry to avoid
 replaying commits. Audit membership against commits/changed files.
@@ -149,8 +149,11 @@ the unavailable core user task works.
 
 ## Final dashboard
 
-Return human-readable outcome plus a table: issue, implementer, reviewer,
-branch, receipt, membership, tests, blocker, rounds/limit and linked follow-ups.
+Return the feature usage/testing guide and ordered required/optional setup actions
+from `../bundled/templates/completion-guide.md`, then a concise evidence table:
+issue, implementer, reviewer, branch, coverage, membership, tests, blocker,
+completed reviews/limit, failed attempts and useful linked follow-ups. Distinguish
+carried review evidence from an independent review of the current head.
 Include integration branch/base/main SHA, umbrella PR, whether main advanced,
 observed issue transitions, remaining prerequisites and exact checkout/test
 action. State **Not merged to main** until a separately authorized merge succeeds.

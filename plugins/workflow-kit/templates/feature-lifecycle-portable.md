@@ -1,4 +1,4 @@
-<!-- workflow-kit:portable version=1.2.0; generated, do not edit -->
+<!-- workflow-kit:portable version=1.3.0; generated, do not edit -->
 
 # Project-local workflow skills
 

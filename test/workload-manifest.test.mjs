@@ -25,6 +25,9 @@ const execution = (provider, role) => JSON.stringify({
 });
 
 function withExecutionFixtures(args) {
+  // Existing fixtures explicitly exercise the preserved legacy launch accounting.
+  // New bounded-policy scenarios opt in below; production init defaults to bounded.
+  if (args[0] === "init" && !args.includes("--review-policy")) return [...args, "--review-policy", "strict"];
   if (args[0] !== "set-issue") return args;
   const result = [...args];
   for (const [flag, role] of [["--implementer", "implementation"], ["--reviewer", "review"]]) {
@@ -65,6 +68,102 @@ function runAsync(cwd, ...args) {
     child.on("exit", (status) => resolve({ status, stdout, stderr }));
   });
 }
+
+test("bounded review: clean first review, optional finding, and nonfunctional carry-forward", () => {
+  withRepository(directory => {
+    const sha = git(directory, "rev-parse", "HEAD");
+    const init = run(directory, "init", "--name", "Bounded-new", "--issues", "A-1", "--implementer", "codex", "--review-policy", "bounded");
+    assert.equal(init.status, 0, init.stderr);
+    const common = ["set-issue", "--run", "bounded-new", "--issue", "A-1"];
+    const guide = headSha => JSON.stringify({ headSha, features: [{ name: "Docs", outcome: "Clearer text", access: "seed.txt", prerequisites: "None", steps: ["Read seed.txt"], expected: "Correct text" }], actions: [], verification: "Content checked", limitations: "None", delivery: "Local branch; not merged" });
+    const dispatch = status => JSON.stringify({ id: "r1", scope: "full issue", kind: "initial", attempt: { id: "a1", status, ...(status === "completed" ? { receipt: `claude:${sha}:r1`, verdict: "pass" } : {}) } });
+    let result = run(directory, ...common, "--state", "code-review", "--base-sha", sha, "--head-sha", sha, "--implementer", "codex", "--reviewer", "claude", "--tests", `${sha}: passed`, "--review-dispatch", dispatch("running"));
+    assert.equal(result.status, 0, result.stderr);
+    const optional = JSON.stringify([{ id: "style-1", severity: "low", category: "style", blocking: false, status: "open", summary: "Optional wording" }]);
+    result = run(directory, ...common, "--state", "reviewed-pending-integration", "--review-dispatch", dispatch("completed"), "--review-findings", optional, "--completion-guide", guide(sha));
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(JSON.parse(result.stdout).issue.reviewDispatches.length, 1);
+    // A real LOW defect cannot be treated as optional.
+    const defect = JSON.stringify([{ id: "bug-1", severity: "low", category: "correctness", blocking: false, status: "open", summary: "Wrong result" }]);
+    result = run(directory, ...common, "--review-findings", defect);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /blocks regardless/);
+    fs.writeFileSync(path.join(directory, "seed.txt"), "clearer wording\n");
+    git(directory, "add", "seed.txt");
+    git(directory, "-c", "user.name=Tests", "-c", "user.email=tests@example.invalid", "commit", "-m", "wording");
+    const next = git(directory, "rev-parse", "HEAD");
+    result = run(directory, ...common, "--head-sha", next, "--tests", `${next}: passed`, "--completion-guide", guide(next));
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /attestation|reviewed headSha/);
+    const attestation = { reviewedSha: sha, classification: "wording", reason: "Only ordinary wording; operating instructions unchanged", assessor: "coordinator", checks: `${next}: content checked` };
+    result = run(directory, ...common, "--head-sha", next, "--tests", `${next}: passed`, "--completion-guide", guide(next), "--review-attestation", JSON.stringify(attestation));
+    assert.equal(result.status, 0, result.stderr);
+    const issue = JSON.parse(result.stdout).issue;
+    assert.equal(issue.reviewReceipt, `claude:${sha}:r1`);
+    assert.equal(issue.reviewAttestation.headSha, next);
+    assert.equal(issue.reviewDispatches.length, 1);
+    assert.equal(issue.reviewAttestation.changedFiles[0], "seed.txt");
+    assert.equal(run(directory, ...common, "--review-attestation", JSON.stringify({ ...attestation, classification: "behavior" })).status, 1);
+    assert.equal(run(directory, "validate", "--run", "bounded-new").status, 0);
+    const filePath = JSON.parse(init.stdout).filePath;
+    const tampered = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    tampered.issues[0].reviewAttestation.deltaHash = "0".repeat(64);
+    fs.writeFileSync(filePath, JSON.stringify(tampered));
+    const invalid = run(directory, "validate", "--run", "bounded-new");
+    assert.equal(JSON.parse(invalid.stdout).valid, false);
+    assert.match(invalid.stdout, /attested delta does not match Git/);
+  });
+});
+
+test("default policy is bounded and adoption preserves completed legacy receipts atomically", () => {
+  withRepository(directory => {
+    const direct = spawnSync(process.execPath, [SCRIPT, "init", "--name", "Default", "--issues", "A-1", "--dry-run", "--cwd", directory], { encoding: "utf8", windowsHide: true });
+    assert.equal(direct.status, 0, direct.stderr);
+    assert.equal(JSON.parse(direct.stdout).manifest.policy.reviewPolicy, "bounded");
+    const sha = git(directory, "rev-parse", "HEAD");
+    assert.equal(run(directory, "init", "--name", "Legacy", "--issues", "A-1").status, 0);
+    const done = run(directory, "set-issue", "--run", "legacy", "--issue", "A-1", "--state", "reviewed-pending-integration", "--base-sha", sha, "--head-sha", sha, "--implementer", "codex", "--reviewer", "claude", "--tests", `${sha}: passed`, "--review-receipt", `claude:${sha}:legacy`);
+    assert.equal(done.status, 0, done.stderr);
+    const policyArgs = ["set-policy", "--run", "legacy", "--review-policy", "bounded", "--policy-decision", "user-approved-adoption"];
+    assert.equal(run(directory, ...policyArgs).status, 1);
+    assert.equal(JSON.parse(run(directory, "show", "--run", "legacy").stdout).manifest.policy.reviewPolicy, "strict");
+    const guide = { headSha: sha, features: [{ name: "Feature", outcome: "Implemented", access: "CLI", prerequisites: "None", steps: ["Run command"], expected: "Result" }], actions: [], verification: "Passed", limitations: "None", delivery: "Local" };
+    const adopted = run(directory, ...policyArgs, "--completion-guides", JSON.stringify({ "A-1": guide }));
+    assert.equal(adopted.status, 0, adopted.stderr);
+    const manifest = JSON.parse(run(directory, "show", "--run", "legacy").stdout).manifest;
+    assert.equal(manifest.issues[0].reviewRounds, 1);
+    assert.equal(manifest.issues[0].reviewHistory[0].receipt, `claude:${sha}:legacy`);
+    assert.deepEqual(manifest.issues[0].reviewDispatches, []);
+    assert.equal(run(directory, "validate", "--run", "legacy").status, 0);
+  });
+});
+
+test("bounded CLI preserves substantive findings through retry and focused verification", () => {
+  withRepository(directory => {
+    const sha = git(directory, "rev-parse", "HEAD");
+    assert.equal(run(directory, "init", "--name", "Fix", "--issues", "A-1", "--review-policy", "bounded").status, 0);
+    const args = ["set-issue", "--run", "fix", "--issue", "A-1"];
+    const dispatch = (id, attempt, status, verdict) => JSON.stringify({ id, scope: id === "r1" ? "full scope" : "F-1 fix", kind: id === "r1" ? "initial" : "fix-verification", attempt: { id: attempt, status, ...(status === "failed" ? { reason: "Bad CLI argument" } : {}), ...(status === "completed" ? { verdict, receipt: `claude:${sha}:${id}` } : {}) } });
+    let result = run(directory, ...args, "--state", "code-review", "--base-sha", sha, "--head-sha", sha, "--implementer", "codex", "--reviewer", "claude", "--tests", `${sha}: passed`, "--review-dispatch", dispatch("r1", "a1", "failed"));
+    assert.equal(result.status, 0, result.stderr);
+    const finding = { id: "F-1", severity: "low", category: "correctness", blocking: true, status: "open", summary: "Incorrect result" };
+    result = run(directory, ...args, "--review-dispatch", dispatch("r1", "a2", "completed", "changes-required"), "--review-findings", JSON.stringify([finding]));
+    assert.equal(result.status, 0, result.stderr);
+    result = run(directory, ...args, "--review-findings", "[]");
+    assert.equal(JSON.parse(result.stdout).issue.reviewFindings.length, 1);
+    const premature = run(directory, ...args, "--state", "reviewed-pending-integration", "--review-findings", JSON.stringify([{ ...finding, status: "resolved" }]));
+    assert.equal(premature.status, 1);
+    assert.match(premature.stderr, /changes-required/);
+    result = run(directory, ...args, "--review-dispatch", dispatch("r2", "a1", "running"));
+    assert.equal(result.status, 0, result.stderr);
+    result = run(directory, ...args, "--review-dispatch", dispatch("r2", "a1", "completed", "pass"), "--review-findings", JSON.stringify([{ ...finding, status: "resolved", decision: "Independently verified against existing behavior" }]));
+    assert.equal(result.status, 0, result.stderr);
+    const issue = JSON.parse(result.stdout).issue;
+    assert.equal(issue.reviewDispatches.filter(item => item.status === "completed").length, 2);
+    assert.equal(issue.reviewDispatches[0].attempts[0].status, "failed");
+    assert.equal(issue.reviewDispatches[0].attempts[0].execution.workerId, "review-fixture-session");
+  });
+});
 
 function withRepository(callback, { branch = "main" } = {}) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "workflow-kit-test-"));

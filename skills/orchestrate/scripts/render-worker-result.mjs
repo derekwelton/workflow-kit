@@ -212,7 +212,7 @@ function nextActionFor(result, stage, verification, hasChangeSummary) {
     return "The orchestrator will verify the recorded head, start independent code review, and continue the workload from that result.";
   }
   if (stage === "review") {
-    return "The orchestrator will adjudicate the findings, rerun affected checks after any fixes, and record a review receipt for the final head.";
+    return "The orchestrator will adjudicate the findings, verify affected behavior, and record exact-head review coverage under the saved policy.";
   }
   if (stage === "integration") {
     return "The orchestrator will validate the combined branch and its current-main gate before preparing the human test handoff.";
@@ -242,7 +242,9 @@ export function renderWorkerResult(result, { technical = false, stage: stageOver
   for (const prerequisite of unmet) {
     notes.push(`Prerequisite: ${prerequisite?.name ?? "unspecified"} — ${prerequisite?.status ?? "unknown"}; ${prerequisite?.remedy ?? "verify before handoff"}`);
   }
-  if (Number.isSafeInteger(result.reviewRounds) && result.reviewRounds >= 0) {
+  if (Array.isArray(result.reviewDispatches)) {
+    notes.push(`Completed reviews: ${result.reviewDispatches.filter(item => item.status === "completed").length}${Number.isSafeInteger(result.maxReviewRounds) ? ` / ${result.maxReviewRounds}` : ""}; failed attempts: ${result.reviewDispatches.flatMap(item => item.attempts ?? []).filter(item => item.status === "failed").length}.`);
+  } else if (Number.isSafeInteger(result.reviewRounds) && result.reviewRounds >= 0) {
     notes.push(`Review rounds: ${result.reviewRounds}${Number.isSafeInteger(result.maxReviewRounds) ? ` / ${result.maxReviewRounds}` : ""}. Thresholds do not confer approval.`);
   }
   if (untrackedFiles.length > 0) {
@@ -274,6 +276,27 @@ export function renderWorkerResult(result, { technical = false, stage: stageOver
   lines.push("", "### Verification", "", ...verificationLines);
   if (notes.length > 0) {
     lines.push("", "### Notes", "", ...notes.map((item) => `- ${safeText(item, technical)}`));
+  }
+
+  const guide = result.completionGuide;
+  if (guide && typeof guide === "object") {
+    lines.push("", "### How to use and test", "");
+    for (const feature of values(guide.features)) {
+      lines.push(`**${safeText(feature.name, technical)}** — ${safeText(feature.outcome, technical)}`, "",
+        `Access: ${safeText(feature.access, technical)}. Prerequisites: ${safeText(feature.prerequisites, technical)}.`, "",
+        ...values(feature.steps).map((step, index) => `${index + 1}. ${safeText(step, technical)}`), "",
+        `Expected: ${safeText(feature.expected, technical)}`, "");
+    }
+    lines.push("### Setup and scripts", "");
+    const actions = values(guide.actions);
+    if (!actions.length) lines.push("No additional setup or scripts are required.");
+    for (const [index, action] of actions.entries()) {
+      lines.push(`${index + 1}. ${action.required ? "Required" : "Optional"}: ${safeText(action.name, technical)} (${safeText(action.status, technical)}). ${safeText(action.purpose, technical)}`,
+        `   Working directory: ${inlineCode(safeText(action.cwd, technical))}. Command/instructions: ${inlineCode(safeText(action.command, technical))}.`,
+        `   Prerequisites: ${safeText(action.prerequisites, technical)}. Expected: ${safeText(action.expected, technical)}. Data impact: ${safeText(action.dataImpact, technical)}.`);
+    }
+    lines.push("", `Verification: ${safeText(guide.verification, technical)}`, "",
+      `Limitations: ${safeText(guide.limitations, technical)}`, "", `Delivery: ${safeText(guide.delivery, technical)}`);
   }
 
   lines.push("", "### Next", "", unmet.length

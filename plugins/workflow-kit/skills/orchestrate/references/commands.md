@@ -20,11 +20,15 @@ Accept:
 --max-implementers <n>                         default: 4
 --max-reviewers <n>                            default: 2
 --max-review-rounds <n>                        default: 2 per issue
---review-policy <strict|convergent>             default: strict
+--review-policy <bounded|strict|convergent>     default: bounded
 --policy-decision <reference>                   required for convergent policy or live policy changes
 --routing <JSON>                               effective implementation/review routes
 --handoff-snapshot                             optional local derived handoff; off by default
---allow-extra-round --reason <text>            explicit authorization for one extra round
+--review-dispatch <JSON>                       bounded dispatch/attempt update
+--review-authorization <JSON>                  durable scoped additional allowance
+--review-attestation <JSON>                    eligible nonfunctional delta evidence
+--completion-guide <JSON>                      head-bound usage/setup/test instructions
+--allow-extra-round --reason <text>            legacy policies only
 --allow-partial                                default: false
 --plan                                         read-only plan; create nothing
 --resume <workload-id>
@@ -58,15 +62,71 @@ node <skill-dir>/scripts/workload-manifest.mjs init \
   --status "<status>" --labels "<labels>" \
   --pair "<pair>" --implementer "<provider>" --reviewer "<provider>" \
   --max-implementers <n> --max-reviewers <n> --max-review-rounds <n> \
-  --review-policy <strict|convergent> --routing '<implementation/review JSON>'
+  --review-policy <bounded|strict|convergent> --routing '<implementation/review JSON>'
 ```
 
 Use `--dry-run` for `--plan`. Report the frozen queue, dependency/file-overlap
 lanes, provider pairs, branch name, and terminal behavior; make no tracker,
 Git, file, or manifest writes. Include `maxReviewRounds: 2` (or the explicit
 threshold), the effective review policy, routing, and the decision source/scope.
-Strict review is default. Convergent deferral requires a run-scoped user decision
+Bounded review is default. Legacy convergent deferral requires a run-scoped user decision
 passed through `--policy-decision`; a threshold means stop and reconcile, never
 automatic approval. Preserve saved policy on resume. Change live policy only
 with `set-policy --run <id> --policy-decision <reference>` and explicit settings.
 Do not infer consent or a new route from a historical anecdote or session restart.
+
+## Bounded review protocol
+
+Pass JSON as structured arguments with proper shell quoting. Before launch use
+set-issue --state code-review --review-dispatch with:
+
+```json
+{"id":"review-1","scope":"full issue","kind":"initial","attempt":{"id":"attempt-1","status":"running"}}
+```
+
+Repeat the same dispatch metadata and attempt ID to report failed (with reason and
+partial findings) or completed (with receipt and verdict pass|changes-required).
+Record --review-execution for each attempt. A retry uses a new attempt ID in the
+same dispatch; at most three attempts are allowed. A focused verification uses a
+new dispatch ID and kind fix-verification. Repeating an identical update is safe.
+Do not change the scope/head of an existing dispatch or launch a concurrent one.
+
+Beyond the completed-review budget, save --review-authorization:
+
+```json
+{"id":"decision-1","reference":"user message reference","scope":"verify stale-write fix","findings":["F-1"],"allowance":1}
+```
+
+Use its authorizationId and exact scope in the dispatch. Preserve any user limits
+in constraints and optional expiresAt; the coordinator must enforce model/cost
+constraints before dispatch. Infrastructure exhaustion requires reconciliation and
+a concrete user decision; never create a new ID to evade retry bounds. If the user
+authorizes more infrastructure attempts, add retryDispatchId and retryAllowance to
+a new authorization record and pass its retryAuthorizationId in the same dispatch.
+The helper bounds those extra attempts separately and preserves previous failures.
+
+For an eligible complete nonfunctional delta, use --review-attestation:
+
+```json
+{"reviewedSha":"<full independently reviewed SHA>","classification":"wording","reason":"Exact wording corrections; no operating instructions or acceptance changes","assessor":"coordinator session ID","checks":"<current SHA>: relevant checks passed"}
+```
+
+The helper records current head, changed paths and the binary diff hash. It cannot
+prove semantic equivalence; the coordinator must inspect the full delta. Supported
+classifications: wording, comments, formatting, mechanical-cleanup.
+
+Before handoff pass --completion-guide (actions are in execution order):
+
+```json
+{"headSha":"<current SHA>","features":[{"name":"Feature","outcome":"What changed","access":"Route or command","prerequisites":"Role and data, or none","steps":["Concrete action"],"expected":"Observable result"}],"actions":[{"name":"Setup","required":true,"cwd":"project directory","command":"exact command or manual instructions","purpose":"Why needed","prerequisites":"Requirements","expected":"Success result","dataImpact":"What it changes","status":"pending"}],"verification":"Checks performed and results","limitations":"Unverified items, or none","delivery":"Branch/PR/environment and merged/deployed state"}
+```
+
+Use actions: [] when no extra setup is needed and say so in the final guide.
+Unknown commands remain explicit blockers; do not fabricate runnable instructions.
+Saved manifests remain canonical; schema migration preserves legacy accounting.
+Adopt bounded on an existing run only with set-policy and a decision reference.
+For runs already at reviewed/human-review gates, also pass --completion-guides
+as an object keyed by issue key containing each head-bound guide. Adoption is
+atomic: missing required guides reject the change and leave the saved policy intact.
+Historical launch counts and receipts remain intact; they are not converted into
+completed-review counts. New dispatches use the bounded ledger.

@@ -17,13 +17,16 @@ Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
 - **Standards**: does the code conform to this repo's documented coding standards, and could it preserve the required behavior more simply?
 - **Spec**: does the code faithfully implement the originating issue / spec?
 
-Both axes run as **parallel sub-agents** so they don't pollute each other's context, then this skill aggregates their findings.
+Follow `../../templates/review-policy.md`. For a small cohesive change one fresh
+independent reviewer covers both axes and reports them separately. For complex or
+explicitly requested reviews use separate axis reviewers within host capacity.
 
 Read `../../templates/project-context.md` for repository conventions and tracker
 scope. For a dispatched workload review, the coordinator already owns dispatch:
 review the assigned axes yourself without nested agents, return findings and
 the exact base/head SHA plus durable review evidence, and leave tracker writes
-to the coordinator. Fixes invalidate prior receipts. Standalone review uses
+to the coordinator. Behavioral fixes require focused verification; eligible
+nonfunctional deltas use the shared attestation rules. Standalone review uses
 fresh reviewers within host capacity (sequential if necessary); implementation
 authors cannot approve their own changes. If independent review is unavailable,
 report that gate as incomplete. Only an authorized completed standalone review
@@ -107,7 +110,11 @@ Keep broader cleanup outside this review; use `ponytail-audit` only when request
   requirement, report that underlying problem as the reason action is required.
   This review proposes changes; it does not authorize applying them.
 
-### 4. Spawn both sub-agents in parallel
+### 4. Review the selected axes
+
+For the small-change path, give one independent reviewer both briefs below and
+require separate Standards and Spec results. Otherwise launch the two axis
+reviewers within host capacity. A dispatched workload reviewer handles both itself.
 
 **Standards sub-agent prompt** should include:
 

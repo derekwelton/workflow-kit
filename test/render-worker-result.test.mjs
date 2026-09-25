@@ -59,6 +59,15 @@ test("unknown prerequisites prevent a ready claim and review rounds stay readabl
   assert.match(output, /Verify save and reload/);
 });
 
+test("renders feature testing, ordered setup, and completed reviews separately from failed attempts", () => {
+  const output = renderWorkerResult({ ...CONTRACT_RESULT, maxReviewRounds: 2,
+    reviewDispatches: [{ status: "completed", attempts: [{ status: "failed" }, { status: "completed" }] }],
+    completionGuide: { features: [{ name: "Export", outcome: "Download CSV", access: "/export", prerequisites: "Editor", steps: ["Choose Export", "Open the download"], expected: "CSV contains selected rows" }],
+      actions: [{ name: "Seed demo data", required: false, status: "pending", cwd: ".", command: "npm run seed", purpose: "Create sample rows", prerequisites: "Local database", expected: "Demo rows available", dataImpact: "Writes local records" }],
+      verification: "Unit checks passed", limitations: "Production untested", delivery: "Draft PR; not merged" } });
+  for (const text of ["Completed reviews: 1 / 2; failed attempts: 1", "1. Choose Export", "2. Open the download", "CSV contains selected rows", "Optional: Seed demo data", "npm run seed", "Writes local records", "Production untested", "not merged"]) assert.ok(output.includes(text), text);
+});
+
 test("renders a worker envelope as a human checkpoint by default", () => {
   const output = renderWorkerResult(RESULT);
   assert.match(output, /IRP-79 implementation is ready for coordinator review/);
