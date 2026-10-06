@@ -76,8 +76,12 @@ export function bundlePayload(sourceRoot, owner, catalog) {
     // Own source files are maintained by authors, never overwritten by the builder.
     if (output.startsWith("bundled/")) payload.set(output, content);
   }
+  // Every install path copies the skill folder, so the package version travels with it.
+  payload.set("bundled/VERSION", `${JSON.parse(read(path.join(sourceRoot, ".claude-plugin/plugin.json"))).version}\n`);
   const dependencies = selected.filter(name => name !== owner);
   payload.set("bundled/dependencies.md", "# Bundled dependencies\n\nRead only the instructions needed by the current workflow. Preserve the user's scope,\nrepository contracts, independent review, and human acceptance boundaries.\n\n" + dependencies.map(name => `- ${name}${catalog.skills[name].name ? ` (${catalog.skills[name].name})` : ""}: [instructions](./skills/${name}/INSTRUCTIONS.md)`).join("\n") + "\n");
+  // Consumer hygiene checks reject blank lines at EOF: end each file with exactly one newline.
+  for (const [file, content] of payload) payload.set(file, content.replace(/\s*$/, "\n"));
   return payload;
 }
 

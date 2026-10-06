@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: "Review a PR, uncommitted changes, or changes since a commit, branch, tag, or merge-base for Standards and Spec. Uses one independent reviewer for small cohesive changes and separate axis reviewers for complex changes. Use for branch, PR, or work-in-progress reviews."
+description: "Review a PR, uncommitted changes, or changes since a commit, branch, tag, or merge-base for Standards and Spec. One fresh independent reviewer covers both axes and reports each separately. Use for branch, PR, or work-in-progress reviews."
 metadata:
   internal: true
 ---
@@ -17,8 +17,9 @@ Reviewers follow `./bundled/templates/review-policy.md`. Prefer the provider
 opposite the implementation author: choose its route and launch transport with
 `./bundled/templates/model-routing.md`. Native fresh same-provider agents are also
 valid; no optional CLI installation is required. Never pass the implementer's
-conversation or reuse its session. Run reviewers within host capacity, sequentially
-if necessary.
+conversation or reuse its session. One reviewer covers both axes by default;
+launch separate Standards and Spec reviewers only when the user explicitly asks
+for them in this run, within host capacity (sequentially if necessary).
 
 Use the supplied issue/spec and existing repository conventions; a missing setup
 file does not block a local diff review. For tracker lookups or writes read
@@ -59,7 +60,7 @@ head SHA, commits not yet pushed (`git log <PR-head-SHA>..HEAD --oneline`),
 uncommitted changes and untracked files.
 
 Before going further, confirm the refs resolve (`git rev-parse`) and the diff is
-non-empty. A bad ref or empty diff should fail here, not inside two parallel sub-agents.
+non-empty. A bad ref or empty diff should fail here, not inside a reviewer.
 
 ### 2. Identify the spec source
 
@@ -70,7 +71,7 @@ Look for the originating spec, in this order:
    messages (`#123`, `Closes #45`, `ABC-123`, GitLab `!67`, etc.), fetched through
    the repository's configured tracker as `./bundled/templates/project-context.md` describes.
 3. As a last fallback, a spec file under `docs/`, `specs/`, or `.scratch/` matching the branch name or feature.
-4. If nothing is found, ask the user where the spec is. If they say there isn't one, the **Spec** sub-agent will skip and report "no spec available".
+4. If nothing is found, ask the user where the spec is. If they say there isn't one, the reviewer skips the **Spec** axis and reports "no spec available".
 
 ### 3. Identify the standards sources
 
@@ -130,24 +131,25 @@ Keep broader cleanup outside this review; use `ponytail-audit` only when request
 
 ### 4. Review the selected axes
 
-For the small-change path, give one independent reviewer both briefs below and
-require separate Standards and Spec results. Otherwise launch the two axis
-reviewers within host capacity.
+Give one fresh independent reviewer both briefs below and require separate
+Standards and Spec results. Split the briefs across two reviewers only when the
+user explicitly asked for separate axis reviewers in this run; change size or
+complexity alone is not a reason to split.
 
-**Standards sub-agent prompt** should include:
+**Standards brief** should include:
 
 - The full diff command, commit list and any untracked files to read.
-- The list of standards-source files you found in step 3, **plus the smell baseline and simplification check from step 3** pasted in full (the sub-agent has no other access to them).
+- The list of standards-source files you found in step 3, **plus the smell baseline and simplification check from step 3** pasted in full (the reviewer has no other access to them).
 - The supplied spec or relevant requirements, when available, so proposed simplifications preserve requested behavior.
 - The brief: "Report documented-standard violations with the source rule and file/line evidence separately from optional smell or simplification suggestions. For each simplification, identify the change, replacement, usage evidence, and maintenance benefit. Apply the baseline and simplification safeguards; deduplicate overlapping concerns. A documented repo standard overrides the baseline. Skip anything tooling enforces. If no worthwhile simplification is found, say so without implying the whole change is approved. Aim for under 400 words without omitting material findings."
 
-**Spec sub-agent prompt** should include:
+**Spec brief** should include:
 
 - The diff command, commit list and any untracked files to read.
 - The path or fetched contents of the spec.
 - The brief: "Report: (a) requirements the spec asked for that are missing or partial; (b) behaviour in the diff that wasn't asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong. Quote the spec line for each finding. Under 400 words."
 
-If the spec is missing, skip the Spec sub-agent and note this in the final report.
+If the spec is missing, skip the Spec brief and note this in the final report.
 
 ### 5. Aggregate
 

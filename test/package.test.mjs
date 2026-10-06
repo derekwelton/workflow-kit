@@ -18,6 +18,8 @@ test("generated compatibility package runs independently and detects missing dep
     assert.equal(JSON.parse(result.stdout).reviewProvider, "claude");
     fs.unlinkSync(path.join(installed, "skills/orchestrate/references/workload-contract.md"));
     assert.match(validatePackage(installed).errors.join("\n"), /workload-contract.md/);
+    fs.writeFileSync(path.join(installed, "skills/ponytail/bundled/VERSION"), "0.0.1\n");
+    assert.match(validatePackage(installed).errors.join("\n"), /version stamp differs: ponytail/);
   } finally { fs.rmSync(temporary, { recursive: true, force: true }); }
 });
 

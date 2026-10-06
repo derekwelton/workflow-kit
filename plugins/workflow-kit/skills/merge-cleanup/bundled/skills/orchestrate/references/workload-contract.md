@@ -14,7 +14,8 @@ before removing deferred issues from frozen membership.
 Only the coordinator changes tracker state/comments, creates/deduplicates
 discoveries, creates/merges PRs, assembles integration, changes membership,
 or launches workers. Workers edit/test leased worktrees and return envelopes;
-review workers cover assigned axes without nested delegation. Audit tracked
+each review worker covers both Standards and Spec without nested delegation,
+unless the user explicitly asked this run for separate axis reviewers. Audit tracked
 and untracked files before committing or integrating. Preserve dirty/active
 worktrees. Source edits use structured patches, not shell-built edits.
 Reuse loaded, unchanged instructions; reload only when changed or lost. Prefer

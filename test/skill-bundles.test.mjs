@@ -45,3 +45,25 @@ test("every single skill folder is portable without sibling skills or repository
 test("bundles are reproducible from canonical owners", () => {
   assert.ok(buildSkillBundles(root, { check: true }) > 0);
 });
+
+test("generated bundle files end with exactly one newline", () => {
+  for (const base of [root, path.join(root, "plugins/workflow-kit")]) {
+    for (const name of Object.keys(catalog.skills)) {
+      const visit = directory => {
+        for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+          const file = path.join(directory, entry.name);
+          if (entry.isDirectory()) visit(file);
+          else assert.match(fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n"), /\S\n$/, file);
+        }
+      };
+      visit(path.join(base, "skills", name, "bundled"));
+    }
+  }
+});
+
+test("every skill folder carries the package version for lock files without one", () => {
+  const { version } = JSON.parse(fs.readFileSync(path.join(root, ".claude-plugin/plugin.json"), "utf8"));
+  for (const name of Object.keys(catalog.skills)) {
+    assert.equal(fs.readFileSync(path.join(root, "skills", name, "bundled/VERSION"), "utf8").trim(), version, name);
+  }
+});

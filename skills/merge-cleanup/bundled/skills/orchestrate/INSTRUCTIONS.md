@@ -53,7 +53,8 @@ the portable fallback too.
    Record code-review with full base/head, execution and head-bound tests;
    publish one implementation checkpoint via update-issue.
 6. Dispatch independent review following the workload contract's pairing and
-   dispatch accounting rules. Give both Standards and Spec axes. Adjudicate
+   dispatch accounting rules. Give one reviewer both Standards and Spec axes;
+   split axes across reviewers only when the user explicitly asks in this run. Adjudicate
    findings against evidence, fix, verify, and obtain exact-head review coverage
    (independent receipt or eligible nonfunctional attestation).
    Record reviewed-pending-integration. Launch workers and reviewers through

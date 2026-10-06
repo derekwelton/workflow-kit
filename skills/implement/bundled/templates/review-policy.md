@@ -8,9 +8,9 @@ and attestation records in the orchestrate workload contract.
 ## Reviews
 
 Review a meaningful change once with a fresh reviewer that has no implementer
-context, covering Standards and Spec. One reviewer may cover both axes of a small
-cohesive change, reporting each separately; use separate axis reviewers for
-complex or explicitly requested reviews, within host capacity. A clean review
+context. That one reviewer covers both Standards and Spec and reports each axis
+separately, whatever the size of the change. Use separate axis reviewers only
+when the user explicitly asks for them in that run, within host capacity. A clean review
 proceeds directly to the remaining gates. If no fresh reviewer can be launched,
 report the review gate as incomplete; never approve your own implementation.
 
