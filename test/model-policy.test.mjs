@@ -5,11 +5,18 @@ import { resolveTracker, trackerTransition } from "../scripts/lib/tracker-policy
 import { validateExecution } from "../scripts/workload-manifest.mjs";
 
 test("coding and review resolve conservatively without machine defaults", () => {
-  assert.equal(resolveRouting().model, "gpt-6-astra");
-  assert.equal(resolveRouting().effort, "low");
+  const codexCoding = resolveRouting();
+  assert.equal(codexCoding.model, "gpt-6.1-sol");
+  assert.equal(codexCoding.effort, "high");
+  assert.match(codexCoding.highReason, /Owner-selected GPT-6.1 Sol high for Codex coding/);
+  assert.equal(resolveRouting({ effort: "low" }).highReason, null);
   assert.equal(resolveRouting({ task: "simple" }).model, "gpt-6-luna");
   assert.equal(resolveRouting({ task: "simple" }).effort, "low");
-  assert.equal(resolveRouting({ task: "review" }).effort, "medium");
+  const codexReview = resolveRouting({ task: "review" });
+  assert.equal(codexReview.model, "gpt-6.1-sol");
+  assert.equal(codexReview.effort, "high");
+  assert.match(codexReview.highReason, /Owner-selected GPT-6.1 Sol high for independent review/);
+  assert.equal(resolveRouting({ task: "review", effort: "medium" }).highReason, null);
   const claudeCoding = resolveRouting({ provider: "claude" });
   assert.equal(claudeCoding.model, "claude-opus-5-5");
   assert.equal(claudeCoding.effort, "high");
@@ -17,13 +24,19 @@ test("coding and review resolve conservatively without machine defaults", () => 
   assert.equal(resolveRouting({ provider: "claude", model: "fable" }).model, "claude-fable-5-1");
   assert.equal(resolveRouting({ provider: "claude", model: "fable" }).effort, "low");
   assert.equal(resolveRouting({ provider: "claude", task: "orchestration" }).model, "claude-fable-5-1");
-  assert.equal(resolveRouting({ model: "sol", effort: "medium" }).model, "gpt-6-sol");
+  assert.equal(resolveRouting({ model: "sol", effort: "medium" }).model, "gpt-6.1-sol");
+  assert.equal(resolveRouting({ model: "astra", effort: "low" }).model, "gpt-6-astra");
+  assert.equal(resolveRouting({ model: "sol60", effort: "low" }).model, "gpt-6-sol");
   assert.equal(resolveRouting({ model: "sol56", effort: "low" }).model, "gpt-5.6-sol");
   assert.equal(resolveRouting({ model: "terra", effort: "low" }).model, "gpt-5.6-terra");
-  assert.equal(resolveRouting({ provider: "codex", task: "design" }).model, "gpt-6-astra");
-  assert.equal(resolveRouting({ provider: "codex", task: "design" }).effort, "medium");
+  assert.equal(resolveRouting({ provider: "codex", task: "design" }).model, "gpt-6.1-sol");
+  assert.equal(resolveRouting({ provider: "codex", task: "design" }).effort, "high");
+  assert.match(resolveRouting({ provider: "codex", task: "design" }).highReason, /Codex design/);
   assert.equal(resolveRouting({ provider: "claude", task: "design" }).model, "claude-opus-5-5");
-  assert.equal(resolveRouting({ provider: "claude", task: "design" }).effort, "medium");
+  assert.equal(resolveRouting({ provider: "claude", task: "design" }).effort, "high");
+  const fableDesign = resolveRouting({ provider: "claude", task: "design", model: "fable" });
+  assert.equal(fableDesign.effort, "high");
+  assert.match(fableDesign.highReason, /Claude design/);
   for (const retired of ["claude-opus-5", "gpt-5.5", "gpt-5.6-luna"]) assert.throws(() => resolveRouting({ model: retired }), /Retired model/);
 });
 
@@ -43,21 +56,22 @@ test("Claude review defaults to owner-selected Opus high and falls back in decla
   assert.equal(primary.model, "claude-opus-5-5");
   assert.equal(primary.effort, "high");
   assert.match(primary.highReason, /Owner-selected/);
-  const fable = resolveRouting({ provider: "claude", task: "review", availableModels: ["claude-fable-5-1", "gpt-6-astra"] });
+  const fable = resolveRouting({ provider: "claude", task: "review", availableModels: ["claude-fable-5-1", "gpt-6.1-sol"] });
   assert.equal(fable.model, "claude-fable-5-1");
   assert.equal(fable.effort, "medium");
   assert.match(fable.fallbackReason, /unavailable/);
   const reviewFallback = { reason: "cli-not-installed", missingProvider: "claude", evidence: "command -v claude: not found" };
-  assert.throws(() => resolveRouting({ provider: "claude", task: "review", availableModels: ["gpt-6-astra"] }), /fallback requires/);
-  const codex = resolveRouting({ provider: "claude", task: "review", availableModels: ["gpt-6-astra"], reviewFallback });
+  assert.throws(() => resolveRouting({ provider: "claude", task: "review", availableModels: ["gpt-6.1-sol"] }), /fallback requires/);
+  const codex = resolveRouting({ provider: "claude", task: "review", availableModels: ["gpt-6.1-sol"], reviewFallback });
   assert.equal(codex.provider, "codex");
-  assert.equal(codex.effort, "medium");
+  assert.equal(codex.model, "gpt-6.1-sol");
+  assert.equal(codex.effort, "high");
   assert.deepEqual(codex.reviewFallback, reviewFallback);
   const unavailableClaude = { reason: "review-models-unavailable", unavailableProvider: "claude", attempts: [
     { model: "claude-opus-5-5", reason: "quota-unavailable", evidence: "Opus quota exhausted" },
     { model: "claude-fable-5-1", reason: "quota-unavailable", evidence: "Fable quota exhausted" }
   ] };
-  assert.deepEqual(resolveRouting({ provider: "claude", task: "review", availableModels: ["gpt-6-astra"], reviewFallback: unavailableClaude }).reviewFallback, unavailableClaude);
+  assert.deepEqual(resolveRouting({ provider: "claude", task: "review", availableModels: ["gpt-6.1-sol"], reviewFallback: unavailableClaude }).reviewFallback, unavailableClaude);
   const unavailableCodex = { reason: "cli-not-installed", missingProvider: "codex", evidence: "command -v codex: not found" };
   const claude = resolveRouting({ provider: "codex", task: "review", availableModels: ["claude-opus-5-5", "claude-fable-5-1"], reviewFallback: unavailableCodex });
   assert.equal(claude.provider, "claude");
@@ -68,20 +82,23 @@ test("Claude review defaults to owner-selected Opus high and falls back in decla
   assert.equal(resolveRouting({ provider: "claude", task: "review", model: "fable", effort: "low" }).effort, "low");
   assert.throws(() => resolveRouting({ provider: "claude", task: "review", model: "opus", availableModels: ["claude-fable-5-1"] }), /unavailable/);
   assert.throws(() => resolveRouting({ task: "review", availableModels: [] }), /incomplete/);
-  assert.equal(resolveRouting({ task: "review", availableModels: ["gpt-6-astra", "claude-opus-5-5"] }).provider, "codex");
+  assert.equal(resolveRouting({ task: "review", availableModels: ["gpt-6.1-sol", "claude-opus-5-5"] }).provider, "codex");
+  assert.throws(() => resolveRouting({ task: "review", availableModels: ["gpt-6-astra"] }), /incomplete/);
 });
 
 test("high needs a reason and unsupported efforts cannot reach a worker", () => {
   for (const effort of ["xhigh", "max", "ultra", "none", "minimal"]) assert.throws(() => resolveRouting({ effort }), /Unsupported effort/);
-  assert.throws(() => resolveRouting({ effort: "high" }), /High effort requires/);
-  for (const provider of ["codex", "claude"]) {
-    for (const task of ["orchestration", "intense"]) {
-      const route = resolveRouting({ provider, task });
-      assert.equal(route.effort, "medium");
-      assert.equal(route.highReason, null);
-      assert.equal(resolveRouting({ provider, task, effort: "low" }).effort, "low");
-      assert.throws(() => resolveRouting({ provider, task, effort: "high" }), /High effort requires/);
-    }
+  assert.throws(() => resolveRouting({ task: "intense", effort: "high" }), /High effort requires/);
+  assert.throws(() => resolveRouting({ model: "astra", effort: "high" }), /High effort requires/);
+  const codexOrchestration = resolveRouting({ task: "orchestration" });
+  assert.equal(codexOrchestration.effort, "high");
+  assert.match(codexOrchestration.highReason, /Codex orchestration/);
+  for (const [provider, task] of [["codex", "intense"], ["claude", "orchestration"], ["claude", "intense"]]) {
+    const route = resolveRouting({ provider, task });
+    assert.equal(route.effort, "medium");
+    assert.equal(route.highReason, null);
+    assert.equal(resolveRouting({ provider, task, effort: "low" }).effort, "low");
+    assert.throws(() => resolveRouting({ provider, task, effort: "high" }), /High effort requires/);
   }
   assert.equal(resolveRouting({ effort: "high", highReason: "intense deadlock reasoning" }).effort, "high");
   assert.throws(() => resolveRouting({ availableModels: ["gpt-6-luna"] }), /unavailable/);

@@ -15,37 +15,44 @@ or access, not higher effort.
 | Task class | Codex default | Claude default | Effort |
 |---|---|---|---|
 | Simple: mechanical, clear acceptance criteria | Luna | chosen session; optional Luna delegation | Luna low for trivial lookups; medium or high freely, no reason needed |
-| Coding: implementation judgment | Astra | Opus 5.5 | Astra low, medium on evidence; Opus high (owner-selected policy), medium for smaller changes |
-| Design: UI design and UX generation | Astra | Opus 5.5 | medium; high with a reason |
-| Independent review of a fixed diff | Astra | Opus 5.5 | Codex medium; Opus high (owner-selected policy) |
-| Orchestration or specific intense reasoning | Astra | Fable 5.1 | medium |
+| Coding: implementation judgment | Sol | Opus 5.5 | Sol high and Opus high (owner-selected policies); Opus medium for smaller changes |
+| Design: UI design and UX generation | Sol | Opus 5.5 (Fable 5.1 alternative) | high (owner-selected policies) |
+| Independent review of a fixed diff | Sol | Opus 5.5 | Sol high and Opus high (owner-selected policies) |
+| Orchestration | Sol | Fable 5.1 | Sol high (owner-selected policy); Fable medium |
+| Specific intense reasoning | Sol | Fable 5.1 | medium |
 
 Only low/medium/high are allowed. Never xhigh/max/ultra. Most workers stay
 low/medium; high requires an explicit selection and recorded reason, never an
-automatic task-class escalation. Two owner-selected exceptions exist: Luna is
-cheap enough that any allowed effort may be chosen without a recorded reason,
-and Opus 5.5 defaults to high for Claude coding and review with the reasons the
-resolver records. Opus 5.5 never runs at low; medium is its floor. Preserve
+automatic task-class escalation. Owner-selected exceptions: Luna is
+cheap enough that any allowed effort may be chosen without a recorded reason;
+Opus 5.5 defaults to high for Claude coding, design and review; Fable 5.1 runs
+high when pinned for Claude design; Sol defaults to high for Codex coding, design,
+review and orchestration. The resolver records each policy's reason. Opus 5.5 never runs at low; medium is its floor. Preserve
 explicit allowed user choices. These are worker defaults, not current-session or
 global settings. A Claude session can delegate ordinary coding to Opus 5.5 high
-or Astra low, simple work to Luna, and UI design or UX generation to Opus 5.5;
+or Sol high, simple work to Luna, and UI design or UX generation to Opus 5.5
+high or Fable 5.1 high;
 Opus 5.5 medium is fine for smaller coding changes and needs no reason. Follow
 repo design/typography/verification rules without provider quality claims. Fable 5.1 stays the Claude default for orchestration and intense
 reasoning and remains an explicit coding pin.
 
 ## Launch and provenance
 
-Use explicit model/effort on every launch. Supported IDs: gpt-6-astra,
-gpt-6-sol, gpt-6-luna, claude-fable-5-1, claude-opus-5-5. Legacy explicit pins
-only, never defaults: gpt-5.6-terra (`terra`), gpt-5.6-sol (`sol56`).
+Use explicit model/effort on every launch. Supported IDs: gpt-6.1-sol (`sol`),
+gpt-6-luna, gpt-6-astra, claude-fable-5-1, claude-opus-5-5. Legacy explicit pins
+only, never defaults: gpt-6-sol (`sol60`), gpt-5.6-terra (`terra`), gpt-5.6-sol
+(`sol56`).
 Retired and refused: claude-opus-5, gpt-5.5, gpt-5.6-luna.
-Sol (gpt-6-sol) is an explicit workhorse choice, not a default.
+GPT-6.1 Sol is the owner-selected Codex workhorse for every non-simple task
+(cost decision, 2026-10-05). Astra (gpt-6-astra) is an explicit pin only, never a default.
+Codex reviews default to Sol high, with recorded highReason
+`Owner-selected GPT-6.1 Sol high for independent review (2026-10-05).`
 Claude reviews default to Opus 5.5 high, with recorded highReason
 `Owner-selected Opus 5.5 high for independent review (2026-09-24).`
 Claude coding defaults to Opus 5.5 high, with recorded highReason
 `Owner-selected Opus 5.5 high for Claude coding (2026-09-24).`
 If Opus is unavailable, use Fable 5.1 medium (low for a small routine review).
-If neither Claude reviewer is available, use a fresh Codex Astra medium session.
+If neither Claude reviewer is available, use a fresh Codex Sol high session.
 Keep other-provider preference: Claude-authored work tries Codex first, then the
 Claude chain if Codex is unavailable. Record each fallback; explicit per-run
 model/effort choices override defaults and are never silently substituted.
@@ -72,7 +79,7 @@ lookup evidence. For installed but unusable reviewers, use reason
 `review-models-unavailable`, unavailableProvider and attempts containing each
 model, reason (`credentials-unavailable`, `quota-unavailable`, `model-unavailable`)
 and observed error evidence. Exhaust Opus 5.5 and Fable before falling back from
-Claude, or Astra before falling back from Codex. Unknown availability, transient
+Claude, or Sol before falling back from Codex. Unknown availability, transient
 network failures and command errors are not absence. Explicit same-provider
 choices remain valid. Every review requires fresh context: a bounded brief,
 requirements, standards and fixed diff, never the implementer's conversation.

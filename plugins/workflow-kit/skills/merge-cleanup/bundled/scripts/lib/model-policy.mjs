@@ -1,15 +1,21 @@
 // Canonical source: derekwelton/workflow-kit.
-export const POLICY_VERSION = "2026-09-24";
+export const POLICY_VERSION = "2026-10-05";
 export const ALLOWED_EFFORTS = ["low", "medium", "high"];
 export const CLAUDE_REVIEW_HIGH_REASON = "Owner-selected Opus 5.5 high for independent review (2026-09-24).";
 export const CLAUDE_CODING_HIGH_REASON = "Owner-selected Opus 5.5 high for Claude coding (2026-09-24).";
+export const CLAUDE_DESIGN_HIGH_REASON = "Owner-selected Opus 5.5 or Fable 5.1 high for Claude design (2026-10-05).";
+export const CODEX_REVIEW_HIGH_REASON = "Owner-selected GPT-6.1 Sol high for independent review (2026-10-05).";
+export const CODEX_CODING_HIGH_REASON = "Owner-selected GPT-6.1 Sol high for Codex coding (2026-10-05).";
+export const CODEX_DESIGN_HIGH_REASON = "Owner-selected GPT-6.1 Sol high for Codex design (2026-10-05).";
+export const CODEX_ORCHESTRATION_HIGH_REASON = "Owner-selected GPT-6.1 Sol high for Codex orchestration (2026-10-05).";
 export const TASK_CLASSES = ["simple", "coding", "design", "review", "orchestration", "intense"];
 // freeHigh: high needs no recorded reason (owner-approved for the cheap model).
 // minEffort: the model never runs below this effort.
 // legacy: explicit pin only; never a default.
 export const MODELS = {
+  sol: { id: "gpt-6.1-sol", provider: "codex" },
   astra: { id: "gpt-6-astra", provider: "codex" },
-  sol: { id: "gpt-6-sol", provider: "codex" },
+  sol60: { id: "gpt-6-sol", provider: "codex", legacy: true },
   luna: { id: "gpt-6-luna", provider: "codex", freeHigh: true },
   terra: { id: "gpt-5.6-terra", provider: "codex", legacy: true },
   sol56: { id: "gpt-5.6-sol", provider: "codex", legacy: true },
@@ -46,7 +52,7 @@ export function validateReviewAvailability(fallback, unavailableProvider) {
   if (fallback.reason === "cli-not-installed" && fallback.missingProvider === unavailableProvider &&
       typeof fallback.evidence === "string" && fallback.evidence.trim()) return;
   if (fallback.reason === "review-models-unavailable" && fallback.unavailableProvider === unavailableProvider) {
-    const expected = unavailableProvider === "claude" ? [MODELS.opus.id, MODELS.fable.id] : [MODELS.astra.id];
+    const expected = unavailableProvider === "claude" ? [MODELS.opus.id, MODELS.fable.id] : [MODELS.sol.id];
     const attempts = fallback.attempts;
     if (Array.isArray(attempts) && expected.every(model => attempts.some(attempt => attempt?.model === model &&
         ["credentials-unavailable", "quota-unavailable", "model-unavailable"].includes(attempt.reason) &&
@@ -63,15 +69,19 @@ export function validateReviewFallback(fallback, implementationProvider, reviewP
 }
 
 function defaultModel(provider, task) {
-  if (provider === "codex") return task === "simple" ? "luna" : "astra";
+  if (provider === "codex") return task === "simple" ? "luna" : "sol";
   return ["coding", "design", "review"].includes(task) ? "opus" : "fable";
 }
 
-// Owner-selected Opus 5.5 high defaults; the resolver records their reasons.
-const OPUS_HIGH_REASONS = { review: CLAUDE_REVIEW_HIGH_REASON, coding: CLAUDE_CODING_HIGH_REASON };
+// Owner-selected high defaults by model and task; the resolver records their reasons.
+const OWNER_HIGH_REASONS = {
+  [MODELS.opus.id]: { review: CLAUDE_REVIEW_HIGH_REASON, coding: CLAUDE_CODING_HIGH_REASON, design: CLAUDE_DESIGN_HIGH_REASON },
+  [MODELS.fable.id]: { design: CLAUDE_DESIGN_HIGH_REASON },
+  [MODELS.sol.id]: { review: CODEX_REVIEW_HIGH_REASON, coding: CODEX_CODING_HIGH_REASON, design: CODEX_DESIGN_HIGH_REASON, orchestration: CODEX_ORCHESTRATION_HIGH_REASON }
+};
 
 function defaultEffort(task, selected) {
-  if (selected.id === MODELS.opus.id && OPUS_HIGH_REASONS[task]) return "high";
+  if (OWNER_HIGH_REASONS[selected.id]?.[task]) return "high";
   if (["orchestration", "intense", "review", "design"].includes(task)) return "medium";
   return selected.minEffort ?? "low";
 }
@@ -85,7 +95,7 @@ export function resolveRouting({ provider = "codex", task = "coding", model, eff
   // Only the owner-authorized default review chain may change provider/model.
   // Callers supply verified availability; missing/unknown data is not absence.
   if (task === "review" && !model && availableModels) {
-    const candidates = provider === "claude" ? ["opus", "fable", "astra"] : ["astra", "opus", "fable"];
+    const candidates = provider === "claude" ? ["opus", "fable", "sol"] : ["sol", "opus", "fable"];
     const candidate = candidates.find(name => availableModels.includes(MODELS[name].id));
     if (!candidate) throw new Error("No authorized review model is available. Independent review remains incomplete.");
     if (candidate !== requestedModel) {
@@ -102,7 +112,7 @@ export function resolveRouting({ provider = "codex", task = "coding", model, eff
   if (selected.provider !== provider) throw new Error(`${requestedModel} cannot run through ${provider}.`);
   if (selected.legacy && !model) throw new Error(`${selected.id} is a legacy explicit pin and never a default.`);
   const selectedEffort = effort ?? defaultEffort(task, selected);
-  const ownerReason = selected.id === MODELS.opus.id && selectedEffort === "high" ? OPUS_HIGH_REASONS[task] ?? null : null;
+  const ownerReason = selectedEffort === "high" ? OWNER_HIGH_REASONS[selected.id]?.[task] ?? null : null;
   const reason = highReason ?? ownerReason;
   validateEffort(selectedEffort, reason, selected);
   if (availableModels && !availableModels.includes(selected.id)) {

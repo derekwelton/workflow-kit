@@ -399,7 +399,7 @@ Keep routine work economical while reserving more reasoning for justified comple
 
 - Use: Applied before delegating implementation or review.
 - Result: An explicit supported model/effort route bounded by host capacity and user choices.
-- Limit: Astra low/medium for Codex coding, Opus 5.5 high for Claude coding and review, Luna at any allowed effort for simple work, Opus 5.5 medium/high for UI design, Codex review normally medium. High needs a reason except on Luna and the owner-selected Opus 5.5 defaults; xhigh/max/ultra reasoning are prohibited.
+- Limit: GPT-6.1 Sol high for Codex coding, design, review and orchestration; Opus 5.5 high for Claude coding, design and review (Fable 5.1 high as the design alternative); Luna at any allowed effort for simple work. Astra is an explicit pin only. High needs a reason except on Luna and the owner-selected Opus 5.5, Fable design and Sol defaults; xhigh/max/ultra reasoning are prohibited.
 - Claude: `/workflow-kit:model-routing`
 - Codex: `$model-routing`
 - Source: `skills/model-routing/SKILL.md:1`
@@ -503,8 +503,9 @@ Eight executable helper entry points and two shared libraries are listed below. 
 
 The codex-cli skill invokes the official CLI directly without a companion plugin.
 Workflow-kit owns lifecycle, model policy, review receipts and integration rules.
-Prefer the other provider for review; Claude reviews use Opus 5.5 high, then Fable
-medium/low, then fresh Codex if neither is available. Record availability
+Prefer the other provider for review; Codex reviews use GPT-6.1 Sol high. Claude
+reviews use Opus 5.5 high, then Fable medium/low, then fresh Codex Sol high if
+neither is available. Record availability
 evidence. See [migration](codex-cli-migration.md).
 
 Machine refresh and repository refresh are different: update the installed plugin on each machine, then use workflow-update in adopted repositories. An already-loaded session can need a restart or reread.

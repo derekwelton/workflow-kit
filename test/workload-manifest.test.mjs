@@ -19,9 +19,9 @@ function git(cwd, ...args) {
 }
 
 const execution = (provider, role) => JSON.stringify({
-  requestedModel: provider === "codex" ? "gpt-6-astra" : "claude-fable-5-1",
+  requestedModel: provider === "codex" ? "gpt-6.1-sol" : "claude-fable-5-1",
   resolvedModel: null, resolutionStatus: "unverified", effort: "medium",
-  workerId: `${role}-fixture-session`, policyVersion: "2026-09-24", fallbackReason: null
+  workerId: `${role}-fixture-session`, policyVersion: "2026-10-05", fallbackReason: null
 });
 
 function withExecutionFixtures(args) {
@@ -261,7 +261,7 @@ test("quota or credentials fallback requires evidence for all authorized review 
     manifest.issues[0].implementationProvider = "claude";
     manifest.issues[0].reviewProvider = "claude";
     manifest.issues[0].reviewFallback = { reason: "review-models-unavailable", unavailableProvider: "codex", attempts: [
-      { model: "gpt-6-astra", reason: "credentials-unavailable", evidence: "Codex login status: not authenticated" }
+      { model: "gpt-6.1-sol", reason: "credentials-unavailable", evidence: "Codex login status: not authenticated" }
     ] };
     assert.deepEqual(validateManifest(manifest), []);
   });

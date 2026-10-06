@@ -32,9 +32,10 @@ the author of each implementation diff, not the coordinator:
   Installed but unusable reviewers instead use reason `review-models-unavailable`,
   unavailableProvider and attempts [{model, reason, evidence}]. Record observed
   credentials/quota/model-access failures for both Claude Opus 5.5 and Fable 5.1
-  before falling back to Codex (or Codex Astra before falling back to Claude).
+  before falling back to Codex (or Codex GPT-6.1 Sol before falling back to Claude).
   Unknown availability or transient failures do not authorize substitution.
   Claude review defaults to Opus 5.5 high; Fable medium/low is its alternative.
+  Codex review defaults to GPT-6.1 Sol high.
 - codex-only / claude-only: fresh independent same-provider session.
 Explicit implementer/reviewer choices must obey the selected pair mode.
 The same session/agent cannot implement and review an issue.

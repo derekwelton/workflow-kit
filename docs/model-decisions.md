@@ -21,31 +21,41 @@ workflow-kit defaults, not claims about which model is objectively best.
 | Work | Default Codex worker | Default effort |
 |---|---|---|
 | Simple mechanical change | Luna | low; medium or high freely |
-| Ordinary implementation | Astra | low |
-| UI design and UX generation | Astra | medium |
-| Independent review | Astra | medium |
-| Coordinator/intense reasoning | Astra | medium |
+| Ordinary implementation | GPT-6.1 Sol | high (owner-selected) |
+| UI design and UX generation | GPT-6.1 Sol | high (owner-selected) |
+| Independent review | GPT-6.1 Sol | high (owner-selected) |
+| Coordinator/orchestration | GPT-6.1 Sol | high (owner-selected) |
+| Intense reasoning | GPT-6.1 Sol | medium |
+
+GPT-6.1 Sol replaced Astra as the Codex default by owner decision (2026-10-05):
+it is close in capability at about half the cost. Astra remains an explicit pin.
+Codex coding, design, review and orchestration default to Sol high, with each
+decision recorded as highReason.
 
 Claude implementation defaults to Opus 5.5 high by explicit owner policy, with
 that decision recorded as highReason; Opus 5.5 medium is fine for smaller
 coding changes. Fable 5.1 remains an explicit coding pin
 and the default for orchestration and intense reasoning. Claude UI design and
-UX generation defaults to Opus 5.5 medium. Claude review defaults to Opus 5.5 high by explicit
+UX generation defaults to Opus 5.5 high, with Fable 5.1 high as the alternative;
+both record the owner design policy as highReason. Claude review defaults to Opus 5.5 high by explicit
 owner policy, with that decision recorded as highReason. Opus 5.5 never runs at
 low. Fable medium (low for a small routine diff) is the review alternative; fresh
-Codex Astra medium is permitted if neither Claude reviewer is available. Prefer
+Codex Sol high is permitted if neither Claude reviewer is available. Prefer
 the other provider first; record CLI, credentials, quota or model-access evidence.
-A Claude session can delegate ordinary coding to Opus 5.5 high or Astra low,
-simple work to Luna, and UI design to Opus 5.5. Sol (gpt-6-sol) is an explicit workhorse choice, not a default.
-Opus 5, GPT-5.5 and GPT-5.6 Luna are retired and refused; GPT-5.6 Terra and
-GPT-5.6 Sol remain explicit legacy pins only.
-The package permits low, medium and high only. Raising low to medium should
-follow evidence; missing requirements or tools do not justify higher effort.
+A Claude session can delegate ordinary coding to Opus 5.5 high or Sol high,
+simple work to Luna, and UI design to Opus 5.5 high or Fable 5.1 high.
+Opus 5, GPT-5.5 and GPT-5.6 Luna are retired and refused; GPT-6 Sol, GPT-5.6
+Terra and GPT-5.6 Sol remain explicit legacy pins only.
+The package permits low, medium and high only. Raising effort outside the
+owner-selected defaults should follow evidence; missing requirements or tools do
+not justify higher effort.
 Luna is cheap enough that any allowed effort may be chosen without a reason.
-Coordination and intense reasoning default to medium for both providers.
+Intense reasoning defaults to medium for both providers; Claude orchestration
+(Fable) defaults to medium.
 High remains an explicit choice requiring a recorded reason; the resolver does
-not manufacture one from the task class. The owner-selected Opus 5.5 coding and
-review policies and Luna are the explicit exceptions. Global settings are unchanged.
+not manufacture one from the task class. The owner-selected Opus 5.5 coding/design/review,
+Fable design, Sol coding/design/review/orchestration policies and Luna are the
+explicit exceptions. Global settings are unchanged.
 
 The host creates a worker with explicit model and effort. Those requests do not
 change the already-running coordinator's model. A full-history fork may not
@@ -62,7 +72,7 @@ slot limit; configured concurrency is a ceiling, not a target.
 
 For example, a docs lookup stays local. A clearly specified isolated mechanical
 change may use Luna at any allowed effort if useful parallel work exists. A review of a complex
-routing change can use a fresh Astra medium reviewer. A conflict-resolution
+routing change can use a fresh Sol high reviewer. A conflict-resolution
 review follows the same preference and availability fallback regardless of which
 provider coordinated the run, and always requires a fresh independent session.
 

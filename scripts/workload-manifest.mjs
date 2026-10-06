@@ -10,7 +10,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 const SCHEMA_VERSION = 3;
-const WORKFLOW_KIT_VERSION = "1.3.0";
+const WORKFLOW_KIT_VERSION = "1.4.0";
 const PAIR_MODES = new Set(["cross", "codex-only", "claude-only"]);
 const ISSUE_STATES = new Set([
   "selected",
@@ -145,7 +145,7 @@ function normalizeProvider(value, { allowAuto = true } = {}) {
   if (allowAuto && provider === "auto") {
     return "auto";
   }
-  if (["codex", "codex-sol", "sol", "gpt-6-sol", "sol56", "gpt-5.6-sol", "astra", "gpt-6-astra", "luna", "gpt-6-luna", "terra", "gpt-5.6-terra"].includes(provider)) {
+  if (["codex", "codex-sol", "sol", "gpt-6.1-sol", "sol60", "gpt-6-sol", "sol56", "gpt-5.6-sol", "astra", "gpt-6-astra", "luna", "gpt-6-luna", "terra", "gpt-5.6-terra"].includes(provider)) {
     return "codex";
   }
   if (["claude", "claude-opus", "opus", "opus-5.5", "opus-5-5", "claude-opus-5-5", "fable", "claude-fable-5-1"].includes(provider)) {
@@ -1120,7 +1120,7 @@ function printUsage() {
       "Legacy strict/convergent retain launch accounting and --allow-extra-round --reason. Live policy changes require --policy-decision. Thresholds never confer approval.",
       "Findings: --review-findings JSON array of {id, severity, category, blocking, status, summary, followUp, decision}. Optional style/simplification/out-of-scope-enhancement alone never blocks bounded review.",
       "set-issue accepts --implementation-execution and --review-execution JSON with requestedModel, resolvedModel (null if unverified), effort, highReason, workerId, policyVersion, fallbackReason.",
-      "init, pair and set-issue accept --review-fallback JSON: cli-not-installed with missingProvider/evidence, or review-models-unavailable with unavailableProvider/attempts [{model, reason, evidence}]. Exhaust Claude Opus/Fable or Codex Astra; preserve fresh sessions. Set null to clear it on return to cross-provider review.",
+      "init, pair and set-issue accept --review-fallback JSON: cli-not-installed with missingProvider/evidence, or review-models-unavailable with unavailableProvider/attempts [{model, reason, evidence}]. Exhaust Claude Opus/Fable or Codex Sol; preserve fresh sessions. Set null to clear it on return to cross-provider review.",
       "set-issue --resume-context accepts JSON for the intended environment, user-task acceptance evidence, owned runtime/jobs, prerequisites, and nextAction.",
       "  workload-manifest.mjs validate --run <id>",
       "  workload-manifest.mjs list",
