@@ -17,7 +17,8 @@ single tracker/manifest/integration writer.
   stop retrying shell edits and switch to the structured editing tool.
 - Delegation: do not spawn subagents. Only the coordinator spawns. If another
   worker is needed, return that request with your evidence. Review both axes
-  yourself unless the coordinator explicitly divided them between peers.
+  yourself; the coordinator divides them between reviewers only when the user
+  explicitly asked for separate axis reviewers in this run.
 - Waiting: blocking `sleep` is forbidden. Use host completion notifications;
   return blockers and stable job IDs rather than repeatedly polling.
 - Evidence: focused verification, exact tested head, changed/untracked files,

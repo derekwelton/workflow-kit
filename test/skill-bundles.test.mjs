@@ -45,3 +45,10 @@ test("every single skill folder is portable without sibling skills or repository
 test("bundles are reproducible from canonical owners", () => {
   assert.ok(buildSkillBundles(root, { check: true }) > 0);
 });
+
+test("every skill folder carries the package version for lock files without one", () => {
+  const { version } = JSON.parse(fs.readFileSync(path.join(root, ".claude-plugin/plugin.json"), "utf8"));
+  for (const name of Object.keys(catalog.skills)) {
+    assert.equal(fs.readFileSync(path.join(root, "skills", name, "bundled/VERSION"), "utf8").trim(), version, name);
+  }
+});

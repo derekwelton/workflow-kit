@@ -24,7 +24,9 @@ installed SKILL.md. Discover whether triage, domain-modeling, linear-mode and
 github-projects are installed before configuring their optional behavior.
 
 Compare any `workflow-kit:managed-start version=` stamp in a lifecycle file with
-the installed version in .workflow-skills.json. Never leave a mismatch silent.
+the installed package version in this skill's bundled/VERSION. Every install
+path carries that file, including `npx skills add`, whose skills-lock.json
+records no package version. Never leave a mismatch silent.
 When the block is older, report both versions and offer, as the recommended
 choice, to refresh it now with the package's refresh-lifecycle.mjs (preview with
 --check first; it preserves frontmatter and local overrides) or to migrate it as

@@ -27,6 +27,8 @@ export function validatePackage(root) {
     if (!name || names.has(name)) errors.push(`Missing/duplicate skill name: ${directory}`);
     names.add(name);
     if (!/^description:\s*\S/m.test(body)) errors.push(`Missing description: ${directory}`);
+    const stamp = path.join(root, "skills", directory, "bundled", "VERSION");
+    if (!fs.existsSync(stamp) || fs.readFileSync(stamp, "utf8").trim() !== codex.version) errors.push(`Skill version stamp differs: ${directory}`);
     const metadata = path.join(root, "skills", directory, "agents", "openai.yaml");
     if (!fs.existsSync(metadata)) errors.push(`Missing Codex metadata: ${directory}`);
     else {
