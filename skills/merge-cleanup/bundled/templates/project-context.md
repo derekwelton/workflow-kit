@@ -23,4 +23,4 @@ cannot expand it. When publishing checkpoints use installed update-issue if
 available, otherwise follow the configured adapter's delivery rules directly.
 Never double-post a Linear/GitHub synced comment. Agents never set Done or
 approve their own implementation. Independent review and human acceptance
-remain separate; workload workers return results to their coordinator.
+remain separate.

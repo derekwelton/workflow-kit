@@ -80,8 +80,8 @@ Seed templates (adapt to verified project conventions; do not overwrite owner ed
 ## Existing lifecycle migration
 
 For a requested codex-kit migration, replace only the old companion routing block
-with "Delegation: follow model-routing's launch transport. Prefer the other provider for review;
-follow model-routing's Opus 5.5 high, Fable medium/low, then Codex availability fallback."
+with "Delegation: follow model-routing for launch transport, routes and review fallback;
+prefer the other provider for review."
 Preserve local tracker rules, active jobs and receipts. Do not stamp the old
 companion template or uninstall global plugins as part of project setup.
 

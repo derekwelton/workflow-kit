@@ -1,7 +1,18 @@
 # Model routing
 
-Executable defaults: `../scripts/lib/model-policy.mjs`. Never maintain a
-second ranking or infer machine defaults.
+`../scripts/lib/model-policy.mjs` is the executable policy; never keep a second
+ranking or infer machine defaults. Resolve every launch with it (resolve the
+script path from this file's directory):
+
+`node ../scripts/lib/model-policy.mjs resolve --provider <codex|claude> --task <class>`
+
+Task classes: simple, coding, design, review, orchestration, intense. Add
+`--model`, `--effort` or `--high-reason` only for an explicit per-run pin; a
+model argument is a pin, never a default. Add `--available <ids>` only from
+verified usable routes, never a public catalog or incomplete discovery, and
+`--review-fallback <JSON>` when the review provider must change. Launch with the
+returned model and effort explicitly and record the returned JSON. An error is a
+blocker to report, never a reason to substitute silently.
 
 ## Decide whether to delegate
 
@@ -14,80 +25,56 @@ or access, not higher effort.
 
 | Task class | Codex default | Claude default | Effort |
 |---|---|---|---|
-| Simple: mechanical, clear acceptance criteria | Luna | chosen session; optional Luna delegation | Luna high; xhigh or max freely, no reason needed |
-| Coding: implementation judgment | Sol | Opus 5.5 | Sol high and Opus high; Opus medium for smaller changes |
+| Simple: mechanical, clear acceptance criteria | Luna | chosen session; optional Luna delegation | Luna high; xhigh or max freely |
+| Coding: implementation judgment | Sol | Opus 5.5 | high; Opus medium for smaller changes |
 | Design: UI design and UX generation | Sol | Opus 5.5 (Fable 5.1 alternative) | Sol xhigh; Opus or Fable high |
-| Independent review of a fixed diff | Sol | Opus 5.5 | Sol high and Opus high |
-| Orchestration | Sol | Opus 5.5 | Sol high and Opus high |
+| Independent review of a fixed diff | Sol | Opus 5.5 | high |
+| Orchestration | Sol | Opus 5.5 | high |
 | Specific intense reasoning | Sol | Fable 5.1 | Sol xhigh; Fable high |
 
-Every elevated default above is an owner-selected policy; the resolver records
-its reason as highReason. Efforts are low, medium, high, xhigh and max, bounded
-per model: Luna runs high through max only, with no recorded reason needed; Sol
-runs up to xhigh; every other model is capped at high. Opus 5.5 never runs at
-low; medium is its floor. ultra is always prohibited. Outside the owner-selected
-defaults, high or above requires an explicit selection and recorded reason, never
-an automatic task-class escalation. Preserve explicit allowed user choices. These
-are worker defaults, not current-session or global settings. A Claude session can
-delegate ordinary coding to Opus 5.5 high or Sol high, simple work to Luna, and UI
-design or UX generation to Opus 5.5 high or Fable 5.1 high; Opus 5.5 medium is
-fine for smaller coding changes and needs no reason. Follow repo
-design/typography/verification rules without provider quality claims. Fable 5.1
-stays the Claude default for intense reasoning and remains an explicit coding pin.
+Elevated defaults are owner-selected; the resolver returns their highReason. It
+also enforces each model's effort range (Luna high to max; Sol up to xhigh;
+others up to high; Opus 5.5 never low; ultra never) and refuses retired models.
+Astra is an explicit pin only. Outside the owner defaults, effort above medium
+needs an explicit choice and recorded reason, never an automatic escalation.
+Preserve explicit allowed user choices. These are worker defaults, not session
+or global settings. No automatic Sonnet/Haiku routing. Follow repository
+design/typography/verification rules without provider quality claims.
 
-## Launch and provenance
+## Review routing
 
-Use explicit model/effort on every launch. Supported IDs: gpt-6.1-sol (`sol`),
-gpt-6-luna, gpt-6-astra, claude-fable-5-1, claude-opus-5-5. Legacy explicit pins
-only, never defaults: gpt-6-sol (`sol60`), gpt-5.6-terra (`terra`), gpt-5.6-sol
-(`sol56`).
-Retired and refused: claude-opus-5, gpt-5.5, gpt-5.6-luna.
-GPT-6.1 Sol is the owner-selected Codex workhorse for every non-simple task
-(cost decision, 2026-10-05). Astra (gpt-6-astra) is an explicit pin only, never a default.
-Owner-selected highReason text lives in the resolver's owner defaults; record the
-value it returns, for example
-`Owner-selected GPT-6.1 Sol high for independent review (2026-10-05).`
-If Opus is unavailable, use Fable 5.1 medium (low for a small routine review).
-If neither Claude reviewer is available, use a fresh Codex Sol high session.
-Keep other-provider preference: Claude-authored work tries Codex first, then the
-Claude chain if Codex is unavailable. Record each fallback; explicit per-run
-model/effort choices override defaults and are never silently substituted.
-No automatic Sonnet/Haiku routing. Check observable host access; if unknown,
-record unverified. An unavailable explicitly pinned model is a reported blocker;
-default review routes use the recorded fallback chain above. Public model listings
-do not prove account access. When calling resolveRouting, omit model for package
-defaults; a model argument means a per-run pin. Pass availableModels only from
-verified usable routes, not a public catalog or an incomplete discovery result.
-The resolver's provider is the preferred reviewer provider, not the implementation
-author. Choose the opposite author first. Provider-changing resolution requires
-reviewFallback evidence and returns it with the route; the coordinator passes it
-to set-issue --review-fallback alongside the selected reviewer and execution.
+Prefer the provider opposite the implementation author; pass that provider to
+the resolver. With `--available`, it applies the owner fallback chain (Claude:
+Opus 5.5, then Fable 5.1, then Codex Sol; Codex: Sol, then Claude). Fable as a
+fallback runs medium, or low for a small routine review.
 
-Record task class/delegation reason, requested/resolved model, effort, worker ID,
-policy version, escalation evidence and explicit fallback reason. If runtime
-does not expose resolved identity, record unknown, not the requested model.
-Prefer the provider opposite the implementation author for review. Check whether
-the selected transport can launch it and its authorized review models are usable.
-If the provider is not installed or the authorized models have unavailable
-credentials, quota or model access, use a fresh same-provider review; do not
-require installation.
-Record reviewFallback with reason `cli-not-installed`, missingProvider and the
-lookup evidence. For installed but unusable reviewers, use reason
-`review-models-unavailable`, unavailableProvider and attempts containing each
-model, reason (`credentials-unavailable`, `quota-unavailable`, `model-unavailable`)
-and observed error evidence. Exhaust Opus 5.5 and Fable before falling back from
-Claude, or Sol before falling back from Codex. Unknown availability, transient
-network failures and command errors are not absence. Explicit same-provider
-choices remain valid. Every review requires fresh context: a bounded brief,
-requirements, standards and fixed diff, never the implementer's conversation.
-Workload pairing/gates are owned by its workload contract. If no fresh session
-can be launched, report the independent review gate as incomplete.
+Changing provider needs `--review-fallback` evidence, which the resolver checks:
 
-Count coordinator, active workers and nested reviewers against host slots using
-workerCapacity in the module. Limits are ceilings. Queue excess; unknown capacity
-means one worker and no nesting. Honor host/user delegation restrictions.
-Use a fresh bounded brief for model overrides when full-history forks cannot
-change models. Coordinator owns tracker writes and final integration.
+- `{"reason":"cli-not-installed","missingProvider":"<provider>","evidence":"<lookup>"}`
+- `{"reason":"review-models-unavailable","unavailableProvider":"<provider>","attempts":[...]}`
+  with `{model, reason, evidence}` attempts covering every authorized reviewer of that provider (Claude: Opus 5.5 and
+  Fable 5.1; Codex: Sol), each `credentials-unavailable`, `quota-unavailable`
+  or `model-unavailable` with the observed error.
+
+Unknown availability, transient network failures and command errors are not
+absence. Explicit same-provider choices remain valid. Every review gets fresh
+context: a bounded brief with requirements, standards and the fixed diff, never
+the implementer's conversation or session. If no fresh session can be launched,
+report the independent review gate as incomplete. Workload pairing and gates
+belong to the orchestrate workload contract.
+
+## Provenance and capacity
+
+Record the task class and delegation reason, the resolver JSON (requested and
+resolved model, effort, highReason, policy version, fallback), worker ID and any
+escalation evidence. If the runtime does not expose the resolved identity,
+record unknown, not the requested model.
+
+Count the coordinator, active workers and nested reviewers against host slots
+with `workerCapacity` in the module. Limits are ceilings; queue excess. Unknown
+capacity means one worker and no nesting. Honor host/user delegation
+restrictions. Use a fresh bounded brief when a full-history fork cannot change
+models. The coordinator owns tracker writes and final integration.
 
 ## Launch transport
 

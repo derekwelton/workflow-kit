@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { resolveRouting, workerCapacity } from "../scripts/lib/model-policy.mjs";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
+import { resolveFromArgs, resolveRouting, workerCapacity } from "../scripts/lib/model-policy.mjs";
 import { resolveTracker, trackerTransition } from "../scripts/lib/tracker-policy.mjs";
 import { validateExecution } from "../scripts/workload-manifest.mjs";
 
@@ -145,4 +147,19 @@ test("execution provenance distinguishes unknown identity and explicit fallback"
   assert.doesNotThrow(() => validateExecution({ ...execution, requestedModel: "sol", effort: "xhigh", resolvedEffort: "xhigh", highReason: "design" }, "codex"));
   assert.throws(() => validateExecution({ ...execution, resolvedModel: "gpt-6-sol" }, "codex"), /fallbackReason/);
   assert.throws(() => validateExecution(execution, "claude"), /mismatch/);
+});
+
+test("the resolve CLI returns the same route skills would otherwise restate", () => {
+  assert.deepEqual(resolveFromArgs(["resolve", "--provider", "claude", "--task", "review"]), resolveRouting({ provider: "claude", task: "review" }));
+  const fallback = resolveFromArgs(["resolve", "--provider", "claude", "--task", "review", "--available", "claude-fable-5-1, gpt-6.1-sol"]);
+  assert.equal(fallback.model, "claude-fable-5-1");
+  assert.equal(fallback.effort, "medium");
+  assert.throws(() => resolveFromArgs(["route", "--task", "review"]), /Usage: model-policy.mjs resolve/);
+  const script = path.resolve(import.meta.dirname, "../scripts/lib/model-policy.mjs");
+  const ran = spawnSync(process.execPath, [script, "resolve", "--provider", "codex", "--task", "design"], { encoding: "utf8", windowsHide: true });
+  assert.equal(ran.status, 0, ran.stderr);
+  assert.equal(JSON.parse(ran.stdout).effort, "xhigh");
+  const refused = spawnSync(process.execPath, [script, "resolve", "--model", "claude-opus-5"], { encoding: "utf8", windowsHide: true });
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /Retired model/);
 });

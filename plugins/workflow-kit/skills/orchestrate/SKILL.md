@@ -16,14 +16,13 @@ workflow-kit installer retains the Claude /orchestrate folder alias. For a separ
 or local-main acceptance test of a named reviewed run, read
 `references/integrate-reviewed.md` and follow that mode instead of Execute.
 
-Read repository configuration/local overrides, `./bundled/templates/lifecycle-contract.md`,
-`references/workload-contract.md`, and `./bundled/templates/model-routing.md`.
-Read `./bundled/templates/review-policy.md` for review accounting and
-`./bundled/templates/completion-guide.md` for the required user handoff.
-The workload contract owns provider independence, review convergence, final-SHA
-receipts, integration gates, single-writer rules and human acceptance.
-Read only the configured tracker adapter; writes use
-`./bundled/templates/tracker-write.md`. Do not load the portable fallback too.
+Read repository configuration/local overrides, `references/workload-contract.md`
+and `./bundled/templates/model-routing.md`. The workload contract owns provider
+independence, review convergence, final-SHA receipts, integration gates,
+single-writer rules and human acceptance; it links the review policy and the
+completion guide at the gates that need them. Read only the configured tracker
+adapter, and `./bundled/templates/tracker-write.md` before a write. Do not load
+the portable fallback too.
 
 ## Execute
 
@@ -64,10 +63,10 @@ Read only the configured tracker adapter; writes use
    findings against evidence, fix, verify, and obtain exact-head review coverage
    (independent receipt or eligible nonfunctional attestation).
    Record reviewed-pending-integration. Launch workers and reviewers through
-   model-routing's launch transport (T3 Code when available, otherwise CLI).
-   Prefer the other provider; follow model-routing's Opus 5.5 high → Fable
-   medium/low → Codex fallback when Claude review is unavailable. Record availability evidence for the chosen
-   route. Never reuse the implementation session for review.
+   model-routing's launch transport (T3 Code when available, otherwise CLI),
+   with the workload contract's provider pairing and model-routing's resolver.
+   Record availability evidence for the chosen route. Never reuse the
+   implementation session for review.
 7. Once the workload contract permits assembly, fetch current default branch,
    combine exact reviewed heads in dependency order on integration/<slug>.
    Record assembling, base/head, combined tests and any conflict-review receipt.

@@ -8,41 +8,28 @@ metadata:
 Resolve bundled relative file paths from this skill's directory, not the project working directory.
 
 
-Prefer the provider opposite the implementation author, following
-`./bundled/templates/model-routing.md`. Claude review defaults to Opus 5.5 high,
-with Fable medium/low as the alternative, then fresh Codex if neither is usable.
-Codex review defaults to GPT-6.1 Sol high; Astra is an explicit pin only.
-Opus 5 is retired; never launch it.
-If the other provider's CLI or authorized reviewers are unavailable, use a fresh
-same-provider session and record the availability evidence.
-No optional CLI installation is required. Launch reviewers through
-model-routing's launch transport (T3 Code when available, otherwise CLI).
-Native fresh same-provider agents are also valid; never pass the implementer's
-conversation or reuse its session.
-
 Two-axis review of the target the user supplies (a ref, a PR, or uncommitted changes):
 
 - **Standards**: does the code conform to this repo's documented coding standards, and could it preserve the required behavior more simply?
 - **Spec**: does the code faithfully implement the originating issue / spec?
 
-Follow `./bundled/templates/review-policy.md`. For a small cohesive change one fresh
-independent reviewer covers both axes and reports them separately. For complex or
-explicitly requested reviews use separate axis reviewers within host capacity.
+Reviewers follow `./bundled/templates/review-policy.md`. Prefer the provider
+opposite the implementation author: choose its route and launch transport with
+`./bundled/templates/model-routing.md`. Native fresh same-provider agents are also
+valid; no optional CLI installation is required. Never pass the implementer's
+conversation or reuse its session. Run reviewers within host capacity, sequentially
+if necessary.
 
-Read `./bundled/templates/project-context.md` for repository conventions and tracker
-scope. For a dispatched workload review, the coordinator already owns dispatch:
-review the assigned axes yourself without nested agents, return findings and
-the exact base/head SHA plus durable review evidence, and leave tracker writes
-to the coordinator. Behavioral fixes require focused verification; eligible
-nonfunctional deltas use the shared attestation rules. Standalone review uses
-fresh reviewers within host capacity (sequential if necessary); implementation
-authors cannot approve their own changes. If independent review is unavailable,
-report that gate as incomplete. Only an authorized completed standalone review
-may advance a configured tracker to human In Review; never set Done.
+Use the supplied issue/spec and existing repository conventions; a missing setup
+file does not block a local diff review. For tracker lookups or writes read
+`./bundled/templates/project-context.md`; if a tracker operation lacks
+configuration, suggest `/setup-workflow-skills` for that choice. Only an
+authorized completed standalone review may advance a configured tracker to human
+In Review; never set Done.
 
-Use the supplied issue/spec and existing repository conventions. If a tracker
-operation lacks configuration, suggest `/setup-workflow-skills` for that missing
-choice; a missing setup file does not block a local diff review.
+If a coordinator dispatched you with a brief, follow it: review the assigned axes
+yourself without launching agents, return findings with the exact base/head SHAs,
+leave tracker writes to the coordinator, and skip step 6.
 
 ## Process
 
@@ -145,7 +132,7 @@ Keep broader cleanup outside this review; use `ponytail-audit` only when request
 
 For the small-change path, give one independent reviewer both briefs below and
 require separate Standards and Spec results. Otherwise launch the two axis
-reviewers within host capacity. A dispatched workload reviewer handles both itself.
+reviewers within host capacity.
 
 **Standards sub-agent prompt** should include:
 
@@ -190,8 +177,7 @@ nothing was pushed. Apply only the reported items, run the affected checks, and
 send behavioral fixes through one focused independent verification as
 `./bundled/templates/review-policy.md` describes. Report the commit, push and
 verification results. A clean review with nothing to apply ends without the
-question. Dispatched workload reviews skip this step and return findings to
-the coordinator.
+question.
 
 ## Why two axes
 

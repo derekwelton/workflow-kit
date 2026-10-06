@@ -17,25 +17,19 @@ or launches workers. Workers edit/test leased worktrees and return envelopes;
 review workers cover assigned axes without nested delegation. Audit tracked
 and untracked files before committing or integrating. Preserve dirty/active
 worktrees. Source edits use structured patches, not shell-built edits.
-Follow lifecycle instruction-retention and wait rules; never duplicate a
-worker just because a session ended.
+Reuse loaded, unchanged instructions; reload only when changed or lost. Prefer
+completion notifications to polling, and never duplicate a worker just because
+a session ended.
 
 ## Independent review and routing
 
-Model/effort is owned by `../../../templates/model-routing.md`. Provider pairing uses
-the author of each implementation diff, not the coordinator:
+Model, effort and review-fallback evidence are owned by
+`../../../templates/model-routing.md`. Provider pairing uses the author of each
+implementation diff, not the coordinator:
 - cross: prefer Codex author → fresh Claude reviewer; Claude author → fresh Codex reviewer.
-  If the other CLI or its authorized reviewers are unavailable, use a fresh same-provider session and
-  record --review-fallback JSON: reason `cli-not-installed`, missingProvider
-  (`claude` or `codex`), and nonempty evidence from the coordinator's CLI lookup.
-  Pass this to init/pair or set-issue when the missing CLI is discovered later.
-  Installed but unusable reviewers instead use reason `review-models-unavailable`,
-  unavailableProvider and attempts [{model, reason, evidence}]. Record observed
-  credentials/quota/model-access failures for both Claude Opus 5.5 and Fable 5.1
-  before falling back to Codex (or Codex GPT-6.1 Sol before falling back to Claude).
-  Unknown availability or transient failures do not authorize substitution.
-  Claude review defaults to Opus 5.5 high; Fable medium/low is its alternative.
-  Codex review defaults to GPT-6.1 Sol high.
+  If that provider or its authorized reviewers are unavailable, use a fresh
+  same-provider session with model-routing's --review-fallback evidence, passed to
+  init/pair, or to set-issue when the gap is discovered later.
 - codex-only / claude-only: fresh independent same-provider session.
 Explicit implementer/reviewer choices must obey the selected pair mode.
 The same session/agent cannot implement and review an issue.
@@ -47,12 +41,25 @@ A conflict-free merge needs combined verification, not repeated issue reviews.
 
 ## Review convergence
 
-Follow `../../../templates/review-policy.md`. New runs default to bounded:
-maxReviewRounds = 2 completed reviews, with at most two infrastructure retries
-per logical dispatch. No automatic second review after a clean first review.
-Use --review-dispatch with stable dispatch/attempt IDs before launch and update
-the same attempt with its outcome. Metadata updates never reserve another review.
-Use --review-authorization for a concrete additional allowance, saved across resumes.
+Follow `../../../templates/review-policy.md` for independence, findings and changes
+after review. Workloads add this accounting. New runs default to bounded:
+maxReviewRounds = 2 completed reviews per issue; no automatic second review after
+a clean first review. Track logical dispatch IDs, attempt IDs and completed
+verdicts separately: reserve with --review-dispatch before launch, update the
+same attempt with its outcome and never launch concurrent duplicates. Metadata
+updates never reserve another review. Failed arguments, quota interruptions and
+stopped launches without a verdict do not consume completed reviews; retain their
+evidence and partial findings. Allow at most two infrastructure retries per
+dispatch within existing scope and model authorization; exhaustion is an
+infrastructure blocker, never approval, and no replacement dispatch may evade it.
+
+When the last budgeted review requires changes, its one focused fix verification
+needs no additional allowance. A blocker remains only if that verification fails
+or finds a new blocker; then ask once about the concrete blocker and proposed
+action. Save the answer with --review-authorization: decision reference,
+issue/finding scope, additional allowance and any expiry/model/cost constraints.
+Reuse it across resumes and retries; ask again only for changed scope or an
+exhausted allowance. Never infer consent from elapsed time or a restart.
 See `commands.md` for the protocol. Budget exhaustion never confers approval.
 
 Preserve saved strict/convergent policy and historical launch counters. They retain
@@ -77,7 +84,11 @@ reviewed-pending-integration also requires reviewer/execution and a receipt:
 <review-provider>:<full-head-sha>:<durable-receipt-id>.
 Head changes invalidate tests. Review coverage for a changed head requires either
 a new independent receipt or --review-attestation for the complete eligible
-nonfunctional delta. Keep the original receipt unchanged. Prose completion cannot
+nonfunctional delta: the exact delta, classification, why behavior is unchanged,
+assessor and checks run on the current head. Check callers, argument evaluation
+and interface implications before classifying unused-argument removal. Keep the
+original receipt attached to the SHA actually reviewed; the attestation is
+coordinator evidence, not independent review of the new commit. Prose completion cannot
 substitute for validated Git/manifest evidence. Bounded runs also require a
 head-bound --completion-guide before reviewed-pending-integration.
 

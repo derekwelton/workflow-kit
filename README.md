@@ -204,8 +204,12 @@ It checks discovery, selective installs, both hosts, copy and default link modes
 and helper execution in isolated projects and a temporary home.
 The optional legacy native-plugin smoke test uses an isolated home:
 `python scripts/test-codex-install.py`.
+`node scripts/measure-context.mjs` reports the instruction characters each skill
+can load; `test/context-budgets.json` caps them so additions stay deliberate.
 Model policy remains in `scripts/lib/model-policy.mjs` and
-`templates/model-routing.md`. Delegation uses T3 Code's orchestrator tools when
+`templates/model-routing.md`; skills resolve routes with
+`node scripts/lib/model-policy.mjs resolve --provider <p> --task <class>`
+instead of restating defaults. Delegation uses T3 Code's orchestrator tools when
 the host exposes them (`templates/t3-delegation.md`) and otherwise the official
 Codex and Claude CLIs (`templates/cli-delegation.md`); only the selected
 transport is read. No codex-kit companion is needed. Codex work defaults to GPT-6.1 Sol

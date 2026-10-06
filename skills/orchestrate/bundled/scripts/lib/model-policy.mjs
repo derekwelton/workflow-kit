@@ -1,4 +1,8 @@
 // Canonical source: derekwelton/workflow-kit.
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { parseArgs } from "node:util";
+
 export const POLICY_VERSION = "2026-10-05";
 // Effort ladder. Each model's minEffort/maxEffort (default low..high) bounds it.
 // ultra is always prohibited.
@@ -143,4 +147,25 @@ export function workerCapacity({ hostSlots, activeWorkers = 0, coordinatorSlots 
     if (!Number.isSafeInteger(value) || value < 0) throw new Error(`${key} must be a nonnegative integer.`);
   }
   return Math.min(requested, Math.max(0, Math.floor((hostSlots - coordinatorSlots - activeWorkers) / (1 + nestedPerWorker))));
+}
+
+// Skills resolve routes through this CLI instead of restating the defaults above.
+export function resolveFromArgs(args) {
+  const { positionals, values } = parseArgs({ args, allowPositionals: true, strict: true, options: {
+    provider: { type: "string" }, task: { type: "string" }, model: { type: "string" }, effort: { type: "string" },
+    "high-reason": { type: "string" }, available: { type: "string" }, "review-fallback": { type: "string" }
+  } });
+  if (positionals.join(" ") !== "resolve") {
+    throw new Error("Usage: model-policy.mjs resolve --provider <codex|claude> --task <class> [--model <pin>] [--effort <effort>] [--high-reason <text>] [--available <id,id>] [--review-fallback <JSON>]");
+  }
+  return resolveRouting({
+    provider: values.provider, task: values.task, model: values.model, effort: values.effort, highReason: values["high-reason"],
+    availableModels: values.available?.split(",").map(id => id.trim()).filter(Boolean),
+    reviewFallback: values["review-fallback"] === undefined ? null : JSON.parse(values["review-fallback"])
+  });
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try { console.log(JSON.stringify(resolveFromArgs(process.argv.slice(2)), null, 2)); }
+  catch (error) { console.error(error.message); process.exitCode = 1; }
 }

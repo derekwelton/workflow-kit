@@ -5,11 +5,8 @@ single tracker/manifest/integration writer.
 
 - Task: issue key, goal, acceptance criteria, role (implementation or review).
 - Scope: leased worktree, allowed files, fixed base/head, repository instructions.
-- Route: explicit provider, model, effort, and high reason only when justified.
-  Follow workflow-kit's `model-routing` (the same canonical policy synced to
-  workflow-kit's model-routing reference). Never use Sonnet/Haiku, retired Opus 5,
-  or ultra effort. xhigh is Sol-only and max is Luna-only; Luna runs high or above;
-  Opus 5.5 never runs low.
+- Route: the explicit provider, model, effort and highReason returned by the
+  model-routing resolver. Workers never change their own route.
 - Review: dispatch/attempt IDs, completed-review budget, saved scoped authorization,
   adjudication rule, Standards and Spec axes. Supply existing fixes/affected behavior
   for verification; never omit the user's authorization record from the prompt.

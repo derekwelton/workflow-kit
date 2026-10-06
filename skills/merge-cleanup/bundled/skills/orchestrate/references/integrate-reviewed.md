@@ -26,7 +26,7 @@ For an already-merged target, use the verified resume path under Wrap.
 
 1. Validate the manifest. Require integration state
    `ready-for-human-review`, every included issue `in-review`, exact-head review
-   coverage under `../../../templates/review-policy.md`, combined tests, and one umbrella PR.
+   coverage under [workload-contract.md](workload-contract.md), combined tests, and one umbrella PR.
 2. Confirm the checked-out/tested integration head still equals the manifest
    head and the remote PR head. Stop on drift.
 3. Re-fetch every issue and require the configured human-review status

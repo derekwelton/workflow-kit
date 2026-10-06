@@ -54,7 +54,7 @@ When persisting the envelope, record full Git-resolved base/head commits. The
 `tests` evidence must include the exact tested head SHA. A final review receipt
 must use `<review-provider>:<full-head-sha>:<durable-receipt-id>`. Changing the
 head invalidates tests; review carry-forward requires the explicit attestation in
-`../../../templates/review-policy.md`. The manifest helper enforces integration
+[workload-contract.md](workload-contract.md). The manifest helper enforces integration
 state order (`pending → assembling → ready-for-human-review → merged`) and
 requires a head-bound conflict review receipt when conflicts occurred.
 

@@ -18,6 +18,10 @@
   Fable low/medium review alternative, then fresh Codex if neither is available);
   Fable 5.1 high for Claude intense reasoning. Astra is an explicit pin only.
   Opus 5.5 never runs at low. Opus 5 is retired. Record routing evidence.
+- Keep each policy in its owner and link to it; do not restate model defaults or
+  workload-only rules in standalone skills. Load references only at the step
+  that needs them. `test/context-budgets.json` caps reachable instructions per
+  skill; raise a budget only deliberately.
 - Preserve local repository tracker/status mappings and independent review,
   final-SHA verification, and human acceptance boundaries.
 - Preserve unrelated worktree changes. Do not change global plugin/model settings

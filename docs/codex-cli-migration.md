@@ -42,8 +42,8 @@ Save the previous workflow-kit version and exact existing routing block for roll
 Install the updated selected skills using that project's established installer.
 Replace only the old codex-kit managed routing block with:
 
-> Delegation: follow model-routing's launch transport. Prefer the other provider for review;
-> follow model-routing's Opus 5.5 high, Fable medium/low, then Codex availability fallback.
+> Delegation: follow model-routing for launch transport, routes and review fallback;
+> prefer the other provider for review.
 
 Preserve custom instructions, tracker/status mappings, active job artifacts and
 receipts. Verify the new instructions in a fresh host session before proceeding
