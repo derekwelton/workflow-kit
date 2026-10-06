@@ -1,12 +1,12 @@
 {
   "schema": 1,
+  "retired": {"codex-cli": "1.5.0: launch mechanics moved to templates/t3-delegation.md and templates/cli-delegation.md via model-routing."},
   "upstream": {"repository": "mattpocock/skills", "revision": "3cca18b368ae95cdbdebbff572ccafa662551015"},
   "skills": {
     "cleanup-audit": {"dependencies": [], "support": ["templates/cleanup-owned.md", "templates/merge-completion.md", "templates/lifecycle-contract.md"]},
     "merge-cleanup": {"dependencies": ["orchestrate"], "support": ["templates/cleanup-owned.md", "templates/merge-completion.md"]},
     "unslop": {"dependencies": []},
-    "code-review": {"dependencies": ["codex-cli"], "support": ["templates/project-context.md", "templates/model-routing.md"]},
-    "codex-cli": {"dependencies": [], "support": ["templates/model-routing.md", "scripts/lib/model-policy.mjs", "templates/codex-adversarial-review.md", "templates/codex-review-output.schema.json"]},
+    "code-review": {"dependencies": [], "support": ["templates/project-context.md", "templates/model-routing.md"]},
     "codebase-design": {"dependencies": []},
     "diagnosing-bugs": {"dependencies": []},
     "domain-modeling": {"dependencies": []},

@@ -1,22 +1,17 @@
 // Canonical source: derekwelton/workflow-kit.
 export const POLICY_VERSION = "2026-10-05";
-export const ALLOWED_EFFORTS = ["low", "medium", "high"];
-export const CLAUDE_REVIEW_HIGH_REASON = "Owner-selected Opus 5.5 high for independent review (2026-09-24).";
-export const CLAUDE_CODING_HIGH_REASON = "Owner-selected Opus 5.5 high for Claude coding (2026-09-24).";
-export const CLAUDE_DESIGN_HIGH_REASON = "Owner-selected Opus 5.5 or Fable 5.1 high for Claude design (2026-10-05).";
-export const CODEX_REVIEW_HIGH_REASON = "Owner-selected GPT-6.1 Sol high for independent review (2026-10-05).";
-export const CODEX_CODING_HIGH_REASON = "Owner-selected GPT-6.1 Sol high for Codex coding (2026-10-05).";
-export const CODEX_DESIGN_HIGH_REASON = "Owner-selected GPT-6.1 Sol high for Codex design (2026-10-05).";
-export const CODEX_ORCHESTRATION_HIGH_REASON = "Owner-selected GPT-6.1 Sol high for Codex orchestration (2026-10-05).";
+// Effort ladder. Each model's minEffort/maxEffort (default low..high) bounds it.
+// ultra is always prohibited.
+export const ALLOWED_EFFORTS = ["low", "medium", "high", "xhigh", "max"];
 export const TASK_CLASSES = ["simple", "coding", "design", "review", "orchestration", "intense"];
-// freeHigh: high needs no recorded reason (owner-approved for the cheap model).
-// minEffort: the model never runs below this effort.
+// freeHigh: efforts above medium need no recorded reason (owner-approved for the cheap model).
+// minEffort/maxEffort: the model never runs outside this range.
 // legacy: explicit pin only; never a default.
 export const MODELS = {
-  sol: { id: "gpt-6.1-sol", provider: "codex" },
+  sol: { id: "gpt-6.1-sol", provider: "codex", maxEffort: "xhigh" },
   astra: { id: "gpt-6-astra", provider: "codex" },
   sol60: { id: "gpt-6-sol", provider: "codex", legacy: true },
-  luna: { id: "gpt-6-luna", provider: "codex", freeHigh: true },
+  luna: { id: "gpt-6-luna", provider: "codex", minEffort: "high", maxEffort: "max", freeHigh: true },
   terra: { id: "gpt-5.6-terra", provider: "codex", legacy: true },
   sol56: { id: "gpt-5.6-sol", provider: "codex", legacy: true },
   fable: { id: "claude-fable-5-1", provider: "claude" },
@@ -33,16 +28,19 @@ export function resolveModel(value) {
   return model;
 }
 
+const rank = effort => ALLOWED_EFFORTS.indexOf(effort);
+
 export function validateEffort(effort, highReason, model = null) {
   if (!ALLOWED_EFFORTS.includes(effort)) {
-    throw new Error(`Unsupported effort "${effort}". Only low, medium, high are permitted; xhigh, max and ultra are prohibited.`);
+    throw new Error(`Unsupported effort "${effort}". Only low, medium, high, xhigh and max are recognized; ultra is prohibited.`);
   }
   const selected = typeof model === "string" ? resolveModel(model) : model;
-  if (selected?.minEffort && ALLOWED_EFFORTS.indexOf(effort) < ALLOWED_EFFORTS.indexOf(selected.minEffort)) {
-    throw new Error(`${selected.id} runs at ${selected.minEffort} or high only; "${effort}" is not permitted.`);
+  const [min, max] = [selected?.minEffort ?? "low", selected?.maxEffort ?? "high"];
+  if (rank(effort) < rank(min) || rank(effort) > rank(max)) {
+    throw new Error(`${selected?.id ?? "An unspecified model"} runs at ${min} through ${max} only; "${effort}" is not permitted.`);
   }
-  if (effort === "high" && !selected?.freeHigh && !String(highReason ?? "").trim()) {
-    throw new Error("High effort requires a recorded highReason for an owner-selected review policy, orchestration or intense reasoning.");
+  if (rank(effort) >= rank("high") && !selected?.freeHigh && !String(highReason ?? "").trim()) {
+    throw new Error("High effort requires a recorded highReason (as do xhigh and max) for an owner-selected policy, orchestration or intense reasoning.");
   }
   return effort;
 }
@@ -70,20 +68,36 @@ export function validateReviewFallback(fallback, implementationProvider, reviewP
 
 function defaultModel(provider, task) {
   if (provider === "codex") return task === "simple" ? "luna" : "sol";
-  return ["coding", "design", "review"].includes(task) ? "opus" : "fable";
+  return ["coding", "design", "review", "orchestration"].includes(task) ? "opus" : "fable";
 }
 
-// Owner-selected high defaults by model and task; the resolver records their reasons.
-const OWNER_HIGH_REASONS = {
-  [MODELS.opus.id]: { review: CLAUDE_REVIEW_HIGH_REASON, coding: CLAUDE_CODING_HIGH_REASON, design: CLAUDE_DESIGN_HIGH_REASON },
-  [MODELS.fable.id]: { design: CLAUDE_DESIGN_HIGH_REASON },
-  [MODELS.sol.id]: { review: CODEX_REVIEW_HIGH_REASON, coding: CODEX_CODING_HIGH_REASON, design: CODEX_DESIGN_HIGH_REASON, orchestration: CODEX_ORCHESTRATION_HIGH_REASON }
+// Owner-selected defaults above medium by model and task; the resolver records each reason.
+const owner = (effort, reason) => ({ effort, reason });
+const OWNER_DEFAULTS = {
+  [MODELS.opus.id]: {
+    coding: owner("high", "Owner-selected Opus 5.5 high for Claude coding (2026-09-24)."),
+    review: owner("high", "Owner-selected Opus 5.5 high for independent review (2026-09-24)."),
+    design: owner("high", "Owner-selected Opus 5.5 high for Claude design (2026-10-05)."),
+    orchestration: owner("high", "Owner-selected Opus 5.5 high for Claude orchestration (2026-10-05).")
+  },
+  [MODELS.fable.id]: {
+    design: owner("high", "Owner-selected Fable 5.1 high for Claude design (2026-10-05)."),
+    intense: owner("high", "Owner-selected Fable 5.1 high for intense reasoning (2026-10-05).")
+  },
+  [MODELS.sol.id]: {
+    coding: owner("high", "Owner-selected GPT-6.1 Sol high for Codex coding (2026-10-05)."),
+    review: owner("high", "Owner-selected GPT-6.1 Sol high for independent review (2026-10-05)."),
+    orchestration: owner("high", "Owner-selected GPT-6.1 Sol high for Codex orchestration (2026-10-05)."),
+    design: owner("xhigh", "Owner-selected GPT-6.1 Sol xhigh for Codex design (2026-10-05)."),
+    intense: owner("xhigh", "Owner-selected GPT-6.1 Sol xhigh for intense reasoning (2026-10-05).")
+  }
 };
 
 function defaultEffort(task, selected) {
-  if (OWNER_HIGH_REASONS[selected.id]?.[task]) return "high";
-  if (["orchestration", "intense", "review", "design"].includes(task)) return "medium";
-  return selected.minEffort ?? "low";
+  const policy = OWNER_DEFAULTS[selected.id]?.[task];
+  if (policy) return policy.effort;
+  const base = ["orchestration", "intense", "review", "design"].includes(task) ? "medium" : "low";
+  return rank(base) < rank(selected.minEffort ?? "low") ? selected.minEffort : base;
 }
 
 export function resolveRouting({ provider = "codex", task = "coding", model, effort, highReason, availableModels, reviewFallback = null } = {}) {
@@ -112,7 +126,9 @@ export function resolveRouting({ provider = "codex", task = "coding", model, eff
   if (selected.provider !== provider) throw new Error(`${requestedModel} cannot run through ${provider}.`);
   if (selected.legacy && !model) throw new Error(`${selected.id} is a legacy explicit pin and never a default.`);
   const selectedEffort = effort ?? defaultEffort(task, selected);
-  const ownerReason = selectedEffort === "high" ? OWNER_HIGH_REASONS[selected.id]?.[task] ?? null : null;
+  // The owner reason covers any elevated effort up to the owner-selected level.
+  const policy = OWNER_DEFAULTS[selected.id]?.[task];
+  const ownerReason = policy && rank(selectedEffort) >= rank("high") && rank(selectedEffort) <= rank(policy.effort) ? policy.reason : null;
   const reason = highReason ?? ownerReason;
   validateEffort(selectedEffort, reason, selected);
   if (availableModels && !availableModels.includes(selected.id)) {

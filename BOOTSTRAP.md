@@ -11,6 +11,6 @@ For orchestration/review, prefer the other provider's CLI. If its authorized
 reviewers are unavailable, use a fresh same-provider session and record why.
 Claude review uses Opus 5.5 high, then Fable medium/low, then Codex Sol high.
 Codex review uses GPT-6.1 Sol high. Neither optional
-CLI is a prerequisite for adopting skills. Claude-to-Codex: follow `codex-cli`.
+CLI is a prerequisite for adopting skills. Delegation: follow model-routing's launch transport.
 Do not stamp companion-plugin instructions into consumer CLAUDE.md files.
 For existing companion routing, follow [migration](docs/codex-cli-migration.md).

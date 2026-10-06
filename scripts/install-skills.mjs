@@ -126,7 +126,9 @@ export function installSkills({ project = process.cwd(), host = "codex", skills 
   const hosts = host === "both" ? ["codex", "claude"] : [host];
   for (const selectedHost of hosts) {
     const old = previous.hosts[selectedHost] ?? { requested: [], files: {} };
-    const requested = (all ? Object.keys(catalog.skills) : [...new Set([...old.requested, ...skills])]).sort();
+    // Retired skills drop out of earlier requests; their owned files are then removed.
+    const kept = old.requested.filter(name => !catalog.retired?.[name]);
+    const requested = (all ? Object.keys(catalog.skills) : [...new Set([...kept, ...skills])]).sort();
     if (!requested.length) throw new Error("Choose --all or --skills <name,...> for the first installation");
     const selected = selectSkills(catalog, requested);
     selections[selectedHost] = { requested, included: selected, dependencies: selected.filter(name => !requested.includes(name)) };

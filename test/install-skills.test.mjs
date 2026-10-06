@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { createHash } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -149,4 +150,18 @@ test("reviewed source updates replace owned files, remove retired owned files, a
   assert.equal(read(consumer, ".agents/skills/ponytail/local-notes.md"), "Owner notes\n");
   assert.ok(!fs.existsSync(path.join(consumer, ".agents/skills/ponytail/old-reference.md")));
   assert.equal(installSkills({ project: consumer, root: source, check: true }).healthy, true);
+}));
+
+test("retired skills drop out of earlier requests and their owned files are removed", () => fixture(project => {
+  installSkills({ project, host: "codex", skills: ["ponytail"] });
+  const retired = ".agents/skills/codex-cli/SKILL.md";
+  fs.mkdirSync(path.join(project, path.dirname(retired)), { recursive: true });
+  fs.writeFileSync(path.join(project, retired), "old\n");
+  const lock = JSON.parse(read(project, ".workflow-skills.json"));
+  lock.hosts.codex.requested.push("codex-cli");
+  lock.hosts.codex.files[retired] = createHash("sha256").update("old\n").digest("hex");
+  fs.writeFileSync(path.join(project, ".workflow-skills.json"), JSON.stringify(lock));
+  installSkills({ project, host: "codex" });
+  assert.ok(!fs.existsSync(path.join(project, retired)));
+  assert.deepEqual(JSON.parse(read(project, ".workflow-skills.json")).hosts.codex.requested, ["ponytail"]);
 }));

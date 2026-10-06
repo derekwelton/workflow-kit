@@ -11,7 +11,7 @@ test("coding and review resolve conservatively without machine defaults", () => 
   assert.match(codexCoding.highReason, /Owner-selected GPT-6.1 Sol high for Codex coding/);
   assert.equal(resolveRouting({ effort: "low" }).highReason, null);
   assert.equal(resolveRouting({ task: "simple" }).model, "gpt-6-luna");
-  assert.equal(resolveRouting({ task: "simple" }).effort, "low");
+  assert.equal(resolveRouting({ task: "simple" }).effort, "high");
   const codexReview = resolveRouting({ task: "review" });
   assert.equal(codexReview.model, "gpt-6.1-sol");
   assert.equal(codexReview.effort, "high");
@@ -23,14 +23,25 @@ test("coding and review resolve conservatively without machine defaults", () => 
   assert.match(claudeCoding.highReason, /Owner-selected Opus 5.5 high for Claude coding/);
   assert.equal(resolveRouting({ provider: "claude", model: "fable" }).model, "claude-fable-5-1");
   assert.equal(resolveRouting({ provider: "claude", model: "fable" }).effort, "low");
-  assert.equal(resolveRouting({ provider: "claude", task: "orchestration" }).model, "claude-fable-5-1");
+  const claudeOrchestration = resolveRouting({ provider: "claude", task: "orchestration" });
+  assert.equal(claudeOrchestration.model, "claude-opus-5-5");
+  assert.equal(claudeOrchestration.effort, "high");
+  assert.match(claudeOrchestration.highReason, /Claude orchestration/);
+  const claudeIntense = resolveRouting({ provider: "claude", task: "intense" });
+  assert.equal(claudeIntense.model, "claude-fable-5-1");
+  assert.equal(claudeIntense.effort, "high");
+  assert.match(claudeIntense.highReason, /Fable 5.1 high for intense reasoning/);
+  const codexIntense = resolveRouting({ task: "intense" });
+  assert.equal(codexIntense.effort, "xhigh");
+  assert.match(codexIntense.highReason, /Sol xhigh for intense reasoning/);
+  assert.match(resolveRouting({ task: "intense", effort: "high" }).highReason, /Sol xhigh/);
   assert.equal(resolveRouting({ model: "sol", effort: "medium" }).model, "gpt-6.1-sol");
   assert.equal(resolveRouting({ model: "astra", effort: "low" }).model, "gpt-6-astra");
   assert.equal(resolveRouting({ model: "sol60", effort: "low" }).model, "gpt-6-sol");
   assert.equal(resolveRouting({ model: "sol56", effort: "low" }).model, "gpt-5.6-sol");
   assert.equal(resolveRouting({ model: "terra", effort: "low" }).model, "gpt-5.6-terra");
   assert.equal(resolveRouting({ provider: "codex", task: "design" }).model, "gpt-6.1-sol");
-  assert.equal(resolveRouting({ provider: "codex", task: "design" }).effort, "high");
+  assert.equal(resolveRouting({ provider: "codex", task: "design" }).effort, "xhigh");
   assert.match(resolveRouting({ provider: "codex", task: "design" }).highReason, /Codex design/);
   assert.equal(resolveRouting({ provider: "claude", task: "design" }).model, "claude-opus-5-5");
   assert.equal(resolveRouting({ provider: "claude", task: "design" }).effort, "high");
@@ -40,12 +51,13 @@ test("coding and review resolve conservatively without machine defaults", () => 
   for (const retired of ["claude-opus-5", "gpt-5.5", "gpt-5.6-luna"]) assert.throws(() => resolveRouting({ model: retired }), /Retired model/);
 });
 
-test("Luna may run high without a reason; Opus 5.5 never runs low", () => {
-  for (const effort of ["low", "medium", "high"]) assert.equal(resolveRouting({ task: "simple", effort }).effort, effort);
+test("Luna runs high through max without a reason; Opus 5.5 never runs low", () => {
+  for (const effort of ["high", "xhigh", "max"]) assert.equal(resolveRouting({ task: "simple", effort }).effort, effort);
   assert.equal(resolveRouting({ task: "simple" }).highReason, null);
-  assert.throws(() => resolveRouting({ task: "simple", effort: "xhigh" }), /Unsupported effort/);
+  for (const effort of ["low", "medium"]) assert.throws(() => resolveRouting({ task: "simple", effort }), /high through max only/);
+  assert.throws(() => resolveRouting({ task: "simple", effort: "ultra" }), /Unsupported effort/);
   assert.throws(() => resolveRouting({ task: "simple", model: "astra", effort: "high" }), /High effort requires/);
-  assert.throws(() => resolveRouting({ provider: "claude", model: "opus", effort: "low" }), /medium or high only/);
+  assert.throws(() => resolveRouting({ provider: "claude", model: "opus", effort: "low" }), /medium through high only/);
   assert.equal(resolveRouting({ provider: "claude", model: "opus", task: "intense" }).effort, "medium");
   assert.equal(resolveRouting({ provider: "claude", model: "opus", effort: "medium" }).highReason, null);
   assert.equal(resolveRouting({ provider: "claude", task: "review", model: "opus", effort: "medium" }).effort, "medium");
@@ -87,18 +99,21 @@ test("Claude review defaults to owner-selected Opus high and falls back in decla
 });
 
 test("high needs a reason and unsupported efforts cannot reach a worker", () => {
-  for (const effort of ["xhigh", "max", "ultra", "none", "minimal"]) assert.throws(() => resolveRouting({ effort }), /Unsupported effort/);
-  assert.throws(() => resolveRouting({ task: "intense", effort: "high" }), /High effort requires/);
+  for (const effort of ["ultra", "none", "minimal"]) assert.throws(() => resolveRouting({ effort }), /Unsupported effort/);
+  assert.throws(() => resolveRouting({ effort: "xhigh" }), /High effort requires/);
+  assert.throws(() => resolveRouting({ effort: "max", highReason: "x" }), /low through xhigh only/);
+  assert.throws(() => resolveRouting({ provider: "claude", task: "design", effort: "xhigh", highReason: "x" }), /medium through high only/);
   assert.throws(() => resolveRouting({ model: "astra", effort: "high" }), /High effort requires/);
+  assert.throws(() => resolveRouting({ model: "astra", effort: "xhigh", highReason: "x" }), /low through high only/);
   const codexOrchestration = resolveRouting({ task: "orchestration" });
   assert.equal(codexOrchestration.effort, "high");
   assert.match(codexOrchestration.highReason, /Codex orchestration/);
-  for (const [provider, task] of [["codex", "intense"], ["claude", "orchestration"], ["claude", "intense"]]) {
-    const route = resolveRouting({ provider, task });
+  for (const [provider, model, task] of [["codex", "astra", "orchestration"], ["codex", "astra", "intense"], ["claude", "fable", "orchestration"]]) {
+    const route = resolveRouting({ provider, model, task });
     assert.equal(route.effort, "medium");
     assert.equal(route.highReason, null);
-    assert.equal(resolveRouting({ provider, task, effort: "low" }).effort, "low");
-    assert.throws(() => resolveRouting({ provider, task, effort: "high" }), /High effort requires/);
+    assert.equal(resolveRouting({ provider, model, task, effort: "low" }).effort, "low");
+    assert.throws(() => resolveRouting({ provider, model, task, effort: "high" }), /High effort requires/);
   }
   assert.equal(resolveRouting({ effort: "high", highReason: "intense deadlock reasoning" }).effort, "high");
   assert.throws(() => resolveRouting({ availableModels: ["gpt-6-luna"] }), /unavailable/);
@@ -125,7 +140,9 @@ test("Projects preserves local statuses without fabricating an AI review column"
 test("execution provenance distinguishes unknown identity and explicit fallback", () => {
   const execution = { requestedModel: "astra", resolvedModel: null, resolutionStatus: "unverified", effort: "medium", workerId: "worker-1", policyVersion: "2026-09-24" };
   assert.doesNotThrow(() => validateExecution(execution, "codex"));
-  assert.throws(() => validateExecution({ ...execution, effort: "xhigh" }, "codex"), /Unsupported effort/);
+  assert.throws(() => validateExecution({ ...execution, effort: "ultra" }, "codex"), /Unsupported effort/);
+  assert.throws(() => validateExecution({ ...execution, effort: "xhigh", highReason: "x" }, "codex"), /low through high only/);
+  assert.doesNotThrow(() => validateExecution({ ...execution, requestedModel: "sol", effort: "xhigh", resolvedEffort: "xhigh", highReason: "design" }, "codex"));
   assert.throws(() => validateExecution({ ...execution, resolvedModel: "gpt-6-sol" }, "codex"), /fallbackReason/);
   assert.throws(() => validateExecution(execution, "claude"), /mismatch/);
 });

@@ -9,9 +9,10 @@ Codex review defaults to GPT-6.1 Sol high; Astra is an explicit pin only.
 Opus 5 is retired; never launch it.
 If the other provider's CLI or authorized reviewers are unavailable, use a fresh
 same-provider session and record the availability evidence.
-No optional CLI installation is required. For a direct Codex launch follow
-`../codex-cli/INSTRUCTIONS.md`. Native fresh same-provider agents
-are also valid; never pass the implementer's conversation or reuse its session.
+No optional CLI installation is required. Launch reviewers through
+model-routing's launch transport (T3 Code when available, otherwise CLI).
+Native fresh same-provider agents are also valid; never pass the implementer's
+conversation or reuse its session.
 
 Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
 

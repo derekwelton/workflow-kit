@@ -62,11 +62,10 @@ Read only the configured tracker adapter; writes use
    dispatch accounting rules. Give both Standards and Spec axes. Adjudicate
    findings against evidence, fix, verify, and obtain exact-head review coverage
    (independent receipt or eligible nonfunctional attestation).
-   Record reviewed-pending-integration. For direct Codex launches, follow
-   `./bundled/skills/codex-cli/INSTRUCTIONS.md`. For Claude review, launch a fresh
-   Claude CLI process as described in model-routing. Prefer the other provider;
-   follow model-routing's Opus 5.5 high → Fable medium/low → Codex fallback when
-   Claude review is unavailable. Record availability evidence for the chosen
+   Record reviewed-pending-integration. Launch workers and reviewers through
+   model-routing's launch transport (T3 Code when available, otherwise CLI).
+   Prefer the other provider; follow model-routing's Opus 5.5 high → Fable
+   medium/low → Codex fallback when Claude review is unavailable. Record availability evidence for the chosen
    route. Never reuse the implementation session for review.
 7. Once the workload contract permits assembly, fetch current default branch,
    combine exact reviewed heads in dependency order on integration/<slug>.

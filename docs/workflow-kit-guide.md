@@ -2,7 +2,7 @@
 
 Historical framework guide. The 1.0 project-local collection supersedes this
 workflow; see README.md and docs/project-local-migration.md for current usage.
-Version 1.1.0 has 31 skills. Counts in the dated September 4/9 overview below
+Version 1.5.0 has 30 skills. Counts in the dated September 4/9 overview below
 describe that historical snapshot, not the current catalog.
 
 ## September 9 update
@@ -399,7 +399,7 @@ Keep routine work economical while reserving more reasoning for justified comple
 
 - Use: Applied before delegating implementation or review.
 - Result: An explicit supported model/effort route bounded by host capacity and user choices.
-- Limit: GPT-6.1 Sol high for Codex coding, design, review and orchestration; Opus 5.5 high for Claude coding, design and review (Fable 5.1 high as the design alternative); Luna at any allowed effort for simple work. Astra is an explicit pin only. High needs a reason except on Luna and the owner-selected Opus 5.5, Fable design and Sol defaults; xhigh/max/ultra reasoning are prohibited.
+- Limit: GPT-6.1 Sol high for Codex coding, review and orchestration, Sol xhigh for design and intense reasoning; Opus 5.5 high for Claude coding, design, review and orchestration (Fable 5.1 high as the design alternative and for intense reasoning); Luna high, xhigh or max for simple work. Astra is an explicit pin only. Effort above medium needs a reason except on Luna and the owner-selected defaults; xhigh is Sol-only, max is Luna-only, and ultra is prohibited.
 - Claude: `/workflow-kit:model-routing`
 - Codex: `$model-routing`
 - Source: `skills/model-routing/SKILL.md:1`
@@ -501,7 +501,8 @@ Eight executable helper entry points and two shared libraries are listed below. 
 
 `.claude-plugin/plugin.json` declares the Claude package; `.agents/plugins/marketplace.json` advertises the native Codex package. `plugins/workflow-kit/` is generated from root sources, including its native manifest. Generated skill copies do not increase the count of 30.
 
-The codex-cli skill invokes the official CLI directly without a companion plugin.
+Delegation uses T3 Code's orchestrator tools when available, otherwise the official
+Codex and Claude CLIs, without a companion plugin.
 Workflow-kit owns lifecycle, model policy, review receipts and integration rules.
 Prefer the other provider for review; Codex reviews use GPT-6.1 Sol high. Claude
 reviews use Opus 5.5 high, then Fable medium/low, then fresh Codex Sol high if

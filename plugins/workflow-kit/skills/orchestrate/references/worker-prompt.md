@@ -8,7 +8,8 @@ single tracker/manifest/integration writer.
 - Route: explicit provider, model, effort, and high reason only when justified.
   Follow workflow-kit's `model-routing` (the same canonical policy synced to
   workflow-kit's model-routing reference). Never use Sonnet/Haiku, retired Opus 5,
-  or xhigh/max/ultra effort. Luna may take any allowed effort; Opus 5.5 never runs low.
+  or ultra effort. xhigh is Sol-only and max is Luna-only; Luna runs high or above;
+  Opus 5.5 never runs low.
 - Review: dispatch/attempt IDs, completed-review budget, saved scoped authorization,
   adjudication rule, Standards and Spec axes. Supply existing fixes/affected behavior
   for verification; never omit the user's authorization record from the prompt.

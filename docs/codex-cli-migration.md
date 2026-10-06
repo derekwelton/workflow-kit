@@ -1,5 +1,8 @@
 # Direct CLI migration and retirement
 
+Workflow-kit 1.5.0 retires the codex-cli skill: launch mechanics live in
+`templates/t3-delegation.md` and `templates/cli-delegation.md`, selected by model-routing.
+
 Workflow-kit 1.1.0 owns direct Codex execution through codex-cli. The official
 Codex CLI remains installed where used; the codex-kit plugin is no longer a
 runtime dependency. Prefer the other provider for review. If its CLI or authorized
@@ -39,7 +42,7 @@ Save the previous workflow-kit version and exact existing routing block for roll
 Install the updated selected skills using that project's established installer.
 Replace only the old codex-kit managed routing block with:
 
-> Claude-to-Codex: follow codex-cli. Prefer the other provider for review;
+> Delegation: follow model-routing's launch transport. Prefer the other provider for review;
 > follow model-routing's Opus 5.5 high, Fable medium/low, then Codex availability fallback.
 
 Preserve custom instructions, tracker/status mappings, active job artifacts and

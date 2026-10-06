@@ -10,7 +10,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 const SCHEMA_VERSION = 3;
-const WORKFLOW_KIT_VERSION = "1.4.0";
+const WORKFLOW_KIT_VERSION = "1.5.0";
 const PAIR_MODES = new Set(["cross", "codex-only", "claude-only"]);
 const ISSUE_STATES = new Set([
   "selected",
@@ -807,7 +807,7 @@ export function validateExecution(value, provider) {
   const requested = resolveModel(value.requestedModel);
   if (provider && requested.provider !== provider) throw new Error("model/provider mismatch");
   validateEffort(value.effort, value.highReason, requested);
-  if (value.resolvedEffort != null) validateEffort(value.resolvedEffort, value.highReason);
+  if (value.resolvedEffort != null) validateEffort(value.resolvedEffort, value.highReason, requested);
   if (value.resolvedModel !== null) {
     const resolved = resolveModel(value.resolvedModel);
     if (resolved.provider !== requested.provider) throw new Error("resolved model/provider mismatch");
