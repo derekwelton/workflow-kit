@@ -80,6 +80,8 @@ export function bundlePayload(sourceRoot, owner, catalog) {
   payload.set("bundled/VERSION", `${JSON.parse(read(path.join(sourceRoot, ".claude-plugin/plugin.json"))).version}\n`);
   const dependencies = selected.filter(name => name !== owner);
   payload.set("bundled/dependencies.md", "# Bundled dependencies\n\nRead only the instructions needed by the current workflow. Preserve the user's scope,\nrepository contracts, independent review, and human acceptance boundaries.\n\n" + dependencies.map(name => `- ${name}${catalog.skills[name].name ? ` (${catalog.skills[name].name})` : ""}: [instructions](./skills/${name}/INSTRUCTIONS.md)`).join("\n") + "\n");
+  // Consumer hygiene checks reject blank lines at EOF: end each file with exactly one newline.
+  for (const [file, content] of payload) payload.set(file, content.replace(/\s*$/, "\n"));
   return payload;
 }
 
