@@ -2,7 +2,7 @@
 
 Historical framework guide. The 1.0 project-local collection supersedes this
 workflow; see README.md and docs/project-local-migration.md for current usage.
-Version 1.5.0 has 30 skills. Counts in the dated September 4/9 overview below
+Version 1.6.0 has 30 skills. Counts in the dated September 4/9 overview below
 describe that historical snapshot, not the current catalog.
 
 ## September 9 update

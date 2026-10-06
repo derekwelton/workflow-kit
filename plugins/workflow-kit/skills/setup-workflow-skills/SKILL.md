@@ -24,6 +24,13 @@ and the installed directory names or .workflow-skills.json. Do not read every
 installed SKILL.md. Discover whether triage, domain-modeling, linear-mode and
 github-projects are installed before configuring their optional behavior.
 
+Compare any `workflow-kit:managed-start version=` stamp in a lifecycle file with
+the installed version in .workflow-skills.json. Never leave a mismatch silent.
+When the block is older, report both versions and offer, as the recommended
+choice, to refresh it now with the package's refresh-lifecycle.mjs (preview with
+--check first; it preserves frontmatter and local overrides) or to migrate it as
+described below. When the block is newer, report that the package needs updating.
+
 Existing tracker bindings, status mappings, branch conventions, glossary paths
 and local verification rules take precedence over defaults. Remote-host inference
 does not override an existing configuration. Conflicts block affected writes.

@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
+import { checkManagedVersion, lifecycleCandidates } from "./managed-version.mjs";
 
 const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const slash = value => value.replaceAll(path.sep, "/");
@@ -94,6 +95,19 @@ export function projectPayload({ root = sourceRoot, host, selected, catalog }) {
   return payload;
 }
 
+// Report a legacy managed lifecycle block whose version differs from these skills.
+// Installation never rewrites it; refreshing or migrating stays an explicit step.
+export function lifecycleSkew(project, root = sourceRoot) {
+  return lifecycleCandidates.map(file => path.join(project, file)).filter(file => fs.existsSync(file))
+    .map(file => checkManagedVersion({ cwd: project, lifecycle: file, pluginRoot: root }))
+    .filter(result => ["stale", "newer"].includes(result.status))
+    .map(result => result.status === "newer" ? result : {
+      ...result,
+      message: `${slash(path.relative(project, result.file))} carries managed block ${result.managed}; these skills are ${result.installed}. Preview the refresh, then rerun without --check (or migrate with setup-workflow-skills):`,
+      command: `node "${path.join(root, "scripts/refresh-lifecycle.mjs")}" "${result.file}" --check`,
+    });
+}
+
 function assertSafe(project, relative) {
   const file = path.resolve(project, relative);
   if (!inside(project, file)) throw new Error(`Path escapes project: ${relative}`);
@@ -177,7 +191,7 @@ export function installSkills({ project = process.cwd(), host = "codex", skills 
       throw error;
     }
   }
-  return { project, healthy: check ? results.length === 0 : true, preview: check || dryRun, selections, changes: results };
+  return { project, healthy: check ? results.length === 0 : true, preview: check || dryRun, selections, changes: results, lifecycle: lifecycleSkew(project, root) };
 }
 
 export function main(argv = process.argv.slice(2)) {
@@ -206,6 +220,7 @@ export function main(argv = process.argv.slice(2)) {
     for (const [host, selection] of Object.entries(result.selections)) console.log(`${host}: ${selection.included.length} skills (${selection.dependencies.length} dependencies). ${selection.included.join(", ")}`);
     for (const change of result.changes) console.log(change.diff ?? `${change.action}: ${change.path}`);
     if (!result.changes.length) console.log("Already current.");
+    for (const skew of result.lifecycle) console.log(`Lifecycle: ${skew.message}${skew.command ? `\n  ${skew.command}` : ""}`);
   }
   if (!result.healthy) process.exitCode = 1;
 }

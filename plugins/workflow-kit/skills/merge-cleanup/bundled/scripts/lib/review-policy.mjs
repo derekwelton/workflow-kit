@@ -26,8 +26,11 @@ export function updateReviewDispatch(issue, input, limit) {
   let dispatch = issue.reviewDispatches.find(item => item.id === request.id);
   if (!dispatch) {
     required(!issue.reviewDispatches.some(item => item.status === "active"), "A review dispatch is already active; reconcile it first.");
-    const completed = issue.reviewDispatches.filter(item => item.status === "completed").length;
-    if (completed >= limit) {
+    const completed = issue.reviewDispatches.filter(item => item.status === "completed");
+    // One fix verification after the last budgeted review belongs to that review.
+    const included = completed.length === limit && request.kind === "fix-verification" && !request.authorizationId &&
+      completed.at(-1)?.verdict === "changes-required" && !issue.reviewDispatches.some(item => item.budgetVerification);
+    if (completed.length >= limit && !included) {
       const grant = issue.reviewAuthorizations.find(item => item.id === request.authorizationId);
       required(grant && grant.scope === request.scope &&
         (!grant.expiresAt || Date.parse(grant.expiresAt) > Date.now()), "Review budget exhausted; a matching unexpired authorization is required.");
@@ -36,6 +39,8 @@ export function updateReviewDispatch(issue, input, limit) {
     }
     dispatch = { ...request, headSha: issue.headSha, status: "active", attempts: [] };
     delete dispatch.attempt;
+    delete dispatch.budgetVerification;
+    if (included) dispatch.budgetVerification = true;
     issue.reviewDispatches.push(dispatch);
     issue.reviewReceipt = null;
     issue.reviewAttestation = null;
@@ -113,7 +118,10 @@ export function reviewPolicyErrors(issue, limit) {
   if (dispatches.filter(item => item.status === "active").length > 1) errors.push("multiple active review dispatches");
   const completed = dispatches.filter(item => item.status === "completed");
   const usage = new Map();
-  for (const dispatch of completed.slice(limit)) {
+  if (dispatches.filter(item => item.budgetVerification).length > 1) errors.push("only one fix verification belongs to the review budget");
+  for (const [index, dispatch] of completed.entries()) {
+    if (index < limit) continue;
+    if (index === limit && dispatch.budgetVerification && dispatch.kind === "fix-verification" && !dispatch.authorizationId) continue;
     const grant = issue.reviewAuthorizations?.find(item => item.id === dispatch.authorizationId);
     if (!grant || grant.scope !== dispatch.scope || !text(grant.reference)) errors.push("extra completed review lacks scoped authorization");
     else {

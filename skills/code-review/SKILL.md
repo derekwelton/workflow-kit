@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: "Review changes since a commit, branch, tag, or merge-base for Standards and Spec. Uses one independent reviewer for small cohesive changes and separate axis reviewers for complex changes. Use for branch, PR, or work-in-progress reviews."
+description: "Review a PR, uncommitted changes, or changes since a commit, branch, tag, or merge-base for Standards and Spec. Uses one independent reviewer for small cohesive changes and separate axis reviewers for complex changes. Use for branch, PR, or work-in-progress reviews."
 ---
 
 Resolve bundled relative file paths from this skill's directory, not the project working directory.
@@ -18,7 +18,7 @@ model-routing's launch transport (T3 Code when available, otherwise CLI).
 Native fresh same-provider agents are also valid; never pass the implementer's
 conversation or reuse its session.
 
-Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
+Two-axis review of the target the user supplies (a ref, a PR, or uncommitted changes):
 
 - **Standards**: does the code conform to this repo's documented coding standards, and could it preserve the required behavior more simply?
 - **Spec**: does the code faithfully implement the originating issue / spec?
@@ -44,21 +44,43 @@ choice; a missing setup file does not block a local diff review.
 
 ## Process
 
-### 1. Pin the fixed point
+### 1. Pin the target
 
-Whatever the user said is the fixed point (a commit SHA, branch name, tag, `main`, `HEAD~5`, etc.). If they didn't specify one, ask for it.
+Resolve what the user named:
 
-Capture the diff command once: `git diff <fixed-point>...HEAD` (three-dot, so the comparison is against the merge-base). Also note the list of commits via `git log <fixed-point>..HEAD --oneline`.
+- **A ref** (commit SHA, branch, tag, `main`, `HEAD~5`, etc.) is the fixed point.
+  The diff is `git diff <fixed-point>...HEAD` (three-dot, against the merge-base)
+  and the commits are `git log <fixed-point>..HEAD --oneline`.
+- **A PR number or URL**: read its base branch, head branch and head SHA
+  (`gh pr view <pr> --json baseRefName,headRefName,headRefOid`). The fixed point
+  is the merge-base with the base branch's remote-tracking ref; fetch the base only
+  if that ref is missing. When this checkout's current branch is the PR's head
+  branch and contains the PR head SHA, review this checkout without fetching the
+  head: `git diff <merge-base>` (working tree, so it includes unpushed commits and
+  staged and unstaged changes) plus untracked files from
+  `git ls-files --others --exclude-standard`. If the current branch is the head
+  branch but lacks the PR head SHA, the checkout is behind or diverged; say so
+  and ask whether to review local work or the PR head. Otherwise fetch the PR head
+  without checking it out and diff the base against the fetched head SHA.
+- **"Uncommitted changes"** (or equivalent): `git diff HEAD` plus untracked files
+  from `git ls-files --others --exclude-standard`.
 
-Before going further, confirm the fixed point resolves (`git rev-parse <fixed-point>`) and the diff is non-empty. A bad ref or empty diff should fail here, not inside two parallel sub-agents.
+If the user named no target, ask for one. Record what the review covers: the PR
+head SHA, commits not yet pushed (`git log <PR-head-SHA>..HEAD --oneline`),
+uncommitted changes and untracked files.
+
+Before going further, confirm the refs resolve (`git rev-parse`) and the diff is
+non-empty. A bad ref or empty diff should fail here, not inside two parallel sub-agents.
 
 ### 2. Identify the spec source
 
 Look for the originating spec, in this order:
 
-1. Issue references in the commit messages (`#123`, `Closes #45`, GitLab `!67`, etc.), fetched via the workflow in `docs/agents/issue-tracker.md`.
-2. A path the user passed as an argument.
-3. A spec file under `docs/`, `specs/`, or `.scratch/` matching the branch name or feature.
+1. An issue, spec path or link the user passed.
+2. The issues linked from the PR, its body, the branch name or the commit
+   messages (`#123`, `Closes #45`, `ABC-123`, GitLab `!67`, etc.), fetched through
+   the repository's configured tracker as `./bundled/templates/project-context.md` describes.
+3. As a last fallback, a spec file under `docs/`, `specs/`, or `.scratch/` matching the branch name or feature.
 4. If nothing is found, ask the user where the spec is. If they say there isn't one, the **Spec** sub-agent will skip and report "no spec available".
 
 ### 3. Identify the standards sources
@@ -114,7 +136,8 @@ Keep broader cleanup outside this review; use `ponytail-audit` only when request
 - Simplification suggestions are optional and do not block approval by
   themselves. If the same code has a demonstrated defect or violates a documented
   requirement, report that underlying problem as the reason action is required.
-  This review proposes changes; it does not authorize applying them.
+  This review proposes changes; it does not authorize applying them. Only the
+  owner's choice in step 6 does.
 
 ### 4. Review the selected axes
 
@@ -124,14 +147,14 @@ reviewers within host capacity. A dispatched workload reviewer handles both itse
 
 **Standards sub-agent prompt** should include:
 
-- The full diff command and commit list.
+- The full diff command, commit list and any untracked files to read.
 - The list of standards-source files you found in step 3, **plus the smell baseline and simplification check from step 3** pasted in full (the sub-agent has no other access to them).
 - The supplied spec or relevant requirements, when available, so proposed simplifications preserve requested behavior.
 - The brief: "Report documented-standard violations with the source rule and file/line evidence separately from optional smell or simplification suggestions. For each simplification, identify the change, replacement, usage evidence, and maintenance benefit. Apply the baseline and simplification safeguards; deduplicate overlapping concerns. A documented repo standard overrides the baseline. Skip anything tooling enforces. If no worthwhile simplification is found, say so without implying the whole change is approved. Aim for under 400 words without omitting material findings."
 
 **Spec sub-agent prompt** should include:
 
-- The diff command and commit list.
+- The diff command, commit list and any untracked files to read.
 - The path or fetched contents of the spec.
 - The brief: "Report: (a) requirements the spec asked for that are missing or partial; (b) behaviour in the diff that wasn't asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong. Quote the spec line for each finding. Under 400 words."
 
@@ -146,6 +169,27 @@ Optional suggestions alone do not make Standards fail. End with a one-line
 summary: findings per axis, distinguishing Standards violations from optional
 suggestions, and the worst issue within each axis (if any). Do not pick a single
 winner across axes or treat an absence of simplification findings as approval.
+
+State what the review covered (step 1): PR head SHA, unpushed commits,
+uncommitted changes and untracked files.
+
+### 6. Finish
+
+For an owner-invoked standalone review that reported findings or suggestions,
+end with one structured question (the host's choice prompt when available):
+
+1. **Apply all findings and suggestions, verify, commit, and push to the PR (recommended)**
+2. **Apply findings only**: the same flow, leaving optional suggestions out
+3. **Stop here**
+
+The choice is the authorization to edit, commit and push; option 1 needs no
+further instruction. Without a PR or upstream branch, commit and report that
+nothing was pushed. Apply only the reported items, run the affected checks, and
+send behavioral fixes through one focused independent verification as
+`./bundled/templates/review-policy.md` describes. Report the commit, push and
+verification results. A clean review with nothing to apply ends without the
+question. Dispatched workload reviews skip this step and return findings to
+the coordinator.
 
 ## Why two axes
 

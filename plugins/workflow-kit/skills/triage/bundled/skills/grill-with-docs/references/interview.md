@@ -19,8 +19,12 @@ Format a round like so:
 ➡️ <your recommended answer>
 ```
 
+End each round with: "Reply with only the numbers you'd change; anything you don't mention takes the recommendation." Treat every question the user's reply doesn't mention as accepting your recommendation.
+
 Each round the user answers reshapes the tree: settled decisions push the frontier outward and unblock questions that depended on them. Recompute the frontier and ask the next round. A question whose answer depends on another question still open in this round belongs to a _later_ round, not this one.
 
 Finding _facts_ is your job, never the user's. When a frontier question needs a fact from the environment (filesystem, tools, etc.), look it up locally, or delegate a bounded independent lookup when useful and permitted; don't ask the user for anything you could look up yourself. Don't block on it: a running exploration is an unsettled prerequisite, so only the questions downstream of it wait for the sub-agent to report; ask the rest of the frontier now. The _decisions_ are the user's: put each to them and wait.
 
 The session is done when the frontier is empty: every branch of the design tree visited, nothing left silently assumed. Do not act on it until the user confirms you have reached a shared understanding.
+
+When the frontier is empty, summarize the agreed decisions and end by recommending the next skill as the default reply, instead of waiting for the user to name it: to-spec to turn the conversation into a spec; then prototype when a UI question is still open; then implement (or orchestrate for a multi-issue workload). Name the command the user types to run it. A calling skill that defines its own next step (triage, wayfinder, architecture review) keeps that step.

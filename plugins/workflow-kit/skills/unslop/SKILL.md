@@ -1,6 +1,6 @@
 ---
 name: unslop
-description: Cut AI tells from any writing. Must always apply.
+description: "Cut AI tells from prose a person reads: PR and commit descriptions, issue comments, reports, docs."
 metadata:
   internal: true
 ---

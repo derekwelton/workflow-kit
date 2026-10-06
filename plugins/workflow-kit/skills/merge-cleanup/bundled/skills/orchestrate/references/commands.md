@@ -91,7 +91,9 @@ same dispatch; at most three attempts are allowed. A focused verification uses a
 new dispatch ID and kind fix-verification. Repeating an identical update is safe.
 Do not change the scope/head of an existing dispatch or launch a concurrent one.
 
-Beyond the completed-review budget, save --review-authorization:
+When the last budgeted review returns changes-required, one fix-verification
+dispatch of those fixes belongs to that review: launch it without an authorization
+and the helper marks it budgetVerification. Beyond that, save --review-authorization:
 
 ```json
 {"id":"decision-1","reference":"user message reference","scope":"verify stale-write fix","findings":["F-1"],"allowance":1}
