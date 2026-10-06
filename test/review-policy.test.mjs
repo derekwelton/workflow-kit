@@ -55,6 +55,26 @@ test("scoped allowance survives serialization and failed attempts but cannot be 
   assert.throws(() => updateReviewDispatch(issue, request("r4", "a5", "running", { authorizationId: "grant" }), 2), /allowance exhausted/);
 });
 
+test("one fix verification after the last budgeted review needs no authorization", () => {
+  const issue = fixture();
+  const verdict = (id, attemptId, value, kind = "initial") => ({ dispatch: { id, scope: "full issue", kind,
+    attempt: { id: attemptId, status: "completed", receipt: `claude:${sha}:${id}`, verdict: value } } });
+  updateReviewDispatch(issue, verdict("r1", "a1", "changes-required"), 2);
+  updateReviewDispatch(issue, verdict("r2", "a2", "changes-required", "fix-verification"), 2);
+  assert.throws(() => updateReviewDispatch(structuredClone(issue), verdict("r3", "a3", "pass"), 2), /budget exhausted/);
+  updateReviewDispatch(issue, verdict("r3", "a3", "changes-required", "fix-verification"), 2);
+  assert.equal(issue.reviewDispatches.at(-1).budgetVerification, true);
+  assert.deepEqual(reviewPolicyErrors(issue, 2), []);
+  assert.throws(() => updateReviewDispatch(structuredClone(issue), verdict("r4", "a4", "pass", "fix-verification"), 2), /budget exhausted/);
+  const passed = fixture();
+  updateReviewDispatch(passed, verdict("r1", "a1", "changes-required"), 2);
+  updateReviewDispatch(passed, verdict("r2", "a2", "pass", "fix-verification"), 2);
+  assert.throws(() => updateReviewDispatch(passed, verdict("r3", "a3", "pass", "fix-verification"), 2), /budget exhausted/);
+  const forged = structuredClone(issue);
+  forged.reviewDispatches[1].budgetVerification = true;
+  assert.match(reviewPolicyErrors(forged, 2).join(), /only one fix verification/);
+});
+
 test("dispatch identity cannot be reused for changed code or changed scope", () => {
   const issue = fixture();
   updateReviewDispatch(issue, request("r1", "a1", "completed"), 2);

@@ -30,8 +30,14 @@ do not assume the default branch or require a manifest for standalone work.
 - If already merged, verify the recorded merge and current destination, then
   resume reconciliation and cleanup. Do not attempt another merge.
 
-Return a short receipt with **merged, issue/PR outcomes, cleaned, retained, and
-unresolved actions**. Verify every claimed outcome. Continue independent eligible
+Return a short receipt with **merged, issue/PR outcomes, cleaned, retained,
+rollout, and unresolved actions**. Build **Rollout** from the migrations,
+scripts and configuration paragraph of `./bundled/templates/completion-guide.md`,
+for everything the merged work delivered: what to run, in order, whether each
+script is safe to rerun, configuration changes, and apps to publish. Write
+"nothing to run" when that is the case. Take script folders, publish commands and
+other repository specifics from the project's lifecycle overrides and
+instructions; never invent a command. Verify every claimed outcome. Continue independent eligible
 cleanup when one item is blocked, and distinguish partial completion from success.
 
 When this workflow calls for a required skill that is not separately installed, read its instructions from `bundled/dependencies.md`. Load only the dependency needed for the current step; bundled instructions do not authorize additional work.

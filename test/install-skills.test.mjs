@@ -165,3 +165,21 @@ test("retired skills drop out of earlier requests and their owned files are remo
   assert.ok(!fs.existsSync(path.join(project, retired)));
   assert.deepEqual(JSON.parse(read(project, ".workflow-skills.json")).hosts.codex.requested, ["ponytail"]);
 }));
+
+test("install reports a stale or newer managed lifecycle block without rewriting it", () => fixture(project => {
+  const file = path.join(project, ".ai/workflows/feature-lifecycle.md");
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const block = version => `<!-- workflow-kit:managed-start version=${version} -->\nold rules\n<!-- workflow-kit:managed-end -->\n\n## Local overrides\nStay on main.\n`;
+  fs.writeFileSync(file, block("0.9.4"));
+  const [skew] = installSkills({ project, skills: ["ponytail"] }).lifecycle;
+  assert.equal(skew.status, "stale");
+  assert.match(skew.message, /0\.9\.4.*setup-workflow-skills/);
+  assert.match(skew.command, /refresh-lifecycle\.mjs" ".*feature-lifecycle\.md" --check$/);
+  assert.equal(read(project, ".ai/workflows/feature-lifecycle.md"), block("0.9.4"));
+  const printed = spawnSync(process.execPath, [path.join(root, "scripts/install-skills.mjs"), "--project", project, "--check"], { encoding: "utf8", windowsHide: true });
+  assert.match(printed.stdout, /Lifecycle: .*0\.9\.4[\s\S]*refresh-lifecycle\.mjs/);
+  fs.writeFileSync(file, block("999.0.0"));
+  assert.match(installSkills({ project, check: true }).lifecycle[0].message, /do not downgrade/);
+  fs.writeFileSync(file, block(skew.installed));
+  assert.deepEqual(installSkills({ project, check: true }).lifecycle, []);
+}));

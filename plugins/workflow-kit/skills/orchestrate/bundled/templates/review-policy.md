@@ -21,8 +21,12 @@ Allow at most two infrastructure retries per dispatch within existing scope and
 model authorization. Exhaustion is an infrastructure blocker, never approval.
 Do not create a replacement dispatch to evade the retry limit.
 
-If a substantive blocker remains after the budget, ask once about the concrete
-blocker and proposed action. Save the decision reference, issue/finding scope,
+When the last budgeted review requires changes, one focused independent
+verification of the fixes for its blockers belongs to that review and needs no
+additional allowance. Fixed but not yet verified is not a remaining blocker; run
+that verification without asking. A blocker remains only when that verification
+fails or finds a new blocker. Only then ask once about the concrete blocker
+and proposed action. Save the decision reference, issue/finding scope,
 additional allowance and any expiry/model/cost constraints. Reuse that allowance
 across resumes and infrastructure retries. Ask again only for changed scope or an
 exhausted allowance. Never infer consent from elapsed time or a session restart.

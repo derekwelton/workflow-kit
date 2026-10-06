@@ -5,13 +5,13 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const defaults = [".ai/workflows/feature-lifecycle.md", "docs/feature-lifecycle.md", ".claude/feature-lifecycle.md", "feature-lifecycle.md"];
+export const lifecycleCandidates = [".ai/workflows/feature-lifecycle.md", "docs/feature-lifecycle.md", ".claude/feature-lifecycle.md", "feature-lifecycle.md"];
 
 export function checkManagedVersion({ cwd = process.cwd(), lifecycle, pluginRoot = packageRoot } = {}) {
   const git = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd, encoding: "utf8", windowsHide: true });
   const repo = git.status === 0 ? git.stdout.trim() : path.resolve(cwd);
   const installed = JSON.parse(fs.readFileSync(path.join(pluginRoot, ".claude-plugin/plugin.json"), "utf8")).version;
-  const candidates = lifecycle ? [path.resolve(repo, lifecycle)] : defaults.map(f => path.join(repo, f));
+  const candidates = lifecycle ? [path.resolve(repo, lifecycle)] : lifecycleCandidates.map(f => path.join(repo, f));
   const found = candidates.filter(f => fs.existsSync(f));
   if (found.length > 1) return { status: "ambiguous", installed, message: "Multiple lifecycle docs found; pass --lifecycle with the repository's canonical path." };
   if (!found.length) return { status: "missing", installed, message: lifecycle ? "Configured lifecycle file is missing; reconcile the repository contract." : "No legacy lifecycle doc found. Project-local skills do not require one." };
