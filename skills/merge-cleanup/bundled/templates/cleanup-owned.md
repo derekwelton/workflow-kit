@@ -29,6 +29,9 @@ scoped cleanup plus verified full delivery and no unique work permits deleting
 that exact branch, never treating the rejection itself as evidence of delivery.
 
 Remove completed disposable feature records only under consumer retention rules.
+Once a workload's work is merged, its evidence directory
+`<git-common-dir>/workflow-kit/runs/<run-slug>/` is such a record: remove it,
+keep the run's manifest JSON, and report the space freed.
 Keep durable documentation and selected historical references, including retained
 DOCS/archive entries where applicable. Do not invent a permanent work archive.
 Use tracked-file operations for tracked disposable artifacts; preserve unrelated

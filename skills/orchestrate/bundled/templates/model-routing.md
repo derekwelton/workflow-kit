@@ -71,8 +71,10 @@ escalation evidence. If the runtime does not expose the resolved identity,
 record unknown, not the requested model.
 
 Count the coordinator, active workers and nested reviewers against host slots
-with `workerCapacity` in the module. Limits are ceilings; queue excess. Unknown
-capacity means one worker and no nesting. Honor host/user delegation
+with `workerCapacity` in the module. Limits are ceilings; queue excess. Host
+slots come from a `workerCapacity: <n>` entry in the repository's agent
+configuration or a saved run answer. Otherwise capacity is unknown, which means
+one worker and no nesting. Honor host/user delegation
 restrictions. Use a fresh bounded brief when a full-history fork cannot change
 models. The coordinator owns tracker writes and final integration.
 
