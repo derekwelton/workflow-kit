@@ -47,6 +47,9 @@ the portable fallback too.
    Report frozen issues, overlap/dependency lanes, routes, round cap and next gates.
 4. Serialize dependent/overlapping work; parallelize bounded independent work
    only while the coordinator has useful work. Respect model-routing capacity.
+   When capacity is unknown and independent lanes exist, the plan shows the
+   parallel schedule and asks once, recommending that width; save the answer
+   as run policy. Stack independent issues only at the user's request.
    Lease one worktree per issue, using Linear gitBranchName or local convention.
    Record which branches/worktrees this run creates in issue --resume-context;
    distinguish reused artifacts so final cleanup can prove ownership.
@@ -91,6 +94,8 @@ verify coverage against every implemented issue before reporting completion.
 
 Use --resume-context for intended-environment acceptance evidence, owned
 processes/jobs, unresolved schema/config/deployment needs and next action.
+At a wave boundary of a long workload, offer continuing with
+`--resume <workload-id>` in a fresh coordinator session as an option.
 An optional --handoff-snapshot is derived from the manifest, never a second
 canonical record; preserve instruction identity/retained content in handoff.
 Research follows `./bundled/skills/research/INSTRUCTIONS.md`; cited chat findings suffice unless an
